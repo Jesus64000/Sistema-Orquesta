@@ -72,10 +72,6 @@ app.delete("/programas/:id", async (req, res) => {
 // ALUMNOS (soporte multi-programa)
 // =======================
 
-/**
- * Helper: obtener programas por una lista de ids_alumno
- * devuelve array de filas: { id_alumno, id_programa, nombre }
- */
 async function fetchProgramasPorAlumnos(idsAlumnos) {
   if (!idsAlumnos || idsAlumnos.length === 0) return [];
   const [rows] = await pool.query(
@@ -88,7 +84,7 @@ async function fetchProgramasPorAlumnos(idsAlumnos) {
   return rows;
 }
 
-// GET /alumnos  -> lista con filtros opcionales: ?search=&estado=&programa_id=
+// GET /alumnos
 app.get("/alumnos", async (req, res) => {
   try {
     const { search, estado, programa_id } = req.query;
@@ -96,7 +92,6 @@ app.get("/alumnos", async (req, res) => {
     const params = [];
     const where = [];
 
-    // Busqueda por nombre o telefono
     if (search) {
       where.push("(a.nombre LIKE ? OR a.telefono_contacto LIKE ?)");
       params.push(`%${search}%`, `%${search}%`);
@@ -107,7 +102,6 @@ app.get("/alumnos", async (req, res) => {
       params.push(estado);
     }
 
-    // Si se filtra por programa, necesitamos JOIN con alumno_programa
     const joinProgramFilter = programa_id ? "JOIN alumno_programa apf ON a.id_alumno = apf.id_alumno" : "";
 
     const sql = `
@@ -119,7 +113,6 @@ app.get("/alumnos", async (req, res) => {
       LIMIT 1000
     `;
 
-    // si se filtró por programa, lo agregamos a params (apf condicion)
     if (programa_id) params.push(programa_id);
 
     const [alumnosRows] = await pool.query(sql, params);
@@ -127,7 +120,6 @@ app.get("/alumnos", async (req, res) => {
     const ids = alumnosRows.map((r) => r.id_alumno);
     const programasRows = await fetchProgramasPorAlumnos(ids);
 
-    // Agrupar programas por alumno
     const mapProg = {};
     for (const pr of programasRows) {
       if (!mapProg[pr.id_alumno]) mapProg[pr.id_alumno] = [];
@@ -146,7 +138,7 @@ app.get("/alumnos", async (req, res) => {
   }
 });
 
-// GET /alumnos/:id -> detalle con programas
+// GET /alumnos/:id
 app.get("/alumnos/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -171,7 +163,7 @@ app.get("/alumnos/:id", async (req, res) => {
   }
 });
 
-// POST /alumnos  -> acepta { nombre, fecha_nacimiento, genero, telefono_contacto, estado, programa_ids:[], programas:[] }
+// POST /alumnos
 app.post("/alumnos", async (req, res) => {
   try {
     const {
@@ -180,7 +172,6 @@ app.post("/alumnos", async (req, res) => {
       genero,
       telefono_contacto,
       estado,
-      // soporte ambos nombres (frontend usa programa_ids)
       programa_ids,
       programas,
     } = req.body;
@@ -192,12 +183,10 @@ app.post("/alumnos", async (req, res) => {
     );
     const id_alumno = result.insertId;
 
-    // decidir array de programas a insertar (ids)
     const progIds = Array.isArray(programa_ids) && programa_ids.length ? programa_ids
       : Array.isArray(programas) && programas.length ? programas
       : [];
 
-    // insertar relaciones (máx 2)
     if (progIds.length > 0) {
       const slice = progIds.slice(0, 2);
       for (const id_programa of slice) {
@@ -208,7 +197,6 @@ app.post("/alumnos", async (req, res) => {
       }
     }
 
-    // devolver el nuevo alumno (con programas)
     const [programasRows] = progIds.length > 0
       ? await pool.query(
           `SELECT p.id_programa, p.nombre
@@ -226,7 +214,7 @@ app.post("/alumnos", async (req, res) => {
   }
 });
 
-// PUT /alumnos/:id -> actualiza alumno y reemplaza programas
+// PUT /alumnos/:id
 app.put("/alumnos/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -247,12 +235,10 @@ app.put("/alumnos/:id", async (req, res) => {
       [nombre, fecha_nacimiento, genero, telefono_contacto, estado, id]
     );
 
-    // decidir array de programas
     const progIds = Array.isArray(programa_ids) && programa_ids.length ? programa_ids
       : Array.isArray(programas) && programas.length ? programas
       : [];
 
-    // reemplazar relaciones: borramos y reinsertamos (máx 2)
     await pool.query(`DELETE FROM alumno_programa WHERE id_alumno = ?`, [id]);
     if (progIds.length > 0) {
       const slice = progIds.slice(0, 2);
@@ -264,7 +250,6 @@ app.put("/alumnos/:id", async (req, res) => {
       }
     }
 
-    // devolver alumno actualizado
     const [[alumnoRow]] = await pool.query(`SELECT * FROM Alumno WHERE id_alumno = ?`, [id]);
     const [programasRows] = await pool.query(
       `SELECT p.id_programa, p.nombre
@@ -293,6 +278,125 @@ app.delete("/alumnos/:id", async (req, res) => {
   }
 });
 
+// -------------------------
+// Helpers: historial & utilidades
+// -------------------------
+
+async function registrarHistorial(id_alumno, tipo, descripcion = "", usuario = "sistema") {
+  try {
+    await pool.query(
+      `INSERT INTO Alumno_Historial (id_alumno, tipo, descripcion, usuario) VALUES (?, ?, ?, ?)`,
+      [id_alumno, tipo, descripcion, usuario]
+    );
+  } catch (err) {
+    console.error("Error registrando historial:", err);
+  }
+}
+
+// Historial alumno
+app.get("/alumnos/:id/historial", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [rows] = await pool.query(
+      `SELECT id_historial, tipo, descripcion, usuario, creado_en
+       FROM Alumno_Historial
+       WHERE id_alumno = ?
+       ORDER BY creado_en DESC`,
+      [id]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error("Error en GET /alumnos/:id/historial", err);
+    res.status(500).json({ error: "Error obteniendo historial" });
+  }
+});
+
+app.post("/alumnos/:id/historial", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { tipo = "OTRO", descripcion = "", usuario = "sistema" } = req.body;
+    await pool.query(
+      `INSERT INTO Alumno_Historial (id_alumno, tipo, descripcion, usuario) VALUES (?, ?, ?, ?)`,
+      [id, tipo, descripcion, usuario]
+    );
+    res.json({ message: "Historial registrado" });
+  } catch (err) {
+    console.error("Error en POST /alumnos/:id/historial", err);
+    res.status(500).json({ error: "Error guardando historial" });
+  }
+});
+
+// Nota alumno
+app.put("/alumnos/:id/nota", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nota = "", usuario = "sistema" } = req.body;
+    await pool.query(`UPDATE Alumno SET nota = ? WHERE id_alumno = ?`, [nota, id]);
+    await registrarHistorial(id, "NOTA", `Nota actualizada: ${nota}`, usuario);
+    res.json({ message: "Nota actualizada" });
+  } catch (err) {
+    console.error("Error en PUT /alumnos/:id/nota", err);
+    res.status(500).json({ error: "Error actualizando nota" });
+  }
+});
+
+// Instrumento asignado
+app.get("/alumnos/:id/instrumento", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [rows] = await pool.query(
+      `SELECT i.id_instrumento, i.nombre, i.categoria, i.numero_serie, i.estado as estado_instrumento, ai.fecha_asignacion
+       FROM Asignacion_Instrumento ai
+       JOIN Instrumento i ON ai.id_instrumento = i.id_instrumento
+       WHERE ai.id_alumno = ? AND ai.estado = 'Activo'
+       ORDER BY ai.fecha_asignacion DESC
+       LIMIT 1`,
+      [id]
+    );
+    res.json(rows[0] || null);
+  } catch (err) {
+    console.error("Error en GET /alumnos/:id/instrumento", err);
+    res.status(500).json({ error: "Error obteniendo instrumento" });
+  }
+});
+
+// Exportar alumnos CSV
+app.get("/alumnos/export", async (req, res) => {
+  try {
+    const { format = "csv", search, estado, programa_id } = req.query;
+    const alumnos = await fetchAlumnosWithPrograms({ search, estado, programa_id });
+
+    if (format === "csv") {
+      const headers = ["id_alumno", "nombre", "fecha_nacimiento", "genero", "telefono_contacto", "estado", "programas", "nota"];
+      const lines = [headers.join(",")];
+
+      for (const a of alumnos) {
+        const programasStr = (a.programas || []).map((p) => p.nombre).join(" | ");
+        const row = [
+          a.id_alumno,
+          `"${String(a.nombre || "").replace(/"/g, '""')}"`,
+          a.fecha_nacimiento ? a.fecha_nacimiento.slice(0, 10) : "",
+          a.genero || "",
+          `"${String(a.telefono_contacto || "").replace(/"/g, '""')}"`,
+          a.estado || "",
+          `"${String(programasStr).replace(/"/g, '""')}"`,
+          `"${String(a.nota || "").replace(/"/g, '""')}"`,
+        ];
+        lines.push(row.join(","));
+      }
+
+      const csv = lines.join("\n");
+      res.setHeader("Content-Type", "text/csv; charset=utf-8");
+      res.setHeader("Content-Disposition", `attachment; filename="alumnos_export_${Date.now()}.csv"`);
+      return res.send(csv);
+    }
+
+    res.status(400).json({ error: "Formato no soportado (usa format=csv por ahora)" });
+  } catch (err) {
+    console.error("Error en GET /alumnos/export", err);
+    res.status(500).json({ error: "Error exportando alumnos" });
+  }
+});
 
 // =======================
 // INSTRUMENTOS
@@ -417,9 +521,7 @@ app.delete("/eventos/:id", async (req, res) => {
   }
 });
 
-// =======================
-// Eventos - Futuros
-// =======================
+// Eventos futuros
 app.get("/eventos/futuros", async (req, res) => {
   const { programa_id } = req.query;
   try {
@@ -445,14 +547,8 @@ app.get("/eventos/futuros", async (req, res) => {
   }
 });
 
-
 // =======================
-// REPORTES (solo lectura)
-// =======================
-
-
-// =======================
-// REPORTES (ajustados a muchos-a-muchos)
+// REPORTES (muchos-a-muchos)
 // =======================
 
 // Número de alumnos por programa
@@ -486,47 +582,10 @@ app.get("/reportes/instrumentos-por-estado", async (req, res) => {
   }
 });
 
+// =======================
+// USUARIOS
+// =======================
 
-
-
-// =============================
-// 📊 REPORTES
-// =============================
-
-// Alumnos por programa
-app.get("/reportes/alumnos-por-programa", async (req, res) => {
-  try {
-    const [rows] = await pool.query(`
-      SELECT p.nombre AS programa, COUNT(a.id_alumno) AS cantidad
-      FROM Programa p
-      LEFT JOIN Alumno a ON p.id_programa = a.id_programa
-      GROUP BY p.nombre
-    `);
-    res.json(rows);
-  } catch (err) {
-    res.status(500).json({ error: "Error al obtener reporte de alumnos" });
-  }
-});
-
-// Instrumentos por estado
-app.get("/reportes/instrumentos-por-estado", async (req, res) => {
-  try {
-    const [rows] = await pool.query(`
-      SELECT estado, COUNT(id_instrumento) AS cantidad
-      FROM Instrumento
-      GROUP BY estado
-    `);
-    res.json(rows);
-  } catch (err) {
-    res.status(500).json({ error: "Error al obtener reporte de instrumentos" });
-  }
-});
-
-// =============================
-// ⚙️ USUARIOS (CONFIGURACIONES)
-// =============================
-
-// Obtener todos los usuarios
 app.get("/usuarios", async (req, res) => {
   try {
     const [rows] = await pool.query("SELECT id_usuario, nombre, email, rol FROM Usuario");
@@ -536,7 +595,6 @@ app.get("/usuarios", async (req, res) => {
   }
 });
 
-// Crear usuario
 app.post("/usuarios", async (req, res) => {
   try {
     const { nombre, email, password, rol } = req.body;
@@ -544,10 +602,9 @@ app.post("/usuarios", async (req, res) => {
       return res.status(400).json({ error: "Todos los campos son requeridos" });
     }
 
-    // Guardamos la contraseña como hash
     const [result] = await pool.query(
       "INSERT INTO Usuario (nombre, email, password_hash, rol) VALUES (?, ?, ?, ?)",
-      [nombre, email, password, rol] // ⚠️ en producción deberíamos encriptar el password
+      [nombre, email, password, rol]
     );
     res.json({ id: result.insertId, nombre, email, rol });
   } catch (err) {
@@ -555,7 +612,6 @@ app.post("/usuarios", async (req, res) => {
   }
 });
 
-// Actualizar usuario
 app.put("/usuarios/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -576,7 +632,6 @@ app.put("/usuarios/:id", async (req, res) => {
   }
 });
 
-// Eliminar usuario
 app.delete("/usuarios/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -592,7 +647,9 @@ app.delete("/usuarios/:id", async (req, res) => {
   }
 });
 
-// === DASHBOARD ===
+// =======================
+// DASHBOARD
+// =======================
 
 // Estadísticas rápidas
 app.get("/dashboard/stats", async (req, res) => {
@@ -600,37 +657,33 @@ app.get("/dashboard/stats", async (req, res) => {
     const { programa_id } = req.query;
 
     // --- Total alumnos ---
-    let queryAlumnos = "SELECT COUNT(*) AS total FROM alumno a";
-    let params = [];
-
-    if (programa_id) {
-      queryAlumnos += " WHERE a.id_programa = ?";
-      params.push(programa_id);
-    }
-
-    const [alumnos] = await pool.query(queryAlumnos, params);
+    let queryAlumnos = `
+      SELECT COUNT(DISTINCT a.id_alumno) AS total
+      FROM alumno a
+      ${programa_id ? "JOIN alumno_programa ap ON a.id_alumno = ap.id_alumno" : ""}
+      ${programa_id ? "WHERE ap.id_programa = ?" : ""}
+    `;
+    const [alumnos] = await pool.query(queryAlumnos, programa_id ? [programa_id] : []);
 
     // --- Activos ---
-    let queryActivos = "SELECT COUNT(*) AS total FROM alumno a WHERE a.estado = 'Activo'";
-    params = [];
-
-    if (programa_id) {
-      queryActivos += " AND a.id_programa = ?";
-      params.push(programa_id);
-    }
-
-    const [activos] = await pool.query(queryActivos, params);
+    let queryActivos = `
+      SELECT COUNT(DISTINCT a.id_alumno) AS total
+      FROM alumno a
+      ${programa_id ? "JOIN alumno_programa ap ON a.id_alumno = ap.id_alumno" : ""}
+      WHERE a.estado = 'Activo'
+      ${programa_id ? "AND ap.id_programa = ?" : ""}
+    `;
+    const [activos] = await pool.query(queryActivos, programa_id ? [programa_id] : []);
 
     // --- Nuevos hoy ---
-    let queryNuevos = "SELECT COUNT(*) AS total FROM alumno a WHERE DATE(a.creado_en) = CURDATE()";
-    params = [];
-
-    if (programa_id) {
-      queryNuevos += " AND a.id_programa = ?";
-      params.push(programa_id);
-    }
-
-    const [nuevos] = await pool.query(queryNuevos, params);
+    let queryNuevos = `
+      SELECT COUNT(DISTINCT a.id_alumno) AS total
+      FROM alumno a
+      ${programa_id ? "JOIN alumno_programa ap ON a.id_alumno = ap.id_alumno" : ""}
+      WHERE DATE(a.creado_en) = CURDATE()
+      ${programa_id ? "AND ap.id_programa = ?" : ""}
+    `;
+    const [nuevos] = await pool.query(queryNuevos, programa_id ? [programa_id] : []);
 
     // --- Personal activo ---
     const [personal] = await pool.query(
@@ -649,23 +702,19 @@ app.get("/dashboard/stats", async (req, res) => {
   }
 });
 
-
-// Próximo evento
+// Próximo evento (multi-programa)
 app.get("/dashboard/proximo-evento", async (req, res) => {
   try {
     const { programa_id } = req.query;
-    const filtro = programa_id ? "WHERE e.id_programa = ?" : "";
-    const params = programa_id ? [programa_id] : [];
-
-    const [rows] = await pool.query(
-      `SELECT * FROM evento e 
-       ${filtro} 
-       AND e.fecha_evento >= CURDATE()
-       ORDER BY e.fecha_evento ASC 
-       LIMIT 1`,
-      params
-    );
-
+    let query = `
+      SELECT e.* 
+      FROM Evento e
+      ${programa_id ? "WHERE e.id_programa = ?" : "WHERE 1=1"}
+      AND e.fecha_evento >= CURDATE()
+      ORDER BY e.fecha_evento ASC 
+      LIMIT 1
+    `;
+    const [rows] = await pool.query(query, programa_id ? [programa_id] : []);
     res.json(rows[0] || null);
   } catch (err) {
     console.error("Error en /dashboard/proximo-evento:", err);
@@ -673,20 +722,18 @@ app.get("/dashboard/proximo-evento", async (req, res) => {
   }
 });
 
+// Eventos futuros (multi-programa)
 app.get("/dashboard/eventos-futuros", async (req, res) => {
   try {
     const { programa_id } = req.query;
-    const filtro = programa_id ? "WHERE e.id_programa = ?" : "";
-    const params = programa_id ? [programa_id] : [];
-
-    const [rows] = await pool.query(
-      `SELECT * FROM evento e 
-       ${filtro} 
-       AND e.fecha_evento >= CURDATE()
-       ORDER BY e.fecha_evento ASC`,
-      params
-    );
-
+    let query = `
+      SELECT e.* 
+      FROM Evento e
+      ${programa_id ? "WHERE e.id_programa = ?" : "WHERE 1=1"}
+      AND e.fecha_evento >= CURDATE()
+      ORDER BY e.fecha_evento ASC
+    `;
+    const [rows] = await pool.query(query, programa_id ? [programa_id] : []);
     res.json(rows);
   } catch (err) {
     console.error("Error en /dashboard/eventos-futuros:", err);
@@ -694,7 +741,7 @@ app.get("/dashboard/eventos-futuros", async (req, res) => {
   }
 });
 
-// Eventos del mes (para calendario)
+
 app.get("/dashboard/eventos-mes", async (req, res) => {
   const { year, month } = req.query;
   try {
@@ -709,13 +756,6 @@ app.get("/dashboard/eventos-mes", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-
-
-
-
-
-
 
 // ====================== SERVIDOR ======================
 app.get("/", (req, res) => {
