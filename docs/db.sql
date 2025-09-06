@@ -152,6 +152,21 @@ CREATE TABLE `alumno_documento` (
   KEY `id_alumno` (`id_alumno`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+----- estructura de tabla para la tabla "Representante"
+
+CREATE TABLE Representante (
+  id_representante INT AUTO_INCREMENT PRIMARY KEY,
+  nombre VARCHAR(100) NOT NULL,
+  telefono VARCHAR(20),
+  email VARCHAR(100)
+);
+
+-- Relación alumno ↔ representante
+ALTER TABLE Alumno
+ADD CONSTRAINT fk_alumno_representante
+  FOREIGN KEY (id_representante) REFERENCES Representante(id_representante)
+  ON DELETE SET NULL;
+
 -- --------------------------------------------------------
 -- Restricciones para tablas volcadas
 --

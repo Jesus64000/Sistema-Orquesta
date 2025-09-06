@@ -4,6 +4,23 @@ Plataforma web para la gestión integral de alumnos, programas, instrumentos, ev
 
 ---
 
+## 📑 Tabla de contenido
+
+- [📦 Estructura del Proyecto](#-estructura-del-proyecto)
+- [🚀 Descripción General del Sistema](#-descripción-general-del-sistema)
+- [⚙️ Instalación y Ejecución](#-instalación-y-ejecución)
+- [📚 Documentación de la API](#-documentación-de-la-api)
+- [🛠️ Dependencias principales](#-dependencias-principales)
+- [🗄️ Estructura del Backend](#-estructura-del-backend)
+- [🖥️ Estructura del Frontend](#-estructura-del-frontend)
+- [🔒 Seguridad y buenas prácticas](#-seguridad-y-buenas-prácticas)
+- [📝 Buenas prácticas de desarrollo](#-buenas-prácticas-de-desarrollo)
+- [📜 Historial de cambios](docs/changelog.md)
+- [📖 Guía de instalación](docs/instalacion.md)
+- [🔐 Guía de seguridad](docs/seguridad.md)
+
+---
+
 ## 📦 Estructura del Proyecto
 
 ```
@@ -29,7 +46,14 @@ Sistema-Orquesta/
 │   └── ...
 │
 ├── docs/                 # Documentación técnica adicional
-│   └── api.md
+│   ├── api.md
+│   ├── arquitectura.md
+│   ├── changelog.md
+│   ├── contribuir.md
+│   ├── db.sql
+│   ├── instalacion.md
+│   ├── modelos.md
+│   └── seguridad.md
 │
 └── README.md             # Este archivo
 ```

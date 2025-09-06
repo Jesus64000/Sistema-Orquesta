@@ -190,10 +190,10 @@ app.delete("/programas/:id", async (req, res) => {
 // ALUMNOS (multi-programa, historial, export, bulk)
 // --------------------
 
-// Listar alumnos con filtros opcionales: ?search=&estado=&programa_id=
+// Listar alumnos con filtros opcionales: ?search=&estado=&programa_id=&edad_min=&edad_max=
 app.get("/alumnos", async (req, res) => {
   try {
-    const { search, estado, programa_id } = req.query;
+    const { search, estado, programa_id, edad_min, edad_max } = req.query;
 
     const params = [];
     const where = [];
@@ -208,6 +208,16 @@ app.get("/alumnos", async (req, res) => {
       params.push(estado);
     }
 
+    if (edad_min) {
+      where.push("TIMESTAMPDIFF(YEAR, a.fecha_nacimiento, CURDATE()) >= ?");
+      params.push(Number(edad_min));
+    }
+
+    if (edad_max) {
+      where.push("TIMESTAMPDIFF(YEAR, a.fecha_nacimiento, CURDATE()) <= ?");
+      params.push(Number(edad_max));
+    }
+
     let joinProgramFilter = "";
     if (programa_id) {
       joinProgramFilter = "JOIN alumno_programa apf ON a.id_alumno = apf.id_alumno";
@@ -216,8 +226,12 @@ app.get("/alumnos", async (req, res) => {
     }
 
     const sql = `
-      SELECT DISTINCT a.*
+      SELECT DISTINCT a.*,
+             TIMESTAMPDIFF(YEAR, a.fecha_nacimiento, CURDATE()) AS edad,
+             r.id_representante, r.nombre AS representante_nombre,
+             r.telefono AS representante_telefono, r.email AS representante_email
       FROM Alumno a
+      LEFT JOIN Representante r ON a.id_representante = r.id_representante
       ${joinProgramFilter}
       ${where.length ? "WHERE " + where.join(" AND ") : ""}
       ORDER BY a.nombre ASC
@@ -247,11 +261,22 @@ app.get("/alumnos", async (req, res) => {
   }
 });
 
-// Detalle alumno
+// Detalle alumno con programas y representante
 app.get("/alumnos/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const [[alumnoRow]] = await pool.query("SELECT * FROM Alumno WHERE id_alumno = ?", [id]);
+
+    const [[alumnoRow]] = await pool.query(
+      `SELECT a.*,
+              TIMESTAMPDIFF(YEAR, a.fecha_nacimiento, CURDATE()) AS edad,
+              r.id_representante, r.nombre AS representante_nombre,
+              r.telefono AS representante_telefono, r.email AS representante_email
+       FROM Alumno a
+       LEFT JOIN Representante r ON a.id_representante = r.id_representante
+       WHERE a.id_alumno = ?`,
+      [id]
+    );
+
     if (!alumnoRow) return res.status(404).json({ error: "Alumno no encontrado" });
 
     const [programasRows] = await pool.query(
@@ -269,6 +294,7 @@ app.get("/alumnos/:id", async (req, res) => {
   }
 });
 
+
 // Crear alumno (acepta programa_ids array)
 app.post("/alumnos", async (req, res) => {
   try {
@@ -281,12 +307,13 @@ app.post("/alumnos", async (req, res) => {
       programa_ids = [],
       programas = [],
       usuario = "sistema",
+      id_representante = null,
     } = req.body;
 
     const [result] = await pool.query(
-      `INSERT INTO Alumno (nombre, fecha_nacimiento, genero, telefono_contacto, estado)
-       VALUES (?, ?, ?, ?, ?)`,
-      [nombre, fecha_nacimiento, genero, telefono_contacto, estado]
+      `INSERT INTO Alumno (nombre, fecha_nacimiento, genero, telefono_contacto, estado, id_representante)
+      VALUES (?, ?, ?, ?, ?, ?)`,
+      [nombre, fecha_nacimiento, genero, telefono_contacto, estado, id_representante]  // <<--- INCLUIDO
     );
     const id_alumno = result.insertId;
 
@@ -324,7 +351,6 @@ app.post("/alumnos", async (req, res) => {
 // Actualizar alumno (+ reemplazar programas si viene programa_ids)
 app.put("/alumnos/:id", async (req, res) => {
   try {
-    const { id } = req.params;
     const {
       nombre,
       fecha_nacimiento,
@@ -334,14 +360,16 @@ app.put("/alumnos/:id", async (req, res) => {
       programa_ids = [],
       programas = [],
       usuario = "sistema",
+      id_representante = null, 
     } = req.body;
 
     await pool.query(
       `UPDATE Alumno
-       SET nombre=?, fecha_nacimiento=?, genero=?, telefono_contacto=?, estado=?
-       WHERE id_alumno=?`,
-      [nombre, fecha_nacimiento, genero, telefono_contacto, estado, id]
+      SET nombre=?, fecha_nacimiento=?, genero=?, telefono_contacto=?, estado=?, id_representante=?
+      WHERE id_alumno=?`,
+      [nombre, fecha_nacimiento, genero, telefono_contacto, estado, id_representante, id]
     );
+
 
     // reemplazar programas
     const progIds = Array.isArray(programa_ids) && programa_ids.length ? programa_ids
@@ -649,6 +677,78 @@ app.get("/alumnos/:id/asistencias", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// =======================
+// REPRESENTANTES
+// =======================
+
+// Listar todos los representantes
+app.get("/representantes", async (req, res) => {
+  try {
+    const [rows] = await pool.query("SELECT * FROM Representante ORDER BY nombre ASC");
+    res.json(rows);
+  } catch (err) {
+    console.error("Error en GET /representantes:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Obtener detalle de un representante
+app.get("/representantes/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [[row]] = await pool.query("SELECT * FROM Representante WHERE id_representante = ?", [id]);
+    if (!row) return res.status(404).json({ error: "Representante no encontrado" });
+    res.json(row);
+  } catch (err) {
+    console.error("Error en GET /representantes/:id:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Crear representante
+app.post("/representantes", async (req, res) => {
+  try {
+    const { nombre, telefono, email } = req.body;
+    const [result] = await pool.query(
+      "INSERT INTO Representante (nombre, telefono, email) VALUES (?, ?, ?)",
+      [nombre, telefono, email]
+    );
+    res.json({ id_representante: result.insertId, nombre, telefono, email });
+  } catch (err) {
+    console.error("Error en POST /representantes:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Actualizar representante
+app.put("/representantes/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nombre, telefono, email } = req.body;
+    await pool.query(
+      "UPDATE Representante SET nombre=?, telefono=?, email=? WHERE id_representante=?",
+      [nombre, telefono, email, id]
+    );
+    res.json({ message: "Representante actualizado correctamente" });
+  } catch (err) {
+    console.error("Error en PUT /representantes/:id:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Eliminar representante
+app.delete("/representantes/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query("DELETE FROM Representante WHERE id_representante = ?", [id]);
+    res.json({ message: "Representante eliminado correctamente" });
+  } catch (err) {
+    console.error("Error en DELETE /representantes/:id:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 // --------------------
 // INSTRUMENTOS CRUD (existentes, preservados)
