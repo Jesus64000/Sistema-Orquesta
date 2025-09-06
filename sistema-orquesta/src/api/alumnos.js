@@ -1,24 +1,34 @@
-// Centraliza todas las llamadas al backend para alumnos
+// src/api/alumnos.js
 import axios from "axios";
 
 const API = "http://localhost:4000";
 
-// ▶️ Listar alumnos (opcional: filtros ?q=, ?estado=, ?programa_id=)
-export const getAlumnos = (params = {}) =>
-  axios.get(`${API}/alumnos`, { params });
+// === Alumnos CRUD ===
+export const getAlumnos = () => axios.get(`${API}/alumnos`);
+export const createAlumno = (data) => axios.post(`${API}/alumnos`, data);
+export const updateAlumno = (id, data) => axios.put(`${API}/alumnos/${id}`, data);
+export const deleteAlumno = (id) => axios.delete(`${API}/alumnos/${id}`);
 
-// ▶️ Crear alumno (incluye programa_ids: number[])
-export const createAlumno = (data) =>
-  axios.post(`${API}/alumnos`, data);
+// === Programas ===
+export const getProgramas = () => axios.get(`${API}/programas`);
 
-// ▶️ Actualizar alumno (incluye programa_ids: number[])
-export const updateAlumno = (id, data) =>
-  axios.put(`${API}/alumnos/${id}`, data);
+// === Historial de alumno ===
+export const getAlumnoHistorial = (id) =>
+  axios.get(`${API}/alumnos/${id}/historial`);
 
-// ▶️ Eliminar
-export const deleteAlumno = (id) =>
-  axios.delete(`${API}/alumnos/${id}`);
+export const addAlumnoHistorial = (id, data) =>
+  axios.post(`${API}/alumnos/${id}/historial`, data);
 
-// ▶️ Programas
-export const getProgramas = () =>
-  axios.get(`${API}/programas`);
+// === Instrumento de alumno ===
+export const getAlumnoInstrumento = (id) =>
+  axios.get(`${API}/alumnos/${id}/instrumento`);
+
+export const asignarInstrumentoAlumno = (id, data) =>
+  axios.post(`${API}/alumnos/${id}/instrumento`, data);
+
+export const liberarInstrumentoAlumno = (id) =>
+  axios.delete(`${API}/alumnos/${id}/instrumento`);
+
+// === Exportar alumnos CSV ===
+export const exportAlumnosCSV = () =>
+  axios.get(`${API}/alumnos/export/csv`, { responseType: "blob" });

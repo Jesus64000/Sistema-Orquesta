@@ -14,6 +14,18 @@ Sistema-Orquesta/
 │   └── ... 
 │
 ├── sistema-orquesta/     # Frontend (React)
+│   ├── src/
+│   │   ├── api/          # Lógica de comunicación con el backend
+│   │   │   └── alumnos.js
+│   │   ├── components/   # Componentes reutilizables
+│   │   │   ├── Modal.jsx
+│   │   │   ├── ConfirmDialog.jsx
+│   │   │   ├── MultiSelect.jsx
+│   │   │   ├── AlumnoForm.jsx
+│   │   │   ├── AlumnoHistorial.jsx
+│   │   │   └── AlumnoInstrumento.jsx
+│   │   └── pages/
+│   │       └── Alumnos.jsx
 │   └── ...
 │
 ├── docs/                 # Documentación técnica adicional
@@ -32,17 +44,28 @@ El sistema está dividido en dos grandes módulos:
 Desarrollado con **Node.js**, **Express** y **MySQL**. Expone una API RESTful que permite gestionar todos los datos del sistema:
 
 - **Programas:** Alta, baja, modificación y consulta de programas musicales.
-- **Alumnos:** Gestión completa de alumnos, incluyendo asociación a programas y consulta avanzada.
-- **Instrumentos:** Registro y administración de instrumentos musicales.
-- **Eventos:** Gestión de eventos, consulta de eventos futuros y por mes.
-- **Reportes:** Consultas agregadas como alumnos por programa e instrumentos por estado.
-- **Usuarios:** Administración de usuarios del sistema.
-- **Dashboard:** Estadísticas rápidas y consultas para paneles administrativos.
+- **Alumnos:** Gestión completa de alumnos, incluyendo asociación a múltiples programas, historial de eventos, asignación y liberación de instrumentos, exportación de datos y consulta avanzada con filtros y paginación.
+- **Instrumentos:** Registro, administración y estado de instrumentos musicales, con reportes agregados por estado.
+- **Eventos:** Gestión de eventos, consulta de eventos futuros, eventos por mes y registro de participación de alumnos.
+- **Reportes:** Consultas agregadas como alumnos por programa e instrumentos por estado, optimizadas para relaciones muchos-a-muchos.
+- **Usuarios:** Administración de usuarios del sistema, con recomendaciones para seguridad y autenticación.
+- **Dashboard:** Estadísticas rápidas y consultas para paneles administrativos, incluyendo métricas de alumnos, instrumentos y eventos.
 
-El backend se conecta a una base de datos MySQL y expone endpoints para cada entidad y reporte, permitiendo la integración con cualquier frontend o sistema externo.
+El backend se conecta a una base de datos MySQL y expone endpoints para cada entidad y reporte, permitiendo la integración con cualquier frontend o sistema externo. Incluye manejo avanzado de errores, validaciones y estructura modular para facilitar el mantenimiento y la escalabilidad.
 
 ### 2. Frontend
-Desarrollado en **React** (Vite), permite la visualización y gestión de todos los módulos anteriores. Incluye paneles administrativos, formularios y dashboards con estadísticas.
+Desarrollado en **React** (Vite), permite la visualización y gestión de todos los módulos anteriores. Incluye paneles administrativos, formularios, dashboards con estadísticas y componentes reutilizables para una experiencia de usuario moderna y eficiente.
+
+#### Componentes principales integrados:
+- **Modal.jsx:** Ventanas modales reutilizables para formularios y confirmaciones.
+- **ConfirmDialog.jsx:** Diálogos de confirmación para acciones críticas.
+- **MultiSelect.jsx:** Selector múltiple para asignación de programas e instrumentos.
+- **AlumnoForm.jsx:** Formulario para alta y edición de alumnos, con validaciones y soporte multi-programa.
+- **AlumnoHistorial.jsx:** Visualización y gestión del historial de alumnos, incluyendo eventos y cambios de estado.
+- **AlumnoInstrumento.jsx:** Asignación y liberación de instrumentos para alumnos, con integración directa a la API.
+- **Alumnos.jsx:** Página principal de gestión de alumnos, con filtros, orden, paginación, selección múltiple y exportación a CSV.
+
+La arquitectura del frontend está pensada para facilitar la extensión y el mantenimiento, permitiendo agregar nuevos módulos y funcionalidades de forma sencilla.
 
 ---
 
@@ -123,12 +146,25 @@ El archivo principal `index.js` contiene:
 - **Rutas REST**: Endpoints para cada entidad (`/programas`, `/alumnos`, `/instrumentos`, `/eventos`, `/usuarios`, `/reportes`, `/dashboard`).
 - **Manejo de errores**: Respuestas claras en caso de error de base de datos o datos inválidos.
 - **Servidor Express**: Inicialización y escucha en el puerto 4000.
+- **Módulos auxiliares**: Funciones para registro de historial, manejo de documentos y lógica de negocio.
 
 Cada endpoint sigue el patrón estándar REST:  
 - `GET` para consultar  
 - `POST` para crear  
 - `PUT` para actualizar  
 - `DELETE` para eliminar
+
+Incluye endpoints avanzados para reportes y exportación de datos.
+
+---
+
+## 🖥️ Estructura del Frontend
+
+- **src/api/alumnos.js:** Centraliza todas las llamadas al backend relacionadas con alumnos, programas, historial e instrumentos.
+- **src/components/**: Componentes reutilizables para formularios, modales, selección múltiple y gestión de datos.
+- **src/pages/Alumnos.jsx:** Página principal para la gestión de alumnos, con integración total a la API y componentes auxiliares.
+
+La estructura modular permite escalar el sistema y agregar nuevas funcionalidades de manera sencilla.
 
 ---
 
@@ -137,11 +173,12 @@ Cada endpoint sigue el patrón estándar REST:
 - Las contraseñas de usuario deben almacenarse como hash (actualmente solo para pruebas, se recomienda encriptar en producción).
 - Se recomienda agregar autenticación y autorización para ambientes productivos.
 - El sistema está preparado para ampliarse con validaciones, logs y manejo avanzado de errores.
+- Uso de CORS para permitir el desarrollo y la integración entre frontend y backend.
 
 ---
 
-## 👨‍💻 Autor
+## 📝 Buenas prácticas de desarrollo
 
-- Jesús64000
-
----
+- Código modular y reutilizable, con separación clara entre lógica de negocio, presentación y comunicación con la API.
+- Uso de componentes funcionales y hooks en React para una gestión eficiente del estado y los efectos.
+- Documentación técnica adicional en la carpeta `docs/` para facilitar la colaboración y el mantenimiento.
