@@ -351,6 +351,7 @@ app.post("/alumnos", async (req, res) => {
 // Actualizar alumno (+ reemplazar programas si viene programa_ids)
 app.put("/alumnos/:id", async (req, res) => {
   try {
+    const { id } = req.params; // ← Línea añadida para extraer el id
     const {
       nombre,
       fecha_nacimiento,
@@ -369,7 +370,6 @@ app.put("/alumnos/:id", async (req, res) => {
       WHERE id_alumno=?`,
       [nombre, fecha_nacimiento, genero, telefono_contacto, estado, id_representante, id]
     );
-
 
     // reemplazar programas
     const progIds = Array.isArray(programa_ids) && programa_ids.length ? programa_ids

@@ -41,7 +41,7 @@ export default function Alumnos() {
 
   // Paginación
   const [page, setPage] = useState(1);
-  const pageSize = 5;
+  const pageSize = 10;
 
   // Orden
   const [sortBy, setSortBy] = useState("nombre");
@@ -204,47 +204,141 @@ export default function Alumnos() {
         <table className="w-full text-sm text-left border-collapse">
           <thead className="bg-gray-100 text-gray-600">
             <tr>
-              <th className="px-3 py-2"><input type="checkbox" onChange={(e) => setSelected(e.target.checked ? alumnosPage.map((a) => a.id_alumno) : [])} checked={selected.length === alumnosPage.length && alumnosPage.length > 0} /></th>
-              {["nombre", "fecha_nacimiento", "genero", "telefono_contacto", "estado"].map((col) => (
-                <th key={col} className="px-3 py-2 border-b cursor-pointer" onClick={() => toggleSort(col)}>
-                  <div className="flex items-center gap-1 capitalize">
-                    {col.replace("_", " ")}
-                    {sortBy === col && (sortDir === "asc" ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />)}
-                  </div>
-                </th>
-              ))}
+              {/* Selección múltiple */}
+              <th className="px-3 py-2">
+                <input
+                  type="checkbox"
+                  onChange={(e) =>
+                    setSelected(
+                      e.target.checked ? alumnosPage.map((a) => a.id_alumno) : []
+                    )
+                  }
+                  checked={
+                    selected.length === alumnosPage.length && alumnosPage.length > 0
+                  }
+                />
+              </th>
+
+              {/* Columnas */}
+              <th
+                className="px-3 py-2 border-b cursor-pointer"
+                onClick={() => toggleSort("nombre")}
+              >
+                <div className="flex items-center gap-1">
+                  Nombre
+                  {sortBy === "nombre" &&
+                    (sortDir === "asc" ? (
+                      <ChevronUp className="h-3 w-3" />
+                    ) : (
+                      <ChevronDown className="h-3 w-3" />
+                    ))}
+                </div>
+              </th>
+
+              <th className="px-3 py-2 border-b">Edad</th>
+              <th className="px-3 py-2 border-b">Fecha nacimiento</th>
+              <th className="px-3 py-2 border-b">Género</th>
+              <th className="px-3 py-2 border-b">Teléfono</th>
+              <th className="px-3 py-2 border-b">Representante</th>
+              <th className="px-3 py-2 border-b">Estado</th>
               <th className="px-3 py-2 border-b">Programas</th>
               <th className="px-3 py-2 border-b">Acciones</th>
             </tr>
           </thead>
+
           <tbody>
             {alumnosPage.map((a) => (
               <tr key={a.id_alumno} className="hover:bg-gray-50">
-                <td className="px-3 py-2"><input type="checkbox" checked={selected.includes(a.id_alumno)} onChange={() => toggleSelect(a.id_alumno)} /></td>
+                <td className="px-3 py-2">
+                  <input
+                    type="checkbox"
+                    checked={selected.includes(a.id_alumno)}
+                    onChange={() => toggleSelect(a.id_alumno)}
+                  />
+                </td>
+
                 <td className="px-3 py-2">{a.nombre}</td>
+                <td className="px-3 py-2">{a.edad} años</td>
                 <td className="px-3 py-2">{a.fecha_nacimiento?.slice(0, 10)}</td>
                 <td className="px-3 py-2">{a.genero}</td>
                 <td className="px-3 py-2">{a.telefono_contacto}</td>
+
+                {/* Representante */}
+                <td className="px-3 py-2">
+                  {a.representante_nombre ? (
+                    <div className="flex flex-col">
+                      <span className="font-medium">{a.representante_nombre}</span>
+                      <span className="text-xs text-gray-500">
+                        {a.representante_telefono}
+                      </span>
+                      <span className="text-xs text-gray-400">
+                        {a.representante_email}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-gray-400">Sin representante</span>
+                  )}
+                </td>
+
                 <td className="px-3 py-2">{a.estado}</td>
+
+                {/* Programas */}
                 <td className="px-3 py-2">
                   <div className="flex flex-wrap gap-1">
-                    {(a.programas || []).map((p) => <Badge key={p.id_programa}>{p.nombre}</Badge>)}
+                    {(a.programas || []).map((p) => (
+                      <Badge key={p.id_programa}>{p.nombre}</Badge>
+                    ))}
+                    {(!a.programas || a.programas.length === 0) && (
+                      <span className="text-xs text-gray-400">Sin programas</span>
+                    )}
                   </div>
                 </td>
+
+                {/* Acciones */}
                 <td className="px-3 py-2 flex gap-2">
-                  <button onClick={() => openEdit(a)} className="p-1.5 bg-blue-50 text-blue-600 rounded-lg border hover:bg-blue-100"><Edit className="h-4 w-4" /></button>
-                  <button onClick={() => setConfirm({ open: true, id: a.id_alumno, name: a.nombre })} className="p-1.5 bg-red-50 text-red-600 rounded-lg border hover:bg-red-100"><Trash2 className="h-4 w-4" /></button>
-                  <button onClick={() => setViewDetail(a)} className="p-1.5 bg-yellow-50 text-yellow-600 rounded-lg border hover:bg-yellow-100">Ver</button>
+                  <button
+                    onClick={() => openEdit(a)}
+                    className="p-1.5 bg-blue-50 text-blue-600 rounded-lg border hover:bg-blue-100"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() =>
+                      setConfirm({ open: true, id: a.id_alumno, name: a.nombre })
+                    }
+                    className="p-1.5 bg-red-50 text-red-600 rounded-lg border hover:bg-red-100"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => setViewDetail(a)}
+                    className="p-1.5 bg-yellow-50 text-yellow-600 rounded-lg border hover:bg-yellow-100"
+                  >
+                    Ver
+                  </button>
                 </td>
               </tr>
             ))}
+
+            {/* Loader amigable */}
             {alumnosPage.length === 0 && (
-              <tr><td colSpan="8" className="text-center py-6 text-gray-500">{loading ? "Cargando..." : "No se encontraron alumnos"}</td></tr>
+              <tr>
+                <td colSpan="10" className="text-center py-10 text-gray-500">
+                  {loading ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <span className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-yellow-500"></span>
+                      <span>Cargando alumnos...</span>
+                    </div>
+                  ) : (
+                    "No se encontraron alumnos"
+                  )}
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
       </div>
-
+      
       {/* Paginación */}
       <div className="flex justify-end items-center gap-2">
         <button disabled={page <= 1} onClick={() => setPage(page - 1)} className="px-3 py-1 border rounded disabled:opacity-50">Anterior</button>
@@ -266,12 +360,7 @@ export default function Alumnos() {
 
       {/* Detalle */}
       {viewDetail && (
-        <Modal title={`Detalle de ${viewDetail.nombre}`} onClose={() => setViewDetail(null)}>
-          <div className="space-y-4">
-            <AlumnoInstrumento idAlumno={viewDetail.id_alumno} />
-            <AlumnoHistorial idAlumno={viewDetail.id_alumno} />
-          </div>
-        </Modal>
+        <AlumnoDetalle alumno={viewDetail} onClose={() => setViewDetail(null)} />
       )}
 
       {/* Confirmar eliminar */}
