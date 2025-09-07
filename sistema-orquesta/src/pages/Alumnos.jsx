@@ -9,6 +9,7 @@ import {
   deleteAlumno,
   getProgramas,
   exportAlumnosCSV,
+  getAlumno,
 } from "../api/alumnos";
 
 import AlumnoForm from "../components/AlumnoForm";
@@ -16,6 +17,7 @@ import AlumnoHistorial from "../components/AlumnoHistorial";
 import AlumnoInstrumento from "../components/AlumnoInstrumento";
 import Modal from "../components/Modal";
 import ConfirmDialog from "../components/ConfirmDialog";
+import AlumnoDetalle from "../components/AlumnoDetalle";
 
 // === Helpers UI ===
 const Badge = ({ children }) => (
@@ -146,6 +148,20 @@ export default function Alumnos() {
       toast.error("Error exportando alumnos");
     }
   };
+
+  const openDetail = async (alumno) => {
+  try {
+    setLoading(true);
+    const res = await getAlumno(alumno.id_alumno);
+    setViewDetail(res.data); // 👈 ahora trae edad + representante desde el back
+  } catch (err) {
+    toast.error("Error cargando detalle del alumno");
+    console.error(err);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <div className="space-y-6">
@@ -310,13 +326,14 @@ export default function Alumnos() {
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
+                  
                   <button
-                    onClick={() => setViewDetail(a)}
+                    onClick={() => openDetail(a)} // 👈 ahora llama a la nueva función
                     className="p-1.5 bg-yellow-50 text-yellow-600 rounded-lg border hover:bg-yellow-100"
                   >
                     Ver
                   </button>
-                </td>
+                  </td>
               </tr>
             ))}
 

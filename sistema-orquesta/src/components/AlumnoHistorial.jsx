@@ -8,6 +8,7 @@ export default function AlumnoHistorial({ idAlumno }) {
   const [form, setForm] = useState({ tipo: "NOTA", descripcion: "" });
 
   const loadHistorial = async () => {
+    if (!idAlumno) return; // 👈 validamos aquí
     setLoading(true);
     try {
       const res = await getAlumnoHistorial(idAlumno);
@@ -21,7 +22,7 @@ export default function AlumnoHistorial({ idAlumno }) {
 
   useEffect(() => {
     loadHistorial();
-      // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idAlumno]);
 
   const handleAdd = async (e) => {
@@ -38,6 +39,8 @@ export default function AlumnoHistorial({ idAlumno }) {
       toast.error("Error guardando historial");
     }
   };
+
+  if (!idAlumno) return null; // 👈 validamos al renderizar
 
   return (
     <div className="space-y-3">

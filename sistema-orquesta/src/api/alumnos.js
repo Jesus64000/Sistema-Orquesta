@@ -9,6 +9,10 @@ export const createAlumno = (data) => axios.post(`${API}/alumnos`, data);
 export const updateAlumno = (id, data) => axios.put(`${API}/alumnos/${id}`, data);
 export const deleteAlumno = (id) => axios.delete(`${API}/alumnos/${id}`);
 
+// === Obtener detalle de un alumno ===
+export const getAlumno = (id) => axios.get(`${API}/alumnos/${id}`);
+
+
 // === Programas ===
 export const getProgramas = () => axios.get(`${API}/programas`);
 

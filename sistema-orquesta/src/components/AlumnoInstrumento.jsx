@@ -6,6 +6,7 @@ export default function AlumnoInstrumento({ idAlumno }) {
   const [instrumento, setInstrumento] = useState(null);
 
   const loadInstrumento = async () => {
+    if (!idAlumno) return; // 👈 validamos aquí
     try {
       const res = await getAlumnoInstrumento(idAlumno);
       setInstrumento(res.data || null);
@@ -18,6 +19,8 @@ export default function AlumnoInstrumento({ idAlumno }) {
     loadInstrumento();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idAlumno]);
+
+  if (!idAlumno) return null; // 👈 validamos al renderizar
 
   return (
     <div className="space-y-3">
