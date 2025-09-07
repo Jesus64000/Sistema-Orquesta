@@ -66,6 +66,20 @@ async function registrarHistorial(id_alumno, tipo, descripcion = "", usuario = "
 }
 
 /**
+ * Registrar evento en Instrumento_Historial
+ */
+async function registrarHistorialInstrumento(id_instrumento, tipo, descripcion = "", usuario = "sistema") {
+  try {
+    await pool.query(
+      `INSERT INTO Instrumento_Historial (id_instrumento, tipo, descripcion, usuario) VALUES (?, ?, ?, ?)`,
+      [id_instrumento, tipo, descripcion, usuario]
+    );
+  } catch (err) {
+    console.error("Error registrando historial instrumento:", err);
+  }
+}
+
+/**
  * Obtener programas para una lista de alumnos
  */
 async function fetchProgramasPorAlumnos(idsAlumnos) {
@@ -762,6 +776,35 @@ app.get("/instrumentos", async (req, res) => {
   }
 });
 
+// Detalle de instrumento con asignación actual
+app.get("/instrumentos/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const [[instrumento]] = await pool.query(
+      `SELECT * FROM Instrumento WHERE id_instrumento = ?`,
+      [id]
+    );
+    if (!instrumento) return res.status(404).json({ error: "Instrumento no encontrado" });
+
+    // ¿Está asignado actualmente?
+    const [asignado] = await pool.query(
+      `SELECT a.id_alumno, a.nombre, ai.fecha_asignacion
+       FROM Asignacion_Instrumento ai
+       JOIN Alumno a ON ai.id_alumno = a.id_alumno
+       WHERE ai.id_instrumento = ? AND ai.estado = 'Activo'
+       ORDER BY ai.fecha_asignacion DESC
+       LIMIT 1`,
+      [id]
+    );
+
+    res.json({ ...instrumento, asignado: asignado[0] || null });
+  } catch (err) {
+    console.error("Error en GET /instrumentos/:id", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post("/instrumentos", async (req, res) => {
   try {
     const { nombre, categoria, numero_serie, estado = "Disponible", fecha_adquisicion = null, ubicacion = "" } = req.body;
@@ -801,6 +844,40 @@ app.delete("/instrumentos/:id", async (req, res) => {
     res.json({ message: "Instrumento eliminado correctamente" });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// Obtener historial de instrumento
+app.get("/instrumentos/:id/historial", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [rows] = await pool.query(
+      `SELECT id_historial, tipo, descripcion, usuario, creado_en
+       FROM Instrumento_Historial
+       WHERE id_instrumento = ?
+       ORDER BY creado_en DESC`,
+      [id]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error("Error en GET /instrumentos/:id/historial", err);
+    res.status(500).json({ error: "Error obteniendo historial instrumento" });
+  }
+});
+
+// Registrar historial de instrumento
+app.post("/instrumentos/:id/historial", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { tipo = "OTRO", descripcion = "", usuario = "sistema" } = req.body;
+    await pool.query(
+      `INSERT INTO Instrumento_Historial (id_instrumento, tipo, descripcion, usuario) VALUES (?, ?, ?, ?)`,
+      [id, tipo, descripcion, usuario]
+    );
+    res.json({ message: "Historial de instrumento registrado" });
+  } catch (err) {
+    console.error("Error en POST /instrumentos/:id/historial", err);
+    res.status(500).json({ error: "Error guardando historial instrumento" });
   }
 });
 

@@ -101,6 +101,20 @@ CREATE TABLE `asignacion_instrumento` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
+-- Estructura de tabla para la tabla `Instrumento_Historial`
+
+CREATE TABLE Instrumento_Historial (
+  id_historial INT AUTO_INCREMENT PRIMARY KEY,
+  id_instrumento INT NOT NULL,
+  tipo VARCHAR(50) NOT NULL,
+  descripcion TEXT,
+  usuario VARCHAR(100),
+  creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (id_instrumento) REFERENCES Instrumento(id_instrumento) ON DELETE CASCADE
+);
+
+
+-- --------------------------------------------------------
 -- Estructura de tabla para la tabla `movimiento_inventario`
 CREATE TABLE `movimiento_inventario` (
   `id_movimiento` int(11) NOT NULL AUTO_INCREMENT,
