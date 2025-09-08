@@ -584,6 +584,14 @@ app.post("/alumnos/:id/instrumento", async (req, res) => {
       [id_instrumento, id]
     );
 
+    // Historial del instrumento
+    await registrarHistorialInstrumento(
+      id_instrumento,
+      "ASIGNACION",
+      `Asignado al alumno ID: ${id}`,
+      usuario
+    );
+
     // actualizar estado instrumento
     await pool.query(`UPDATE Instrumento SET estado = 'Asignado' WHERE id_instrumento = ?`, [id_instrumento]);
 
@@ -622,6 +630,14 @@ app.delete("/alumnos/:id/instrumento", async (req, res) => {
     await pool.query(`UPDATE Instrumento SET estado = 'Disponible' WHERE id_instrumento = ?`, [asign.id_instrumento]);
 
     await registrarHistorial(id, "ASIGNACION_INSTRUMENTO", `Instrumento ${asign.id_instrumento} devuelto`, usuario);
+
+    // Historial del instrumento
+    await registrarHistorialInstrumento(
+      asign.id_instrumento,
+      "DEVOLUCION",
+      `Devuelto por alumno ID: ${id}`,
+      usuario
+    );
 
     res.json({ message: "Instrumento devuelto / asignación finalizada" });
   } catch (err) {
@@ -769,7 +785,9 @@ app.delete("/representantes/:id", async (req, res) => {
 // --------------------
 app.get("/instrumentos", async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT * FROM Instrumento ORDER BY nombre ASC");
+    const [rows] = await pool.query(
+      "SELECT * FROM Instrumento ORDER BY nombre ASC"
+    );
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -785,7 +803,8 @@ app.get("/instrumentos/:id", async (req, res) => {
       `SELECT * FROM Instrumento WHERE id_instrumento = ?`,
       [id]
     );
-    if (!instrumento) return res.status(404).json({ error: "Instrumento no encontrado" });
+    if (!instrumento)
+      return res.status(404).json({ error: "Instrumento no encontrado" });
 
     // ¿Está asignado actualmente?
     const [asignado] = await pool.query(
@@ -805,15 +824,40 @@ app.get("/instrumentos/:id", async (req, res) => {
   }
 });
 
+// Crear instrumento
 app.post("/instrumentos", async (req, res) => {
   try {
-    const { nombre, categoria, numero_serie, estado = "Disponible", fecha_adquisicion = null, ubicacion = "" } = req.body;
+    const {
+      nombre,
+      categoria,
+      numero_serie,
+      estado = "Disponible",
+      fecha_adquisicion = null,
+      ubicacion = "",
+    } = req.body;
+
     const [result] = await pool.query(
       `INSERT INTO Instrumento (nombre, categoria, numero_serie, estado, fecha_adquisicion, ubicacion)
        VALUES (?, ?, ?, ?, ?, ?)`,
       [nombre, categoria, numero_serie, estado, fecha_adquisicion, ubicacion]
     );
-    res.json({ id_instrumento: result.insertId, nombre, categoria, numero_serie, estado, fecha_adquisicion, ubicacion });
+
+    // Registrar historial de creación
+    await registrarHistorialInstrumento(
+      result.insertId,
+      "CREACION",
+      `Instrumento creado: ${nombre} (${numero_serie})`
+    );
+
+    res.json({
+      id_instrumento: result.insertId,
+      nombre,
+      categoria,
+      numero_serie,
+      estado,
+      fecha_adquisicion,
+      ubicacion,
+    });
   } catch (err) {
     console.error("Error en POST /instrumentos:", err);
     res.status(500).json({ error: err.message });
@@ -830,6 +874,8 @@ app.put("/instrumentos/:id", async (req, res) => {
        WHERE id_instrumento=?`,
       [nombre, categoria, numero_serie, estado, fecha_adquisicion, ubicacion, id]
     );
+    // registrar historial
+    await registrarHistorialInstrumento(id, "ACTUALIZACION", `Instrumento actualizado: ${nombre}`, "sistema");
     res.json({ message: "Instrumento actualizado correctamente" });
   } catch (err) {
     console.error("Error en PUT /instrumentos/:id", err);
@@ -840,9 +886,12 @@ app.put("/instrumentos/:id", async (req, res) => {
 app.delete("/instrumentos/:id", async (req, res) => {
   try {
     const { id } = req.params;
+    // registrar historial
+    await registrarHistorialInstrumento(id, "ELIMINACION", `Instrumento eliminado`, "sistema");
     await pool.query("DELETE FROM Instrumento WHERE id_instrumento=?", [id]);
     res.json({ message: "Instrumento eliminado correctamente" });
   } catch (err) {
+    console.error("Error en Delete /instrumentos/:id", err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -880,6 +929,8 @@ app.post("/instrumentos/:id/historial", async (req, res) => {
     res.status(500).json({ error: "Error guardando historial instrumento" });
   }
 });
+
+
 
 // --------------------
 // EVENTOS

@@ -32,6 +32,25 @@ export default function AlumnoInstrumento({ idAlumno }) {
           <p><span className="font-medium">N° Serie:</span> {instrumento.numero_serie}</p>
           <p><span className="font-medium">Estado:</span> {instrumento.estado_instrumento}</p>
           <p><span className="font-medium">Fecha asignación:</span> {instrumento.fecha_asignacion?.slice(0, 10)}</p>
+
+          <button
+            onClick={async () => {
+              try {
+                const res = await fetch(
+                  `http://localhost:4000/alumnos/${idAlumno}/instrumento`,
+                  { method: "DELETE", headers: { "Content-Type": "application/json" } }
+                );
+                if (!res.ok) throw new Error();
+                toast.success("Instrumento devuelto");
+                setInstrumento(null); // 🔄 refrescar UI
+              } catch {
+                toast.error("Error devolviendo instrumento");
+              }
+            }}
+            className="mt-3 px-3 py-1 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600"
+          >
+            Devolver instrumento
+          </button>
         </div>
       ) : (
         <p className="text-sm text-gray-500">Sin instrumento asignado</p>

@@ -15,3 +15,7 @@ export const updateInstrumento = (id, data) =>
 
 // Eliminar instrumento
 export const deleteInstrumento = (id) => axios.delete(`${API}/instrumentos/${id}`);
+
+// Obtener historial de un instrumento
+export const getInstrumentoHistorial = (id) => axios.get(`${API}/instrumentos/${id}/historial`);
+

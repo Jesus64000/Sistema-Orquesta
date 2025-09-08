@@ -107,8 +107,12 @@ export default function AlumnoDetalle({ alumno, onClose }) {
           )}
 
           {tab === "instrumentos" && (
-            <AlumnoInstrumento idAlumno={alumno.id_alumno} />
+            <AlumnoInstrumento 
+              idAlumno={alumno.id_alumno}
+              onChange={() => {}}e
+            />
           )}
+
 
           {tab === "historial" && (
             <AlumnoHistorial idAlumno={alumno.id_alumno} />
