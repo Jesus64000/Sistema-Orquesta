@@ -1,3 +1,4 @@
+// src/components/AlumnoDetalle.jsx
 import { useState } from "react";
 import InstrumentoAsignacion from "./InstrumentoAsignacion";
 import InstrumentoHistorial from "./InstrumentoHistorial";

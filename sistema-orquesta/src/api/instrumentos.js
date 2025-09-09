@@ -1,3 +1,4 @@
+// src/api/instrumentos.js
 // Maneja todas las peticiones HTTP relacionadas con instrumentos
 
 import axios from "axios";

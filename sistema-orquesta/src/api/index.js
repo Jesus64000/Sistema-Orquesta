@@ -1,3 +1,4 @@
+// src/api/index.js
 // Reexporta todo en un solo archivo para importar más fácil
 
 export * from "./alumnos";

@@ -1,3 +1,4 @@
+// src/components/ConfirmDialog.jsx
 import React from "react";
 
 export default function ConfirmDialog({ open, title, message, onCancel, onConfirm }) {

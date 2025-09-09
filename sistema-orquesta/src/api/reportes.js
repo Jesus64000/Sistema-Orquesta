@@ -1,3 +1,4 @@
+// src/api/reportes.js
 // Aquí irán las llamadas para estadísticas rápidas y reportes
 
 import axios from "axios";

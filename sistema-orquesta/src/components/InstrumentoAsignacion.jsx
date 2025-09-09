@@ -1,3 +1,4 @@
+// src/components/InstrumentoAsignacion.jsx
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
@@ -6,16 +7,18 @@ export default function InstrumentoAsignacion({ instrumento }) {
   const [alumnos, setAlumnos] = useState([]);
   const [alumnoId, setAlumnoId] = useState("");
 
-  // 🔄 Cargar asignación actual
+  // 🔄 Cargar asignación actual del instrumento
   const loadAsignacion = async () => {
     try {
-      const res = await fetch(
-        `http://localhost:4000/alumnos/${instrumento.id_instrumento}/instrumento`
-      );
-      if (!res.ok) throw new Error("No se pudo obtener asignación");
+      // Traer todos los alumnos y filtrar el que tiene este instrumento asignado
+      const res = await fetch("http://localhost:4000/alumnos");
       const data = await res.json();
-      setAsignado(data || null);
-    } catch {
+      const asignacion = data.find(alumno =>
+        alumno.instrumentos?.some(i => i.id_instrumento === instrumento.id_instrumento)
+      );
+      setAsignado(asignacion || null); // null si está libre
+    } catch (err) {
+      console.error("Error cargando asignación:", err);
       setAsignado(null);
     }
   };
@@ -32,16 +35,21 @@ export default function InstrumentoAsignacion({ instrumento }) {
     }
   };
 
-
-    useEffect(() => {
+  useEffect(() => {
     loadAsignacion();
     loadAlumnos();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [instrumento.id_instrumento]);
 
   // ✅ Asignar instrumento
   const asignar = async () => {
     if (!alumnoId) return toast.error("Selecciona un alumno");
+
+    // Verificar si ya está asignado
+    if (asignado) {
+      return toast.error(`Este instrumento ya está asignado a ${asignado.nombre}`);
+    }
+
     try {
       const res = await fetch(
         `http://localhost:4000/alumnos/${alumnoId}/instrumento`,
@@ -52,8 +60,11 @@ export default function InstrumentoAsignacion({ instrumento }) {
         }
       );
       if (!res.ok) throw new Error("Error en asignación");
+
       toast.success("Instrumento asignado correctamente");
-      await loadAsignacion(); // 🔄 refrescar datos
+
+      // 🔄 Refrescar asignación inmediatamente
+      await loadAsignacion();
       setAlumnoId("");
     } catch {
       toast.error("No se pudo asignar el instrumento");
@@ -62,17 +73,19 @@ export default function InstrumentoAsignacion({ instrumento }) {
 
   // ✅ Devolver instrumento
   const devolver = async () => {
+    if (!asignado?.id_alumno) return toast.error("No hay asignación activa");
+
     try {
       const res = await fetch(
         `http://localhost:4000/alumnos/${asignado.id_alumno}/instrumento`,
-        {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-        }
+        { method: "DELETE" }
       );
-      if (!res.ok) throw new Error("Error en devolución");
+      if (!res.ok) throw new Error("Error al devolver el instrumento");
+
       toast.success("Instrumento devuelto correctamente");
-      await loadAsignacion(); // 🔄 refrescar datos
+
+      // 🔄 Refrescar asignación inmediatamente
+      await loadAsignacion();
     } catch {
       toast.error("No se pudo devolver el instrumento");
     }
@@ -81,10 +94,9 @@ export default function InstrumentoAsignacion({ instrumento }) {
   return (
     <div className="space-y-4">
       {asignado ? (
-        <div className="p-3 border rounded-lg bg-green-50">
+        <div className="p-3 border rounded-lg bg-red-50">
           <p className="text-sm text-gray-700">
-            Actualmente asignado a:{" "}
-            <b>{asignado?.nombre || "Alumno ID " + asignado?.id_alumno}</b>
+            Este instrumento ya está asignado a: <b>{asignado.nombre}</b>
           </p>
           <button
             onClick={devolver}

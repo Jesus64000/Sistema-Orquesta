@@ -1,3 +1,4 @@
+// src/api/eventos.js
 // Llamadas al backend para eventos
 
 import axios from "axios";

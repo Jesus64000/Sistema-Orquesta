@@ -416,18 +416,72 @@ app.put("/alumnos/:id", async (req, res) => {
   }
 });
 
-// Eliminar alumno
-app.delete("/alumnos/:id", async (req, res) => {
+// PUT /alumnos/:id/desactivar
+// ✅ PUT /alumnos/:id/desactivar
+app.put("/alumnos/:id/desactivar", async (req, res) => {
+  const { id } = req.params;
+  const { instrumentosDevueltos } = req.body;
+
   try {
-    const { id } = req.params;
-    await pool.query("DELETE FROM Alumno WHERE id_alumno = ?", [id]);
-    await pool.query("DELETE FROM alumno_programa WHERE id_alumno = ?", [id]);
-    res.json({ message: "Alumno eliminado correctamente" });
+    // 1️⃣ Verificar si hay asignaciones activas
+    const [asignaciones] = await pool.query(
+      "SELECT id_asignacion FROM asignacion_instrumento WHERE id_alumno = ? AND estado = 'Activo'",
+      [id]
+    );
+
+    // 🚫 Si tiene instrumentos activos → bloquear
+    if (asignaciones.length > 0) {
+      return res.status(400).json({
+        error: "El alumno aún tiene instrumentos asignados. No puede ser desactivado hasta devolverlos."
+      });
+    }
+
+    // 2️⃣ Si no tiene instrumentos, pero no marcó el check → bloquear
+    if (!instrumentosDevueltos) {
+      return res.status(400).json({
+        error: "Debes confirmar que el alumno devolvió sus instrumentos."
+      });
+    }
+
+    // 3️⃣ Desactivar alumno
+    await pool.query(
+      "UPDATE alumno SET estado = 'Inactivo' WHERE id_alumno = ?",
+      [id]
+    );
+
+    res.json({ message: "Alumno desactivado correctamente" });
   } catch (err) {
-    console.error("Error en DELETE /alumnos/:id:", err);
-    res.status(500).json({ error: err.message });
+    console.error("Error al desactivar alumno:", err);
+    res.status(500).json({ error: "Error al desactivar alumno" });
   }
 });
+
+// Eliminar alumno
+app.delete("/alumnos/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    //comprobar si el alumno existe
+    const [alumno] = await pool.query(
+      "SELECT * FROM alumno WHERE id_alumno = ?",
+      [id]
+    );
+
+    if (alumno.length === 0) {
+      return res.status(404).json({ error: "Alumno no encontrado" });
+    }
+
+    // Eliminar el alumno
+    // Gracias a ON DELETE CASCADE en alumno_historial, alumno_programa y otros, todo relacionado se eliminará automáticamente
+    await pool.query("DELETE FROM alumno WHERE id_alumno = ?", [id]);
+
+    return res.json({ message: "Alumno eliminado correctamente" });
+  } catch (err) {
+    console.error("Error en DELETE /alumnos/:id:", err);
+    return res.status(500).json({ error: "Error eliminando alumno" });
+  }
+});
+
 
 // Cambio rápido de estado
 app.put("/alumnos/:id/estado", async (req, res) => {
@@ -608,7 +662,7 @@ app.post("/alumnos/:id/instrumento", async (req, res) => {
 app.delete("/alumnos/:id/instrumento", async (req, res) => {
   try {
     const { id } = req.params;
-    const { usuario = "sistema" } = req.body;
+    const usuario = req.body?.usuario || "sistema";
 
     // buscar asignacion activa
     const [rows] = await pool.query(
@@ -645,6 +699,48 @@ app.delete("/alumnos/:id/instrumento", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// DELETE /alumnos/:id/instrumento (o PUT para devolver)
+app.put("/alumnos/:id/instrumento/devolver", async (req, res) => {
+  const { id } = req.params;
+  const { id_instrumento } = req.body; // El instrumento que se devuelve
+
+  try {
+    // 1️⃣ Verificar si hay asignación activa
+    const [asignacion] = await pool.query(
+      "SELECT * FROM asignacion_instrumento WHERE id_alumno = ? AND estado = 'Activo' AND id_instrumento = ?",
+      [id, id_instrumento]
+    );
+
+    if (asignacion.length === 0) {
+      return res.status(404).json({ error: "No hay asignación activa para este alumno e instrumento" });
+    }
+
+    // 2️⃣ Marcar la asignación como finalizada y registrar fecha de devolución
+    await pool.query(
+      "UPDATE asignacion_instrumento SET estado = 'Finalizado', fecha_devolucion_real = NOW() WHERE id_asignacion = ?",
+      [asignacion[0].id_asignacion]
+    );
+
+    // 3️⃣ Actualizar historial del instrumento
+    await pool.query(
+      "INSERT INTO instrumento_historial (id_instrumento, tipo, descripcion, usuario) VALUES (?, 'DEVOLUCION', ?, ?)",
+      [id_instrumento, `Devuelto por alumno ID: ${id}`, "sistema"]
+    );
+
+    // 4️⃣ Actualizar estado del instrumento a "Disponible"
+    await pool.query(
+      "UPDATE instrumento SET estado = 'Disponible' WHERE id_instrumento = ?",
+      [id_instrumento]
+    );
+
+    res.json({ message: "Instrumento devuelto correctamente" });
+  } catch (err) {
+    console.error("Error al devolver instrumento:", err);
+    res.status(500).json({ error: "Error al devolver instrumento" });
+  }
+});
+
 
 // --------------------
 // Documentos de alumno (upload)
@@ -883,18 +979,25 @@ app.put("/instrumentos/:id", async (req, res) => {
   }
 });
 
-app.delete("/instrumentos/:id", async (req, res) => {
-  try {
+// DELETE /instrumentos/:id
+  app.delete("/instrumentos/:id", async (req, res) => {
     const { id } = req.params;
-    // registrar historial
-    await registrarHistorialInstrumento(id, "ELIMINACION", `Instrumento eliminado`, "sistema");
-    await pool.query("DELETE FROM Instrumento WHERE id_instrumento=?", [id]);
-    res.json({ message: "Instrumento eliminado correctamente" });
-  } catch (err) {
-    console.error("Error en Delete /instrumentos/:id", err);
-    res.status(500).json({ error: err.message });
-  }
-});
+    try {
+      // 1️⃣ Borrar asignaciones del instrumento
+      await pool.query("DELETE FROM Asignacion_Instrumento WHERE id_instrumento = ?", [id]);
+
+      // 2️⃣ Borrar historial si deseas
+      await pool.query("DELETE FROM Historial_Instrumento WHERE id_instrumento = ?", [id]);
+
+      // 3️⃣ Borrar instrumento
+      await pool.query("DELETE FROM Instrumento WHERE id_instrumento = ?", [id]);
+
+      res.json({ message: "Instrumento eliminado correctamente" });
+    } catch (err) {
+      console.error("Error en DELETE /instrumentos/:id:", err);
+      res.status(500).json({ error: "No se pudo eliminar el instrumento. " + err.message });
+    }
+  });
 
 // Obtener historial de instrumento
 app.get("/instrumentos/:id/historial", async (req, res) => {

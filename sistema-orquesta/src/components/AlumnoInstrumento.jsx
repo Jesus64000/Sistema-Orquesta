@@ -1,3 +1,4 @@
+// src/components/AlumnoInstrumento.jsx
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { getAlumnoInstrumento } from "../api/alumnos";

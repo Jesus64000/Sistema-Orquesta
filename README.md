@@ -28,21 +28,23 @@ Sistema-Orquesta/
 │
 ├── backend/              # API REST (Node.js, Express, MySQL)
 │   ├── index.js          # Código principal del backend
-│   └── ... 
+│   ├── controllers/      # Lógica de negocio por entidad
+│   ├── routes/           # Definición de rutas REST
+│   ├── models/           # Modelos de datos y acceso a BD
+│   ├── middlewares/      # Validaciones y manejo de errores
+│   ├── utils/            # Funciones auxiliares (exportación, reportes)
+│   ├── uploads/          # Archivos subidos por usuarios
+│   └── ...
 │
-├── sistema-orquesta/     # Frontend (React)
+├── sistema-orquesta/     # Frontend (React + Vite)
 │   ├── src/
-│   │   ├── api/          # Lógica de comunicación con el backend
-│   │   │   └── alumnos.js
+│   │   ├── api/          # Comunicación con la API
 │   │   ├── components/   # Componentes reutilizables
-│   │   │   ├── Modal.jsx
-│   │   │   ├── ConfirmDialog.jsx
-│   │   │   ├── MultiSelect.jsx
-│   │   │   ├── AlumnoForm.jsx
-│   │   │   ├── AlumnoHistorial.jsx
-│   │   │   └── AlumnoInstrumento.jsx
-│   │   └── pages/
-│   │       └── Alumnos.jsx
+│   │   ├── pages/        # Vistas principales
+│   │   ├── hooks/        # Hooks personalizados
+│   │   ├── context/      # Contextos globales
+│   │   └── ...
+│   ├── public/           # Recursos estáticos
 │   └── ...
 │
 ├── docs/                 # Documentación técnica adicional
@@ -68,14 +70,14 @@ El sistema está dividido en dos grandes módulos:
 Desarrollado con **Node.js**, **Express** y **MySQL**. Expone una API RESTful que permite gestionar todos los datos del sistema:
 
 - **Programas:** Alta, baja, modificación y consulta de programas musicales.
-- **Alumnos:** Gestión completa de alumnos, incluyendo asociación a múltiples programas, historial de eventos, asignación y liberación de instrumentos, exportación de datos y consulta avanzada con filtros y paginación.
-- **Instrumentos:** Registro, administración y estado de instrumentos musicales, con reportes agregados por estado.
-- **Eventos:** Gestión de eventos, consulta de eventos futuros, eventos por mes y registro de participación de alumnos.
+- **Alumnos:** Gestión completa de alumnos, incluyendo asociación a múltiples programas, historial de eventos, asignación y liberación de instrumentos, exportación de datos, gestión de documentos y consulta avanzada con filtros y paginación.
+- **Instrumentos:** Registro, administración y estado de instrumentos musicales, con reportes agregados por estado y asignación a alumnos.
+- **Eventos:** Gestión de eventos, consulta de eventos futuros, eventos por mes y registro de participación y asistencia de alumnos.
 - **Reportes:** Consultas agregadas como alumnos por programa e instrumentos por estado, optimizadas para relaciones muchos-a-muchos.
-- **Usuarios:** Administración de usuarios del sistema, con recomendaciones para seguridad y autenticación.
+- **Usuarios:** Administración de usuarios del sistema, con roles y recomendaciones para seguridad y autenticación.
 - **Dashboard:** Estadísticas rápidas y consultas para paneles administrativos, incluyendo métricas de alumnos, instrumentos y eventos.
 
-El backend se conecta a una base de datos MySQL y expone endpoints para cada entidad y reporte, permitiendo la integración con cualquier frontend o sistema externo. Incluye manejo avanzado de errores, validaciones y estructura modular para facilitar el mantenimiento y la escalabilidad.
+El backend se conecta a una base de datos MySQL y expone endpoints para cada entidad y reporte, permitiendo la integración con cualquier frontend o sistema externo. Incluye manejo avanzado de errores, validaciones, modularidad y soporte para exportación de datos y archivos.
 
 ### 2. Frontend
 Desarrollado en **React** (Vite), permite la visualización y gestión de todos los módulos anteriores. Incluye paneles administrativos, formularios, dashboards con estadísticas y componentes reutilizables para una experiencia de usuario moderna y eficiente.
@@ -132,7 +134,7 @@ La arquitectura del frontend está pensada para facilitar la extensión y el man
 
 ## 📚 Documentación de la API
 
-La documentación completa de los endpoints y ejemplos de uso está en [`docs/api.md`](docs/api.md).
+La documentación completa de los endpoints, ejemplos de uso y modelos de datos está en [`docs/api.md`](docs/api.md) y [`docs/modelos.md`](docs/modelos.md).
 
 ---
 
@@ -143,10 +145,12 @@ La documentación completa de los endpoints y ejemplos de uso está en [`docs/ap
 - **express**: Framework para crear la API REST.
 - **cors**: Permite peticiones entre dominios (útil para desarrollo frontend-backend).
 - **mysql2/promise**: Cliente MySQL con soporte para promesas, usado para la conexión y consultas a la base de datos.
+- **multer**: Gestión de archivos subidos (documentos).
+- **dotenv**: Variables de entorno para configuración segura.
 
 Instalación:
 ```sh
-npm install express cors mysql2
+npm install express cors mysql2 multer dotenv
 ```
 
 ### Frontend
@@ -178,15 +182,17 @@ Cada endpoint sigue el patrón estándar REST:
 - `PUT` para actualizar  
 - `DELETE` para eliminar
 
-Incluye endpoints avanzados para reportes y exportación de datos.
+Incluye endpoints avanzados para reportes, exportación de datos y gestión de archivos.
 
 ---
 
 ## 🖥️ Estructura del Frontend
 
-- **src/api/alumnos.js:** Centraliza todas las llamadas al backend relacionadas con alumnos, programas, historial e instrumentos.
+- **src/api/**: Centraliza todas las llamadas al backend relacionadas con alumnos, programas, historial, instrumentos y usuarios.
 - **src/components/**: Componentes reutilizables para formularios, modales, selección múltiple y gestión de datos.
-- **src/pages/Alumnos.jsx:** Página principal para la gestión de alumnos, con integración total a la API y componentes auxiliares.
+- **src/pages/**: Vistas principales para la gestión de alumnos, programas, instrumentos, eventos y dashboard.
+- **src/hooks/**: Hooks personalizados para lógica compartida.
+- **src/context/**: Contextos globales para usuario, sesión y estado de la aplicación.
 
 La estructura modular permite escalar el sistema y agregar nuevas funcionalidades de manera sencilla.
 
@@ -198,6 +204,7 @@ La estructura modular permite escalar el sistema y agregar nuevas funcionalidade
 - Se recomienda agregar autenticación y autorización para ambientes productivos.
 - El sistema está preparado para ampliarse con validaciones, logs y manejo avanzado de errores.
 - Uso de CORS para permitir el desarrollo y la integración entre frontend y backend.
+- Configuración de variables de entorno para credenciales y rutas sensibles.
 
 ---
 
@@ -206,3 +213,7 @@ La estructura modular permite escalar el sistema y agregar nuevas funcionalidade
 - Código modular y reutilizable, con separación clara entre lógica de negocio, presentación y comunicación con la API.
 - Uso de componentes funcionales y hooks en React para una gestión eficiente del estado y los efectos.
 - Documentación técnica adicional en la carpeta `docs/` para facilitar la colaboración y el mantenimiento.
+- Pruebas unitarias y de integración recomendadas para asegurar la calidad y estabilidad del sistema.
+- Mantener la documentación y el changelog actualizados con cada nueva versión.
+
+---

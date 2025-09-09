@@ -18,6 +18,7 @@ import AlumnoInstrumento from "../components/AlumnoInstrumento";
 import Modal from "../components/Modal";
 import ConfirmDialog from "../components/ConfirmDialog";
 import AlumnoDetalle from "../components/AlumnoDetalle";
+import DesactivarAlumno from "../components/Alumno/DesactivarAlumno";
 
 // === Helpers UI ===
 const Badge = ({ children }) => (
@@ -25,6 +26,7 @@ const Badge = ({ children }) => (
     {children}
   </span>
 );
+
 
 export default function Alumnos() {
   // Data
@@ -35,10 +37,11 @@ export default function Alumnos() {
   const [loading, setLoading] = useState(false);
   const [confirm, setConfirm] = useState({ open: false, id: null, name: "" });
   const [viewDetail, setViewDetail] = useState(null);
+  const [desactivarAlumnoId, setDesactivarAlumnoId] = useState(null);
 
   // Filtros
   const [search, setSearch] = useState("");
-  const [fEstado, setFEstado] = useState("");
+  const [fEstado, setFEstado] = useState("Activo");
   const [fPrograma, setFPrograma] = useState("");
 
   // Paginación
@@ -121,6 +124,7 @@ export default function Alumnos() {
   const openCreate = () => { setEditing(null); setShowForm(true); };
   const openEdit = (al) => { setEditing(al); setShowForm(true); };
 
+  // eslint-disable-next-line no-unused-vars
   const confirmDelete = async () => {
     try {
       setLoading(true);
@@ -199,10 +203,10 @@ export default function Alumnos() {
           />
         </div>
         <select value={fEstado} onChange={(e) => setFEstado(e.target.value)} className="px-3 py-2 border rounded-lg bg-white">
-          <option value="">Todos</option>
           <option>Activo</option>
           <option>Inactivo</option>
           <option>Retirado</option>
+          <option value="">Todos</option>
         </select>
         <div className="flex items-center gap-2 px-3 py-2 border rounded-lg bg-white">
           <Filter className="h-4 w-4 text-gray-500" />
@@ -319,14 +323,11 @@ export default function Alumnos() {
                     <Edit className="h-4 w-4" />
                   </button>
                   <button
-                    onClick={() =>
-                      setConfirm({ open: true, id: a.id_alumno, name: a.nombre })
-                    }
-                    className="p-1.5 bg-red-50 text-red-600 rounded-lg border hover:bg-red-100"
+                    onClick={() => setDesactivarAlumnoId(a.id_alumno)}
+                    className="p-1.5 bg-orange-50 text-orange-600 rounded-lg border hover:bg-orange-100"
                   >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                  
+                    Desactivar
+                  </button>                  
                   <button
                     onClick={() => openDetail(a)} // 👈 ahora llama a la nueva función
                     className="p-1.5 bg-yellow-50 text-yellow-600 rounded-lg border hover:bg-yellow-100"
@@ -380,14 +381,22 @@ export default function Alumnos() {
         <AlumnoDetalle alumno={viewDetail} onClose={() => setViewDetail(null)} />
       )}
 
-      {/* Confirmar eliminar */}
-      <ConfirmDialog
-        open={confirm.open}
-        title="Eliminar alumno"
-        message={`¿Eliminar a "${confirm.name}"?`}
-        onCancel={() => setConfirm({ open: false, id: null, name: "" })}
-        onConfirm={confirmDelete}
-      />
+      {desactivarAlumnoId && (
+        <Modal
+          title="Desactivar Alumno"
+          onClose={() => setDesactivarAlumnoId(null)}
+        >
+          <DesactivarAlumno
+            alumnoId={desactivarAlumnoId}
+            onSuccess={(msg) => {
+              toast.success(msg);
+              setDesactivarAlumnoId(null);
+              loadData(); // refresca la tabla
+            }}
+          />
+        </Modal>
+      )}
+
     </div>
   );
 }
