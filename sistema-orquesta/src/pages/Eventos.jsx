@@ -1,3 +1,4 @@
+// sistema-orquesta/src/pages/Eventos.jsx
 import { useEffect, useState } from "react";
 import {
   getEventos,

@@ -1,7 +1,7 @@
 // backend/routes/instrumentos.js
 import { Router } from 'express';
 import pool from '../db.js';
-import { registrarHistorialInstrumento } from '../helpers/historial.js';
+import { registrarHistorialInstrumento, obtenerHistorialInstrumento } from '../helpers/historial.js';
 
 const router = Router();
 
@@ -146,10 +146,12 @@ router.get('/:id/historial', async (req, res) => {
   try {
     const { id } = req.params;
     const [rows] = await pool.query(
-      `SELECT id_historial, tipo, descripcion, usuario, creado_en
-       FROM Instrumento_Historial
-       WHERE id_instrumento = ?
-       ORDER BY creado_en DESC`,
+      `SELECT h.id_historial, h.tipo, h.descripcion, h.usuario, h.creado_en,
+              a.nombre AS nombre_alumno
+       FROM Instrumento_Historial h
+       LEFT JOIN Alumno a ON h.id_alumno = a.id_alumno
+       WHERE h.id_instrumento = ?
+       ORDER BY h.creado_en DESC`,
       [id]
     );
     res.json(rows);
@@ -162,17 +164,22 @@ router.get('/:id/historial', async (req, res) => {
 // POST /instrumentos/:id/historial
 router.post('/:id/historial', async (req, res) => {
   try {
-    const { id } = req.params;
-    const { tipo = 'OTRO', descripcion = '', usuario = 'sistema' } = req.body;
+    const { id } = req.params; // id_instrumento
+    const { tipo = 'OTRO', descripcion = '', usuario = 'sistema', id_alumno = null } = req.body;
+
     await pool.query(
-      `INSERT INTO Instrumento_Historial (id_instrumento, tipo, descripcion, usuario) VALUES (?, ?, ?, ?)`,
-      [id, tipo, descripcion, usuario]
+      `INSERT INTO Instrumento_Historial (id_instrumento, tipo, descripcion, usuario, id_alumno) 
+       VALUES (?, ?, ?, ?, ?)`,
+      [id, tipo, descripcion, usuario, id_alumno]
     );
+
     res.status(201).json({ message: 'Historial de instrumento registrado' });
   } catch (err) {
     console.error('Error en POST /instrumentos/:id/historial', err);
     res.status(500).json({ error: 'Error guardando historial instrumento' });
   }
 });
+
+
 
 export default router;

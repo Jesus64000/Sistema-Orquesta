@@ -1,3 +1,4 @@
+// sistema-orquesta/src/api/configuraciones.js
 // Aquí centralizamos configuraciones del sistema, roles y usuarios
 
 import axios from "axios";

@@ -1,3 +1,4 @@
+// backend/index.js
 // index.js - API completa y consolidada para Sistema Nacional de Orquestas
 // ESM module (package.json: { "type": "module" })
 

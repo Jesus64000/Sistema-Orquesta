@@ -1,3 +1,4 @@
+// sistema-orquesta/src/pages/Dashboard.jsx
 import { useEffect, useMemo, useState } from "react";
 import {
   PlusCircle, Wrench, ClipboardList, MapPin, Clock,

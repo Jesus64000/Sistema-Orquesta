@@ -261,6 +261,37 @@ router.put('/:id/desactivar', async (req, res) => {
   }
 });
 
+// PUT /alumnos/:id/estado
+router.put('/:id/estado', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Obtener estado actual del alumno
+    const [alumno] = await pool.query(
+      'SELECT estado FROM Alumno WHERE id_alumno = ?',
+      [id]
+    );
+
+    if (!alumno.length) {
+      return res.status(404).json({ error: 'Alumno no encontrado' });
+    }
+
+    // Alternar estado
+    const nuevoEstado = alumno[0].estado === 'Activo' ? 'Inactivo' : 'Activo';
+
+    // Actualizar estado en la DB
+    await pool.query(
+      'UPDATE Alumno SET estado = ? WHERE id_alumno = ?',
+      [nuevoEstado, id]
+    );
+
+    res.json({ id_alumno: id, estado: nuevoEstado });
+  } catch (err) {
+    console.error('Error cambiando estado:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Eliminar alumno
 router.delete('/:id', async (req, res) => {
 const { id } = req.params;

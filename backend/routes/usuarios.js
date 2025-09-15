@@ -1,3 +1,4 @@
+// backend/routes/usuarios.js
 import { Router } from 'express';
 import pool from '../db.js';
 

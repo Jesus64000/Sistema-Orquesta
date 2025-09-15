@@ -1,3 +1,4 @@
+// backend/routes/reportes.js
 import { Router } from 'express';
 import pool from '../db.js';
 

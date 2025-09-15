@@ -1,3 +1,4 @@
+// sistema-orquesta/src/pages/Instrumentos.jsx
 import { useEffect, useMemo, useState } from "react";
 import {
   PlusCircle, Search, Edit, Trash2, Filter, ChevronUp, ChevronDown, Eye

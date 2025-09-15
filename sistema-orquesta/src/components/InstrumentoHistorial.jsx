@@ -38,6 +38,9 @@ export default function InstrumentoHistorial({ idInstrumento }) {
         >
           <div className="flex justify-between">
             <span className="font-medium">{h.tipo}</span>
+            {h.nombre_alumno && (
+            <p className="text-xs text-gray-500">Alumno: {h.nombre_alumno}</p>
+            )}
             <span className="text-xs text-gray-400">
               {new Date(h.creado_en).toLocaleString()}
             </span>

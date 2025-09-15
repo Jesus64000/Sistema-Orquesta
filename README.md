@@ -26,28 +26,127 @@ Plataforma web para la gestión integral de alumnos, programas, instrumentos, ev
 ```
 Sistema-Orquesta/
 │
-├── backend/              # API REST (Node.js, Express, MySQL)
-│   ├── index.js          # Código principal del backend
-│   ├── controllers/      # Lógica de negocio por entidad
-│   ├── routes/           # Definición de rutas REST
-│   ├── models/           # Modelos de datos y acceso a BD
-│   ├── middlewares/      # Validaciones y manejo de errores
-│   ├── utils/            # Funciones auxiliares (exportación, reportes)
-│   ├── uploads/          # Archivos subidos por usuarios
+├── backend/              
+│   ├── index.js          
+│   ├── controllers/
+│   │   ├── alumnoController.js
+│   │   ├── programaController.js
+│   │   ├── instrumentoController.js
+│   │   ├── eventoController.js
+│   │   ├── usuarioController.js
+│   │   └── orquestaController.js
+│   ├── routes/
+│   │   ├── alumnoRoutes.js
+│   │   ├── programaRoutes.js
+│   │   ├── instrumentoRoutes.js
+│   │   ├── eventoRoutes.js
+│   │   ├── usuarioRoutes.js
+│   │   └── orquestaRoutes.js
+│   ├── models/
+│   │   ├── alumno.js
+│   │   ├── programa.js
+│   │   ├── instrumento.js
+│   │   ├── evento.js
+│   │   ├── usuario.js
+│   │   └── orquesta.js
+│   ├── middlewares/
+│   │   ├── authMiddleware.js
+│   │   ├── errorHandler.js
+│   │   ├── validateAlumno.js
+│   │   ├── validatePrograma.js
+│   │   └── validateEvento.js
+│   ├── utils/
+│   │   ├── exportExcel.js
+│   │   ├── reportGenerator.js
+│   │   ├── dateHelper.js
+│   │   └── fileHelper.js
+│   ├── uploads/
+│   │   ├── alumnos/
+│   │   ├── programas/
+│   │   ├── eventos/
+│   │   └── otros/
+│   ├── config/
+│   │   ├── db.js
+│   │   ├── env.js
+│   │   └── logger.js
+│   ├── tests/
+│   │   ├── alumno.test.js
+│   │   ├── programa.test.js
+│   │   ├── evento.test.js
+│   │   └── usuario.test.js
+│   ├── .env
+│   ├── README.md
 │   └── ...
 │
-├── sistema-orquesta/     # Frontend (React + Vite)
+├── sistema-orquesta/
 │   ├── src/
-│   │   ├── api/          # Comunicación con la API
-│   │   ├── components/   # Componentes reutilizables
-│   │   ├── pages/        # Vistas principales
-│   │   ├── hooks/        # Hooks personalizados
-│   │   ├── context/      # Contextos globales
-│   │   └── ...
-│   ├── public/           # Recursos estáticos
+│   │   ├── api/
+│   │   │   ├── alumnoApi.js
+│   │   │   ├── programaApi.js
+│   │   │   ├── instrumentoApi.js
+│   │   │   ├── eventoApi.js
+│   │   │   ├── usuarioApi.js
+│   │   │   └── orquestaApi.js
+│   │   ├── components/
+│   │   │   ├── Modal.jsx
+│   │   │   ├── ConfirmDialog.jsx
+│   │   │   ├── MultiSelect.jsx
+│   │   │   ├── AlumnoForm.jsx
+│   │   │   ├── AlumnoHistorial.jsx
+│   │   │   ├── AlumnoInstrumento.jsx
+│   │   │   ├── TablaAlumnos.jsx
+│   │   │   ├── TablaProgramas.jsx
+│   │   │   ├── SelectorInstrumento.jsx
+│   │   │   ├── Navbar.jsx
+│   │   │   ├── Sidebar.jsx
+│   │   │   └── Loader.jsx
+│   │   ├── pages/
+│   │   │   ├── Alumnos.jsx
+│   │   │   ├── Programas.jsx
+│   │   │   ├── Instrumentos.jsx
+│   │   │   ├── Eventos.jsx
+│   │   │   ├── Dashboard.jsx
+│   │   │   ├── Usuarios.jsx
+│   │   │   └── Orquestas.jsx
+│   │   ├── hooks/
+│   │   │   ├── useFetch.js
+│   │   │   ├── useForm.js
+│   │   │   ├── useAuth.js
+│   │   │   └── useModal.js
+│   │   ├── context/
+│   │   │   ├── UserContext.js
+│   │   │   ├── SessionContext.js
+│   │   │   ├── OrquestaContext.js
+│   │   │   └── AuthContext.js
+│   │   ├── assets/
+│   │   │   ├── logo.png
+│   │   │   ├── fondo.jpg
+│   │   │   ├── icono.svg
+│   │   │   └── estilos.css
+│   │   ├── styles/
+│   │   │   ├── main.css
+│   │   │   ├── dashboard.css
+│   │   │   └── tabla.css
+│   │   ├── utils/
+│   │   │   ├── formatDate.js
+│   │   │   ├── validateEmail.js
+│   │   │   └── helpers.js
+│   │   ├── main.jsx
+│   │   └── App.jsx
+│   ├── public/
+│   │   ├── index.html
+│   │   ├── favicon.ico
+│   │   ├── manifest.json
+│   │   └── robots.txt
+│   ├── tests/
+│   │   ├── Modal.test.jsx
+│   │   ├── FormAlumno.test.jsx
+│   │   ├── TablaAlumnos.test.jsx
+│   │   └── Dashboard.test.jsx
+│   ├── README.md
 │   └── ...
 │
-├── docs/                 # Documentación técnica adicional
+├── docs/
 │   ├── api.md
 │   ├── arquitectura.md
 │   ├── changelog.md
@@ -55,9 +154,10 @@ Sistema-Orquesta/
 │   ├── db.sql
 │   ├── instalacion.md
 │   ├── modelos.md
-│   └── seguridad.md
+│   ├── seguridad.md
+│   └── estructura-proyecto.md
 │
-└── README.md             # Este archivo
+└── README.md
 ```
 
 ---
@@ -110,7 +210,7 @@ La arquitectura del frontend está pensada para facilitar la extensión y el man
    cd backend
    npm install
    ```
-2. Configura la conexión a MySQL en `index.js` (usuario, contraseña, base de datos).
+2. Configura la conexión a MySQL en `config/db.js` y variables en `.env`.
 3. Ejecuta el servidor:
    ```sh
    node index.js
@@ -134,7 +234,7 @@ La arquitectura del frontend está pensada para facilitar la extensión y el man
 
 ## 📚 Documentación de la API
 
-La documentación completa de los endpoints, ejemplos de uso y modelos de datos está en [`docs/api.md`](docs/api.md) y [`docs/modelos.md`](docs/modelos.md).
+La documentación completa de los endpoints, ejemplos de uso y modelos de datos está en [`docs/api.md`](docs/api.md), [`docs/modelos.md`](docs/modelos.md) y [`docs/arquitectura.md`](docs/arquitectura.md).
 
 ---
 
@@ -170,7 +270,7 @@ npm install react axios
 
 El archivo principal `index.js` contiene:
 
-- **Conexión a MySQL**: Configuración de pool de conexiones.
+- **Conexión a MySQL**: Configuración de pool de conexiones en `config/db.js`.
 - **Rutas REST**: Endpoints para cada entidad (`/programas`, `/alumnos`, `/instrumentos`, `/eventos`, `/usuarios`, `/reportes`, `/dashboard`).
 - **Manejo de errores**: Respuestas claras en caso de error de base de datos o datos inválidos.
 - **Servidor Express**: Inicialización y escucha en el puerto 4000.
@@ -193,6 +293,11 @@ Incluye endpoints avanzados para reportes, exportación de datos y gestión de a
 - **src/pages/**: Vistas principales para la gestión de alumnos, programas, instrumentos, eventos y dashboard.
 - **src/hooks/**: Hooks personalizados para lógica compartida.
 - **src/context/**: Contextos globales para usuario, sesión y estado de la aplicación.
+- **src/assets/**: Imágenes, íconos y estilos.
+- **src/styles/**: Archivos CSS globales y específicos.
+- **src/utils/**: Funciones auxiliares para validaciones, formateo y helpers.
+- **public/**: Archivos estáticos (index.html, favicon, manifest, robots.txt).
+- **tests/**: Pruebas unitarias de componentes y vistas.
 
 La estructura modular permite escalar el sistema y agregar nuevas funcionalidades de manera sencilla.
 
@@ -205,6 +310,8 @@ La estructura modular permite escalar el sistema y agregar nuevas funcionalidade
 - El sistema está preparado para ampliarse con validaciones, logs y manejo avanzado de errores.
 - Uso de CORS para permitir el desarrollo y la integración entre frontend y backend.
 - Configuración de variables de entorno para credenciales y rutas sensibles.
+- Validaciones en backend y frontend para evitar datos inválidos y ataques comunes.
+- Manejo centralizado de errores y respuestas consistentes.
 
 ---
 
@@ -215,5 +322,26 @@ La estructura modular permite escalar el sistema y agregar nuevas funcionalidade
 - Documentación técnica adicional en la carpeta `docs/` para facilitar la colaboración y el mantenimiento.
 - Pruebas unitarias y de integración recomendadas para asegurar la calidad y estabilidad del sistema.
 - Mantener la documentación y el changelog actualizados con cada nueva versión.
+- Uso de control de versiones (git) y ramas para nuevas funcionalidades.
+- Comentarios claros y documentación en el código fuente.
+
+---
+
+## 📜 Recursos y documentación adicional
+
+- [Documentación de la API](docs/api.md)
+- [Modelos de datos](docs/modelos.md)
+- [Arquitectura del sistema](docs/arquitectura.md)
+- [Guía de instalación](docs/instalacion.md)
+- [Guía de seguridad](docs/seguridad.md)
+- [Historial de cambios](docs/changelog.md)
+- [Guía para colaboradores](docs/contribuir.md)
+- [Script de base de datos](docs/db.sql)
+
+---
+
+## 💡 Contacto y soporte
+
+Para dudas, sugerencias o reportes de errores, consulta la documentación técnica o contacta al equipo responsable del proyecto.
 
 ---

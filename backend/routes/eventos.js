@@ -18,16 +18,18 @@ router.get('/', async (_req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { titulo, descripcion, fecha_evento, lugar, id_programa = null, hora_evento = null } = req.body;
+    const { titulo, descripcion, fecha_evento, lugar, id_programa = null } = req.body;
 
     const [result] = await pool.query(
-      'UPDATE Evento SET titulo=?, descripcion=?, fecha_evento=?, lugar=?, id_programa=?, hora_evento=? WHERE id_evento=?',
-      [titulo, descripcion, fecha_evento, lugar, id_programa, hora_evento, id]
+      'UPDATE Evento SET titulo=?, descripcion=?, fecha_evento=?, lugar=?, id_programa=? WHERE id_evento=?',
+      [titulo, descripcion, fecha_evento, lugar, id_programa, id]
     );
+
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Evento no encontrado' });
     }
-    res.json({ id_evento: Number(id), titulo, descripcion, fecha_evento, lugar, id_programa, hora_evento });
+
+    res.json({ id_evento: Number(id), titulo, descripcion, fecha_evento, lugar, id_programa });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -38,9 +40,11 @@ router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const [result] = await pool.query('DELETE FROM Evento WHERE id_evento=?', [id]);
+
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Evento no encontrado' });
     }
+
     res.json({ message: 'Evento eliminado correctamente' });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -52,16 +56,18 @@ router.get('/futuros', async (req, res) => {
   try {
     const { programa_id } = req.query;
     let query = `
-      SELECT id_evento, titulo, descripcion, fecha_evento, lugar, hora_evento, id_programa
+      SELECT id_evento, titulo, descripcion, fecha_evento, lugar, id_programa
       FROM Evento
       WHERE fecha_evento >= CURDATE()
     `;
     const params = [];
+
     if (programa_id) {
       query += ' AND id_programa = ?';
       params.push(programa_id);
     }
-    query += ' ORDER BY fecha_evento ASC, hora_evento ASC';
+
+    query += ' ORDER BY fecha_evento ASC';
     const [rows] = await pool.query(query, params);
     res.json(rows);
   } catch (err) {
@@ -74,10 +80,10 @@ router.get('/futuros', async (req, res) => {
 router.get('/futuros2', async (_req, res) => {
   try {
     const [rows] = await pool.query(
-      `SELECT id_evento, titulo, descripcion, fecha_evento, lugar, hora_evento
+      `SELECT id_evento, titulo, descripcion, fecha_evento, lugar, id_programa
        FROM Evento
        WHERE fecha_evento >= CURDATE()
-       ORDER BY fecha_evento ASC, hora_evento ASC`
+       ORDER BY fecha_evento ASC`
     );
     res.json(rows);
   } catch (err) {

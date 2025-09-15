@@ -1,3 +1,4 @@
+// sistema-orquesta/src/pages/Alumnos.jsx
 import { useEffect, useMemo, useState } from "react";
 import {
   UserPlus, Search, Edit, Trash2, Filter, ChevronUp, ChevronDown,
@@ -16,9 +17,10 @@ import AlumnoForm from "../components/AlumnoForm";
 import AlumnoHistorial from "../components/AlumnoHistorial";
 import AlumnoInstrumento from "../components/AlumnoInstrumento";
 import Modal from "../components/Modal";
-import ConfirmDialog from "../components/ConfirmDialog";
+import ConfirmDialog from "../components/ConfirmDialogalumnos";
 import AlumnoDetalle from "../components/AlumnoDetalle";
-import DesactivarAlumno from "../components/Alumno/DesactivarAlumno";
+import ToggleAlumnoEstado from "../components/Alumno/ToggleAlumnoEstado"; 
+
 
 // === Helpers UI ===
 const Badge = ({ children }) => (
@@ -165,7 +167,6 @@ export default function Alumnos() {
     setLoading(false);
   }
 };
-
 
   return (
     <div className="space-y-6">
@@ -315,26 +316,36 @@ export default function Alumnos() {
                 </td>
 
                 {/* Acciones */}
-                <td className="px-3 py-2 flex gap-2">
-                  <button
-                    onClick={() => openEdit(a)}
-                    className="p-1.5 bg-blue-50 text-blue-600 rounded-lg border hover:bg-blue-100"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => setDesactivarAlumnoId(a.id_alumno)}
-                    className="p-1.5 bg-orange-50 text-orange-600 rounded-lg border hover:bg-orange-100"
-                  >
-                    Desactivar
-                  </button>                  
-                  <button
-                    onClick={() => openDetail(a)} // 👈 ahora llama a la nueva función
-                    className="p-1.5 bg-yellow-50 text-yellow-600 rounded-lg border hover:bg-yellow-100"
-                  >
-                    Ver
-                  </button>
+                  <td className="px-3 py-2 flex gap-2">
+                    <button
+                      onClick={() => openEdit(a)}
+                      className="p-1.5 bg-blue-50 text-blue-600 rounded-lg border hover:bg-blue-100"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </button>
+
+                    {/* 🔹 Nuevo componente para activar/desactivar */}
+                    <ToggleAlumnoEstado
+                      alumnoId={a.id_alumno}
+                      estadoActual={a.estado}
+                      onSuccess={(nuevoEstado) => {
+                        // actualiza solo este alumno en la tabla
+                        setAlumnos((prev) =>
+                          prev.map((al) =>
+                            al.id_alumno === a.id_alumno ? { ...al, estado: nuevoEstado } : al
+                          )
+                        );
+                      }}
+                    />
+
+                    <button
+                      onClick={() => openDetail(a)}
+                      className="p-1.5 bg-yellow-50 text-yellow-600 rounded-lg border hover:bg-yellow-100"
+                    >
+                      Ver
+                    </button>
                   </td>
+
               </tr>
             ))}
 

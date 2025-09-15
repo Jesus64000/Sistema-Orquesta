@@ -1,3 +1,4 @@
+// sistema-orquesta/src/pages/Reportes.jsx
 import { useEffect, useState } from "react";
 import {
   getAlumnosPorPrograma,

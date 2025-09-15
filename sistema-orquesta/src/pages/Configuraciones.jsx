@@ -1,3 +1,4 @@
+// sistema-orquesta/src/pages/Configuraciones.jsx
 import { useEffect, useState } from "react";
 import {
   getUsuarios,

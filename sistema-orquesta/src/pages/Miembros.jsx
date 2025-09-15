@@ -1,3 +1,4 @@
+// sistema-orquesta/src/pages/Miembros.jsx
 import { useState } from "react";
 import { UserPlus, Search } from "lucide-react";
 import Modal from "../components/Modal";
