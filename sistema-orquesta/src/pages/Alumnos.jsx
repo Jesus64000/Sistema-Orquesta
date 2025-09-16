@@ -11,15 +11,16 @@ import {
   getProgramas,
   exportAlumnosCSV,
   getAlumno,
+  getAlumnoInstrumento,
 } from "../api/alumnos";
 
 import AlumnoForm from "../components/AlumnoForm";
 import AlumnoHistorial from "../components/AlumnoHistorial";
 import AlumnoInstrumento from "../components/AlumnoInstrumento";
 import Modal from "../components/Modal";
-import ConfirmDialog from "../components/ConfirmDialogalumnos";
 import AlumnoDetalle from "../components/AlumnoDetalle";
-import ToggleAlumnoEstado from "../components/Alumno/ToggleAlumnoEstado"; 
+import ConfirmDialog from "../components/ConfirmDialog";
+import ErrorDialog from "../components/InfoDialog";
 
 
 // === Helpers UI ===
@@ -39,7 +40,6 @@ export default function Alumnos() {
   const [loading, setLoading] = useState(false);
   const [confirm, setConfirm] = useState({ open: false, id: null, name: "" });
   const [viewDetail, setViewDetail] = useState(null);
-  const [desactivarAlumnoId, setDesactivarAlumnoId] = useState(null);
 
   // Filtros
   const [search, setSearch] = useState("");
@@ -60,6 +60,14 @@ export default function Alumnos() {
   // Form
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
+
+  // Diálogos
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [errorOpen, setErrorOpen] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState({});
+  const [errorConfig, setErrorConfig] = useState({});
+  const [selectedAlumno, setSelectedAlumno] = useState(null);
+  const [checkingId, setCheckingId] = useState(null); // id del alumno mientras verifico instrumentos
 
   // Load data
   const loadData = async () => {
@@ -125,6 +133,76 @@ export default function Alumnos() {
 
   const openCreate = () => { setEditing(null); setShowForm(true); };
   const openEdit = (al) => { setEditing(al); setShowForm(true); };
+
+  // Verifica instrumentos y abre confirmación / muestra ErrorDialog o ConfirmDialog
+  const handleEstadoClick = async (alumno) => {
+    // evito doble clics mientras se verifica
+    if (checkingId) return;
+
+    // Si voy a ACTIVAR, no necesito comprobar instrumentos => abrir confirm
+    if (alumno.estado !== "Activo") {
+      setSelectedAlumno(alumno);
+      setDialogConfig({
+        title: "Confirmar activación",
+        message: `¿Seguro que deseas activar al alumno ${alumno.nombre}?`,
+        confirmLabel: "Activar",
+        confirmColor: "bg-green-600 hover:bg-green-700",
+      });
+      setConfirmOpen(true);
+      return;
+    }
+
+    // Si está Activo => comprobar si tiene instrumentos asignados antes de desactivar
+    try {
+      setCheckingId(alumno.id_alumno);
+
+      const res = await getAlumnoInstrumento(alumno.id_alumno);
+      const data = res?.data;
+
+      // Determinar si hay instrumentos (aceptamos array u objeto)
+      const tieneInstrumento = Array.isArray(data) ? data.length > 0 : !!data;
+
+      if (tieneInstrumento) {
+        const lista = Array.isArray(data) ? data : [data];
+        const detalle = lista
+          .map((it) => {
+            const nombre = it?.nombre || it?.instrumento || it?.tipo || "Instrumento";
+            const serial = it?.numero_serie || it?.serial || it?.codigo || "";
+            return serial ? `${nombre} (${serial})` : nombre;
+          })
+          .join(", ");
+
+        setErrorConfig({
+          title: "Acción no permitida",
+          message:
+            `No se puede desactivar porque tiene asignado: ${detalle}. ` +
+            `Debe devolverlo antes de desactivar.`,
+        });
+        setErrorOpen(true);
+        return;
+      }
+
+      // No tiene instrumentos -> abrir confirmación para desactivar
+      setSelectedAlumno(alumno);
+      setDialogConfig({
+        title: "Confirmar desactivación",
+        message: `¿Seguro que deseas desactivar al alumno ${alumno.nombre}?`,
+        confirmLabel: "Desactivar",
+        confirmColor: "bg-red-600 hover:bg-red-700",
+      });
+      setConfirmOpen(true);
+    } catch (err) {
+      console.error("Error verificando instrumentos:", err);
+      setErrorConfig({
+        title: "Error",
+        message: "No se pudo verificar si el alumno tiene instrumentos asignados. Intenta de nuevo.",
+      });
+      setErrorOpen(true);
+    } finally {
+      setCheckingId(null);
+    }
+  };
+
 
   // eslint-disable-next-line no-unused-vars
   const confirmDelete = async () => {
@@ -324,19 +402,18 @@ export default function Alumnos() {
                       <Edit className="h-4 w-4" />
                     </button>
 
-                    {/* 🔹 Nuevo componente para activar/desactivar */}
-                    <ToggleAlumnoEstado
-                      alumnoId={a.id_alumno}
-                      estadoActual={a.estado}
-                      onSuccess={(nuevoEstado) => {
-                        // actualiza solo este alumno en la tabla
-                        setAlumnos((prev) =>
-                          prev.map((al) =>
-                            al.id_alumno === a.id_alumno ? { ...al, estado: nuevoEstado } : al
-                          )
-                        );
-                      }}
-                    />
+                    {/* Activar / Desactivar con verificación de instrumentos */}
+                    <button
+                      onClick={() => handleEstadoClick(a)}
+                      disabled={checkingId === a.id_alumno}
+                      className={`p-1.5 rounded-lg border ${
+                        a.estado === "Activo"
+                          ? "bg-red-50 text-red-600 hover:bg-red-100"
+                          : "bg-green-50 text-green-600 hover:bg-green-100"
+                      } ${checkingId === a.id_alumno ? "opacity-60 cursor-not-allowed" : ""}`}
+                    >
+                      {checkingId === a.id_alumno ? "..." : (a.estado === "Activo" ? "Desactivar" : "Activar")}
+                    </button>
 
                     <button
                       onClick={() => openDetail(a)}
@@ -392,22 +469,58 @@ export default function Alumnos() {
         <AlumnoDetalle alumno={viewDetail} onClose={() => setViewDetail(null)} />
       )}
 
-      {desactivarAlumnoId && (
-        <Modal
-          title="Desactivar Alumno"
-          onClose={() => setDesactivarAlumnoId(null)}
-        >
-          <DesactivarAlumno
-            alumnoId={desactivarAlumnoId}
-            onSuccess={(msg) => {
-              toast.success(msg);
-              setDesactivarAlumnoId(null);
-              loadData(); // refresca la tabla
-            }}
-          />
-        </Modal>
-      )}
+      {/* Confirmación Activar/Desactivar */}
+      <ConfirmDialog
+        open={confirmOpen}
+        {...dialogConfig}
+        onCancel={() => {
+          setConfirmOpen(false);
+          setSelectedAlumno(null);
+        }}
+        onConfirm={async () => {
+          try {
+            const nuevoEstado = selectedAlumno.estado === "Activo" ? "Inactivo" : "Activo";
 
+            const res = await fetch(
+              `http://localhost:4000/alumnos/${selectedAlumno.id_alumno}/estado`,
+              {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ estado: nuevoEstado }),
+              }
+            );
+
+            if (!res.ok) throw new Error("Error actualizando estado");
+
+            setAlumnos((prev) =>
+              prev.map((al) =>
+                al.id_alumno === selectedAlumno.id_alumno
+                  ? { ...al, estado: nuevoEstado }
+                  : al
+              )
+            );
+
+            toast.success(
+              `Alumno ${selectedAlumno.nombre} ${
+                nuevoEstado === "Activo" ? "activado" : "desactivado"
+              } correctamente`
+            );
+          } catch (e) {
+            toast.error("No se pudo actualizar el estado");
+            console.error(e);
+          } finally {
+            setConfirmOpen(false);
+            setSelectedAlumno(null);
+          }
+        }}
+      />
+
+      {/* Error si no se puede desactivar */}
+      <ErrorDialog
+        open={errorOpen}
+        {...errorConfig}
+        onClose={() => setErrorOpen(false)}
+      />
     </div>
   );
 }

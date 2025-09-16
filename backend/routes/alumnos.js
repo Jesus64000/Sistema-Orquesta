@@ -285,12 +285,24 @@ router.put('/:id/estado', async (req, res) => {
       [nuevoEstado, id]
     );
 
+    // Insertar en historial
+    await pool.query(
+      `INSERT INTO alumno_historial (id_alumno, tipo, descripcion, usuario)
+       VALUES (?, 'ESTADO', ?, ?)`,
+      [
+        id,
+        `Alumno cambiado a ${nuevoEstado}`,
+        req.user?.nombre || 'Sistema', // 👈 aquí depende de si manejas login
+      ]
+    );
+
     res.json({ id_alumno: id, estado: nuevoEstado });
   } catch (err) {
     console.error('Error cambiando estado:', err);
     res.status(500).json({ error: err.message });
   }
 });
+
 
 // Eliminar alumno
 router.delete('/:id', async (req, res) => {
