@@ -1,4 +1,4 @@
-// src/components/AlumnoDetalle.jsx
+// src/components/Modal.jsx
 import React from "react";
 import { X } from "lucide-react";
 
@@ -17,3 +17,4 @@ export default function Modal({ title, children, onClose, className = "" }) {
     </div>
   );
 }
+

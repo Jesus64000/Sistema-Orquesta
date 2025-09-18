@@ -1,136 +1,232 @@
 // sistema-orquesta/src/pages/Eventos.jsx
-import { useEffect, useState } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
-  getEventos,
-  createEvento,
-  updateEvento,
-  deleteEvento,
-} from "../api/eventos";
-import { ClipboardList, Search, Edit, Trash2, PlusCircle } from "lucide-react";
+  PlusCircle, Search, Edit, Trash2, ChevronUp, ChevronDown, Eye
+} from "lucide-react";
+import toast from "react-hot-toast";
+
+import { getEventos, deleteEvento } from "../api/eventos";
+import EventoForm from "../components/Eventos/EventoForm";
+import EventoDetalle from "../components/Eventos/EventoDetalle";
+import Modal from "../components/Modal";
+import ConfirmDialog from "../components/ConfirmDialog";
+
+// === Helpers UI ===
+const Badge = ({ children }) => (
+  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-700 border">
+    {children}
+  </span>
+);
 
 export default function Eventos() {
+  // Data
   const [eventos, setEventos] = useState([]);
-  const [search, setSearch] = useState("");
-  const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({
-    titulo: "",
-    descripcion: "",
-    fecha_evento: "",
-    lugar: "",
-  });
-  const [editing, setEditing] = useState(null);
 
-  // 🔹 Cargar eventos al entrar
-  useEffect(() => {
-    loadEventos();
+  // UI State
+  const [loading, setLoading] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [viewDetail, setViewDetail] = useState(null);
+  const [confirm, setConfirm] = useState({ open: false, id: null, name: "" });
+
+  // Filtros
+  const [search, setSearch] = useState("");
+
+  // Paginación
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+
+  // Orden
+  const [sortBy, setSortBy] = useState("titulo");
+  const [sortDir, setSortDir] = useState("asc");
+
+  // Selección múltiple
+  const [selected, setSelected] = useState([]);
+
+  // Load data
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await getEventos();
+      setEventos(res.data || res || []);
+    } catch (err) {
+      console.error(err);
+      toast.error("Error cargando eventos");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const loadEventos = async () => {
-    const res = await getEventos();
-    setEventos(res.data);
-  };
+  useEffect(() => { loadData(); }, [loadData]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (editing) {
-      await updateEvento(editing.id_evento, formData);
-    } else {
-      await createEvento(formData);
+  // Filtros + orden + paginación
+  const eventosFiltrados = useMemo(() => {
+    let list = [...eventos];
+
+    // filtros
+    list = list.filter(ev =>
+      ev.titulo?.toLowerCase().includes(search.toLowerCase()) ||
+      ev.descripcion?.toLowerCase().includes(search.toLowerCase())
+    );
+
+    // ordenar
+    list.sort((a, b) => {
+      let vA = a[sortBy];
+      let vB = b[sortBy];
+      if (typeof vA === "string") vA = vA.toLowerCase();
+      if (typeof vB === "string") vB = vB.toLowerCase();
+      if (vA < vB) return sortDir === "asc" ? -1 : 1;
+      if (vA > vB) return sortDir === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    return list;
+  }, [eventos, search, sortBy, sortDir]);
+
+  const totalPages = Math.ceil(eventosFiltrados.length / pageSize);
+  const eventosPage = eventosFiltrados.slice((page - 1) * pageSize, page * pageSize);
+
+  // Handlers
+  const toggleSort = (col) => {
+    if (sortBy === col) setSortDir(sortDir === "asc" ? "desc" : "asc");
+    else {
+      setSortBy(col);
+      setSortDir("asc");
     }
-    setFormData({ titulo: "", descripcion: "", fecha_evento: "", lugar: "" });
-    setEditing(null);
-    setShowForm(false);
-    loadEventos();
   };
 
-  const handleEdit = (evento) => {
-    setFormData(evento);
-    setEditing(evento);
-    setShowForm(true);
+  const toggleSelect = (id) => {
+    setSelected(s => s.includes(id) ? s.filter(i => i !== id) : [...s, id]);
   };
 
-  const handleDelete = async (id) => {
-    if (confirm("¿Seguro que deseas eliminar este evento?")) {
-      await deleteEvento(id);
-      loadEventos();
+  const openCreate = () => { setEditing(null); setShowForm(true); };
+  const openEdit = (ev) => { setEditing(ev); setShowForm(true); };
+
+  const confirmDelete = async () => {
+    try {
+      await deleteEvento(confirm.id);
+      toast.success("Evento eliminado");
+      loadData();
+    } catch {
+      toast.error("Error eliminando evento");
+    } finally {
+      setConfirm({ open: false, id: null, name: "" });
     }
   };
-
-  // 🔹 Filtrar resultados
-  const filtered = eventos.filter(
-    (e) =>
-      e.titulo.toLowerCase().includes(search.toLowerCase()) ||
-      e.lugar.toLowerCase().includes(search.toLowerCase())
-  );
 
   return (
     <div className="space-y-6">
       {/* Encabezado */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <h1 className="text-2xl font-bold">Gestión de Eventos</h1>
-        <button
-          onClick={() => {
-            setShowForm(true);
-            setEditing(null);
-          }}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-yellow-400 text-gray-900 hover:bg-yellow-500 shadow-sm"
-        >
-          <PlusCircle className="h-4 w-4" />
-          Crear Evento
-        </button>
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">Gestión de Eventos</h1>
+          <p className="text-sm text-gray-500">Administra todos los eventos de la orquesta.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={openCreate}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-yellow-400 text-gray-900 hover:bg-yellow-500 shadow-sm"
+          >
+            <PlusCircle className="h-4 w-4" />
+            Agregar Evento
+          </button>
+        </div>
       </div>
 
-      {/* Buscador */}
-      <div className="flex items-center gap-2 px-3 py-2 border rounded-lg bg-white shadow-sm w-full sm:w-80">
-        <Search className="h-4 w-4 text-gray-500" />
-        <input
-          type="text"
-          placeholder="Buscar evento..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="flex-1 outline-none text-sm"
-        />
+      {/* Filtros */}
+      <div className="bg-white p-4 rounded-xl border shadow-sm flex flex-col md:flex-row gap-3">
+        <div className="flex-1 flex items-center gap-2 px-3 py-2 border rounded-lg bg-white shadow-sm">
+          <Search className="h-4 w-4 text-gray-500" />
+          <input
+            type="text"
+            placeholder="Buscar por título o descripción..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="flex-1 outline-none text-sm"
+          />
+        </div>
       </div>
 
       {/* Tabla */}
       <div className="overflow-x-auto bg-white border rounded-2xl shadow-sm">
         <table className="w-full text-sm text-left border-collapse">
-          <thead>
-            <tr className="bg-gray-100 text-gray-600">
-              <th className="px-4 py-2 border-b">Título</th>
-              <th className="px-4 py-2 border-b">Fecha</th>
-              <th className="px-4 py-2 border-b">Lugar</th>
-              <th className="px-4 py-2 border-b">Acciones</th>
+          <thead className="bg-gray-100 text-gray-600">
+            <tr>
+              <th className="px-3 py-2">
+                <input
+                  type="checkbox"
+                  onChange={(e) => setSelected(
+                    e.target.checked ? eventosPage.map(ev => ev.id_evento) : []
+                  )}
+                  checked={selected.length === eventosPage.length && eventosPage.length > 0}
+                />
+              </th>
+              <th className="px-3 py-2 border-b cursor-pointer" onClick={() => toggleSort("titulo")}>
+                <div className="flex items-center gap-1">
+                  Título
+                  {sortBy === "titulo" &&
+                    (sortDir === "asc" ? (
+                      <ChevronUp className="h-3 w-3" />
+                    ) : (
+                      <ChevronDown className="h-3 w-3" />
+                    ))}
+                </div>
+              </th>
+              <th className="px-3 py-2 border-b">Descripción</th>
+              <th className="px-3 py-2 border-b cursor-pointer" onClick={() => toggleSort("fecha_evento")}>
+                Fecha
+                {sortBy === "fecha_evento" &&
+                  (sortDir === "asc" ? (
+                    <ChevronUp className="h-3 w-3 inline" />
+                  ) : (
+                    <ChevronDown className="h-3 w-3 inline" />
+                  ))}
+              </th>
+              <th className="px-3 py-2 border-b">Lugar</th>
+              <th className="px-3 py-2 border-b">Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((e) => (
-              <tr key={e.id_evento} className="hover:bg-gray-50">
-                <td className="px-4 py-2 border-b">{e.titulo}</td>
-                <td className="px-4 py-2 border-b">
-                  {e.fecha_evento?.slice(0, 10)}
+            {eventosPage.map(ev => (
+              <tr key={ev.id_evento} className="hover:bg-gray-50">
+                <td className="px-3 py-2">
+                  <input
+                    type="checkbox"
+                    checked={selected.includes(ev.id_evento)}
+                    onChange={() => toggleSelect(ev.id_evento)}
+                  />
                 </td>
-                <td className="px-4 py-2 border-b">{e.lugar}</td>
-                <td className="px-4 py-2 border-b flex gap-2">
+                <td className="px-3 py-2">{ev.titulo}</td>
+                <td className="px-3 py-2">{ev.descripcion || "-"}</td>
+                <td className="px-3 py-2">{ev.fecha_evento?.slice(0, 10)}</td>
+                <td className="px-3 py-2">{ev.lugar}</td>
+                <td className="px-3 py-2 flex gap-2">
                   <button
-                    onClick={() => handleEdit(e)}
-                    className="p-1 rounded bg-blue-100 text-blue-600 hover:bg-blue-200"
+                    onClick={() => openEdit(ev)}
+                    className="p-1.5 bg-blue-50 text-blue-600 rounded-lg border hover:bg-blue-100"
                   >
                     <Edit className="h-4 w-4" />
                   </button>
                   <button
-                    onClick={() => handleDelete(e.id_evento)}
-                    className="p-1 rounded bg-red-100 text-red-600 hover:bg-red-200"
+                    onClick={() => setViewDetail(ev)}
+                    className="p-1.5 bg-yellow-50 text-yellow-600 rounded-lg border hover:bg-yellow-100"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => setConfirm({ open: true, id: ev.id_evento, name: ev.titulo })}
+                    className="p-1.5 bg-red-50 text-red-600 rounded-lg border hover:bg-red-100"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </td>
               </tr>
             ))}
-            {filtered.length === 0 && (
+
+            {eventosPage.length === 0 && (
               <tr>
-                <td colSpan="4" className="text-center py-4 text-gray-500">
-                  No se encontraron eventos
+                <td colSpan="6" className="text-center py-10 text-gray-500">
+                  {loading ? "Cargando eventos..." : "No se encontraron eventos"}
                 </td>
               </tr>
             )}
@@ -138,70 +234,37 @@ export default function Eventos() {
         </table>
       </div>
 
-      {/* Modal */}
+      {/* Paginación */}
+      <div className="flex justify-end items-center gap-2">
+        <button disabled={page <= 1} onClick={() => setPage(page - 1)} className="px-3 py-1 border rounded disabled:opacity-50">Anterior</button>
+        <span className="text-sm">Página {page} de {totalPages}</span>
+        <button disabled={page >= totalPages} onClick={() => setPage(page + 1)} className="px-3 py-1 border rounded disabled:opacity-50">Siguiente</button>
+      </div>
+
+      {/* Formulario */}
       {showForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-2xl shadow-lg w-full max-w-lg">
-            <h2 className="text-xl font-semibold mb-4">
-              {editing ? "Editar Evento" : "Crear Evento"}
-            </h2>
-            <form onSubmit={handleSubmit} className="space-y-3">
-              <input
-                type="text"
-                placeholder="Título"
-                value={formData.titulo}
-                onChange={(e) =>
-                  setFormData({ ...formData, titulo: e.target.value })
-                }
-                className="w-full p-2 border rounded-lg"
-                required
-              />
-              <textarea
-                placeholder="Descripción"
-                value={formData.descripcion}
-                onChange={(e) =>
-                  setFormData({ ...formData, descripcion: e.target.value })
-                }
-                className="w-full p-2 border rounded-lg"
-              />
-              <input
-                type="date"
-                value={formData.fecha_evento}
-                onChange={(e) =>
-                  setFormData({ ...formData, fecha_evento: e.target.value })
-                }
-                className="w-full p-2 border rounded-lg"
-                required
-              />
-              <input
-                type="text"
-                placeholder="Lugar"
-                value={formData.lugar}
-                onChange={(e) =>
-                  setFormData({ ...formData, lugar: e.target.value })
-                }
-                className="w-full p-2 border rounded-lg"
-                required
-              />
-              <div className="flex justify-end gap-2 mt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowForm(false)}
-                  className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-lg bg-yellow-400 text-gray-900 hover:bg-yellow-500"
-                >
-                  Guardar
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <Modal title={editing ? "Editar Evento" : "Nuevo Evento"} onClose={() => setShowForm(false)}>
+          <EventoForm
+            data={editing}
+            onCancel={() => setShowForm(false)}
+            onSaved={() => { setShowForm(false); loadData(); }}
+          />
+        </Modal>
       )}
+
+      {/* Detalle */}
+      {viewDetail && (
+        <EventoDetalle evento={viewDetail} onClose={() => setViewDetail(null)} />
+      )}
+
+      {/* Confirmar eliminar */}
+      <ConfirmDialog
+        open={confirm.open}
+        title="Eliminar evento"
+        message={`¿Eliminar "${confirm.name}"?`}
+        onCancel={() => setConfirm({ open: false, id: null, name: "" })}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

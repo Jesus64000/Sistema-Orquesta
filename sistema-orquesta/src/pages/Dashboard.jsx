@@ -1,14 +1,18 @@
 // sistema-orquesta/src/pages/Dashboard.jsx
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   PlusCircle, Wrench, ClipboardList, MapPin, Clock,
   ChevronLeft, ChevronRight, UserCheck, UserPlus, Hourglass, Briefcase, Filter
 } from "lucide-react";
-import {
-  getDashboardStats,
-  getProximoEvento,
-} from "../api/dashboard";
+
+import { getDashboardStats, getProximoEvento } from "../api/dashboard";
 import { getEventosFuturos } from "../api/eventos";
+import { getProgramas } from "../api/programas"; // <-- importa la API de programas
+
+import Modal from "../components/Modal";
+import EventoForm from "../components/Eventos/EventoForm";
+import InstrumentoForm from "../components/InstrumentoForm";
+import AlumnoForm from "../components/AlumnoForm";
 
 // === UI Helpers ===
 const Card = ({ children, className = "" }) => (
@@ -17,9 +21,12 @@ const Card = ({ children, className = "" }) => (
   </div>
 );
 
-const QuickAction = ({ icon: Icon, label }) => (
-  <button className="flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow-400 text-gray-900 hover:bg-yellow-500 text-xs shadow-sm">
-    <Icon className="h-4 w-4" />
+const QuickAction = ({ icon: Icon, label, onClick }) => (
+  <button
+    onClick={onClick}
+    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow-400 text-gray-900 hover:bg-yellow-500 text-xs shadow-sm"
+  >
+    {Icon && <Icon className="h-4 w-4" />}
     <span>{label}</span>
   </button>
 );
@@ -27,7 +34,7 @@ const QuickAction = ({ icon: Icon, label }) => (
 const QuickStat = ({ label, value, icon: Icon }) => (
   <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200 shadow-sm">
     <div className="h-8 w-8 rounded-lg bg-yellow-200 text-gray-900 grid place-items-center shadow">
-      <Icon className="h-4 w-4" />
+      {Icon && <Icon className="h-4 w-4" />}
     </div>
     <div>
       <p className="text-xs text-gray-500">{label}</p>
@@ -40,7 +47,7 @@ const QuickStat = ({ label, value, icon: Icon }) => (
 const Tooltip = ({ eventos, align = "center" }) => (
   <div
     className={`absolute z-50 w-64 bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-xs text-gray-700 pointer-events-none
-    ${align === "left" ? "right-full mr-2" : align === "right" ? "left-full ml-2" : "-translate-x-1/2 left-1/2"}`}
+      ${align === "left" ? "right-full mr-2" : align === "right" ? "left-full ml-2" : "-translate-x-1/2 left-1/2"}`}
   >
     {eventos.map((evento) => (
       <div key={evento.id_evento} className="mb-2 last:mb-0">
@@ -102,21 +109,13 @@ const MonthCalendar = ({ year, monthIndex, eventos }) => {
         <div className="flex gap-2">
           <button
             className="p-2 rounded-lg bg-yellow-400 text-gray-900 hover:bg-yellow-500 shadow-sm"
-            onClick={() =>
-              setCursor(({ y, m }) =>
-                m === 0 ? { y: y - 1, m: 11 } : { y, m: m - 1 }
-              )
-            }
+            onClick={() => setCursor(({ y, m }) => (m === 0 ? { y: y - 1, m: 11 } : { y, m: m - 1 }))}
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
           <button
             className="p-2 rounded-lg bg-yellow-400 text-gray-900 hover:bg-yellow-500 shadow-sm"
-            onClick={() =>
-              setCursor(({ y, m }) =>
-                m === 11 ? { y: y + 1, m: 0 } : { y, m: m + 1 }
-              )
-            }
+            onClick={() => setCursor(({ y, m }) => (m === 11 ? { y: y + 1, m: 0 } : { y, m: m + 1 }))}
           >
             <ChevronRight className="h-4 w-4" />
           </button>
@@ -139,7 +138,6 @@ const MonthCalendar = ({ year, monthIndex, eventos }) => {
           const eventosDia = eventosPorDia[keyDate] || [];
           const isHovered = hovered?.date.toDateString() === keyDate;
 
-          // Detectar borde derecho (columnas 5 y 6 → índice 5 o 6)
           const colIndex = i % 7;
           let align = "center";
           if (colIndex >= 5) align = "left";
@@ -152,13 +150,10 @@ const MonthCalendar = ({ year, monthIndex, eventos }) => {
               onMouseLeave={() => setHovered(null)}
               className={`relative aspect-square rounded-xl text-sm grid place-items-center border shadow-sm
                 ${inMonth ? "bg-white text-gray-900 border-gray-200" : "bg-gray-50 text-gray-400 border-transparent"}
-                ${eventosDia.length ? "bg-yellow-200 font-bold cursor-pointer" : ""}
-              `}
+                ${eventosDia.length ? "bg-yellow-200 font-bold cursor-pointer" : ""}`}
             >
               {day}
-              {isHovered && eventosDia.length > 0 && (
-                <Tooltip eventos={eventosDia} align={align} />
-              )}
+              {isHovered && eventosDia.length > 0 && <Tooltip eventos={eventosDia} align={align} />}
             </div>
           );
         })}
@@ -173,27 +168,48 @@ export default function Dashboard() {
   const [stats, setStats] = useState({});
   const [proximoEvento, setProximoEvento] = useState(null);
   const [eventosFuturos, setEventosFuturos] = useState([]);
-
+  const [openModal, setOpenModal] = useState(null);
+  const [editingData, setEditingData] = useState(null);
+  const [programas, setProgramas] = useState([]);
   const today = new Date();
 
-  useEffect(() => {
-    loadDashboard();
-  }, [programFilter]);
+  const handleCloseModal = () => {
+    setOpenModal(null);
+    setEditingData(null);
+  };
 
-  const loadDashboard = async () => {
+  const loadDashboard = useCallback(async () => {
     try {
+      // Estadísticas y próximo evento según filtro
       const resStats = await getDashboardStats(programFilter || null);
       setStats(resStats.data);
 
       const resEvento = await getProximoEvento(programFilter || null);
       setProximoEvento(resEvento.data);
 
-      const resEventos = await getEventosFuturos(programFilter || null);
+      // Eventos futuros **sin filtrar** para el calendario
+      const resEventos = await getEventosFuturos();
       setEventosFuturos(resEventos.data);
     } catch (err) {
       console.error("Error cargando dashboard:", err);
     }
-  };
+  }, [programFilter]);
+
+
+  // Cargar dashboard y programas
+  useEffect(() => {
+    loadDashboard();
+
+    const fetchProgramas = async () => {
+      try {
+        const res = await getProgramas();
+        setProgramas(res.data);
+      } catch (err) {
+        console.error("Error cargando programas:", err);
+      }
+    };
+    fetchProgramas();
+  }, [loadDashboard]);
 
   return (
     <div>
@@ -206,6 +222,7 @@ export default function Dashboard() {
           </p>
         </div>
 
+        {/* Filtro por programa */}
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-gray-200 shadow-sm">
             <Filter className="h-4 w-4 text-gray-500" />
@@ -215,9 +232,11 @@ export default function Dashboard() {
               className="bg-transparent outline-none text-sm"
             >
               <option value="">General</option>
-              <option value={1}>Programa Infantil</option>
-              <option value={2}>Programa Juvenil</option>
-              <option value={3}>Cátedra de Viento</option>
+              {programas.map((p) => (
+                <option key={p.id_programa} value={p.id_programa}>
+                  {p.nombre}
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -229,9 +248,9 @@ export default function Dashboard() {
           <Card>
             <p className="text-sm font-medium mb-3">Acciones Rápidas</p>
             <div className="flex gap-2 flex-wrap">
-              <QuickAction icon={PlusCircle} label="Agregar Alumno" />
-              <QuickAction icon={Wrench} label="Registrar Instrumento" />
-              <QuickAction icon={ClipboardList} label="Crear Evento" />
+              <QuickAction icon={PlusCircle} label="Agregar Alumno" onClick={() => setOpenModal("alumno")} />
+              <QuickAction icon={Wrench} label="Registrar Instrumento" onClick={() => setOpenModal("instrumento")} />
+              <QuickAction icon={ClipboardList} label="Crear Evento" onClick={() => setOpenModal("evento")} />
             </div>
           </Card>
 
@@ -247,7 +266,7 @@ export default function Dashboard() {
         </div>
 
         <div className="lg:col-span-1 space-y-5">
-          {/* Card de próximo evento */}
+          {/* Próximo evento */}
           <Card>
             <p className="text-gray-500 text-sm">Próximo Evento</p>
             {proximoEvento ? (
@@ -272,12 +291,53 @@ export default function Dashboard() {
             )}
           </Card>
 
-          {/* Calendario con todos los futuros */}
-          <MonthCalendar
-            year={today.getFullYear()}
-            monthIndex={today.getMonth()}
-            eventos={eventosFuturos}
+          {/* Calendario */}
+          <MonthCalendar 
+            year={today.getFullYear()} 
+            monthIndex={today.getMonth()} 
+            eventos={eventosFuturos} 
           />
+          
+          {/* Modales */}
+          {openModal === "evento" && (
+            <Modal title="Crear Evento" onClose={handleCloseModal}>
+              <EventoForm
+                data={editingData}
+                onCancel={handleCloseModal}
+                onSaved={() => {
+                  handleCloseModal();
+                  loadDashboard();
+                }}
+              />
+            </Modal>
+          )}
+
+          {openModal === "instrumento" && (
+            <Modal title="Registrar Instrumento" onClose={handleCloseModal}>
+              <InstrumentoForm
+                data={editingData}
+                onCancel={handleCloseModal}
+                onSaved={() => {
+                  handleCloseModal();
+                  loadDashboard();
+                }}
+              />
+            </Modal>
+          )}
+
+          {openModal === "alumno" && (
+            <Modal title="Agregar Alumno" onClose={handleCloseModal}>
+              <AlumnoForm
+                data={editingData}
+                programas={programas} // <-- pasa los programas al formulario
+                onCancel={handleCloseModal}
+                onSaved={() => {
+                  handleCloseModal();
+                  loadDashboard();
+                }}
+              />
+            </Modal>
+          )}
         </div>
       </div>
     </div>
