@@ -5,7 +5,7 @@ export const pool = mysql.createPool({
   host: 'localhost',
   user: 'root',
   password: '',
-  database: 'orquesta_prueba',
+  database: 'db_orquesta',
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,

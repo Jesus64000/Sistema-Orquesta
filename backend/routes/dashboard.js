@@ -73,13 +73,18 @@ router.get('/stats', async (req, res) => {
 router.get('/proximo-evento', async (req, res) => {
   try {
     const programa_id = req.query.programa_id || null;
-    let query = `SELECT * FROM Evento WHERE fecha_evento >= CURDATE()`;
+      let query = `
+        SELECT id_evento, titulo, descripcion, fecha_evento, hora_evento, lugar, id_programa
+        FROM Evento
+        WHERE (fecha_evento > CURDATE())
+          OR (fecha_evento = CURDATE() AND hora_evento >= CURTIME())
+      `;
     const params = [];
     if (programa_id) {
       query += ' AND id_programa = ?';
       params.push(programa_id);
     }
-    query += ' ORDER BY fecha_evento ASC LIMIT 1';
+    query += ' ORDER BY fecha_evento ASC, hora_evento ASC LIMIT 1';
     const [rows] = await pool.query(query, params);
     res.json(rows[0] || null);
   } catch (err) {
@@ -92,13 +97,19 @@ router.get('/proximo-evento', async (req, res) => {
 router.get('/eventos-futuros', async (req, res) => {
   try {
     const programa_id = req.query.programa_id || null;
-    let query = `SELECT * FROM Evento WHERE fecha_evento >= CURDATE()`;
+      let query = `
+        SELECT id_evento, titulo, descripcion, fecha_evento, hora_evento, lugar, id_programa
+        FROM Evento
+        WHERE (fecha_evento > CURDATE())
+          OR (fecha_evento = CURDATE() AND hora_evento >= CURTIME())
+        ORDER BY fecha_evento ASC, hora_evento ASC
+      `;
     const params = [];
     if (programa_id) {
       query += ' AND id_programa = ?';
       params.push(programa_id);
     }
-    query += ' ORDER BY fecha_evento ASC';
+      query += ' ORDER BY fecha_evento ASC, hora_evento ASC';
     const [rows] = await pool.query(query, params);
     res.json(rows);
   } catch (err) {
@@ -115,9 +126,9 @@ router.get('/eventos-mes', async (req, res) => {
       return res.status(400).json({ error: 'year y month son requeridos' });
     }
     let query = `
-      SELECT id_evento, titulo, fecha_evento, lugar
-      FROM Evento
-      WHERE YEAR(fecha_evento)=? AND MONTH(fecha_evento)=?
+    SELECT id_evento, titulo, fecha_evento, hora_evento, lugar
+    FROM Evento
+    WHERE YEAR(fecha_evento)=? AND MONTH(fecha_evento)=?
     `;
     const params = [year, month];
     if (programa_id) {

@@ -182,6 +182,7 @@ export default function Eventos() {
                     <ChevronDown className="h-3 w-3 inline" />
                   ))}
               </th>
+              <th className="px-3 py-2 border-b">Hora</th>
               <th className="px-3 py-2 border-b">Lugar</th>
               <th className="px-3 py-2 border-b">Acciones</th>
             </tr>
@@ -198,7 +199,12 @@ export default function Eventos() {
                 </td>
                 <td className="px-3 py-2">{ev.titulo}</td>
                 <td className="px-3 py-2">{ev.descripcion || "-"}</td>
-                <td className="px-3 py-2">{ev.fecha_evento?.slice(0, 10)}</td>
+                {/* ✅ Mostrar fecha ya formateada desde el backend */}
+                <td className="px-3 py-2">{ev.fecha_evento || "-"}</td>
+                {/* ✅ Mostrar hora ya formateada desde el backend */}
+                <td className="px-3 py-2">
+                  {ev.hora_evento ? new Date(`1970-01-01T${ev.hora_evento}`).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", hour12: true }) : "-"}
+                </td>
                 <td className="px-3 py-2">{ev.lugar}</td>
                 <td className="px-3 py-2 flex gap-2">
                   <button
@@ -225,7 +231,7 @@ export default function Eventos() {
 
             {eventosPage.length === 0 && (
               <tr>
-                <td colSpan="6" className="text-center py-10 text-gray-500">
+                <td colSpan="7" className="text-center py-10 text-gray-500">
                   {loading ? "Cargando eventos..." : "No se encontraron eventos"}
                 </td>
               </tr>

@@ -7,7 +7,7 @@ import {
 
 import { getDashboardStats, getProximoEvento } from "../api/dashboard";
 import { getEventosFuturos } from "../api/eventos";
-import { getProgramas } from "../api/programas"; // <-- importa la API de programas
+import { getProgramas } from "../api/programas";
 
 import Modal from "../components/Modal";
 import EventoForm from "../components/Eventos/EventoForm";
@@ -43,35 +43,53 @@ const QuickStat = ({ label, value, icon: Icon }) => (
   </div>
 );
 
+// util: parsear datetimes que vienen de la BD
+const parseDBDate = (val) => {
+  if (!val) return null;
+  if (val instanceof Date) return val;
+  const s = String(val).trim();
+  if (/^\d{4}-\d{2}-\d{2}( \d{2}:\d{2}(:\d{2})?)?$/.test(s)) {
+    return new Date(s.replace(" ", "T"));
+  }
+  return new Date(s);
+};
+
 // === Tooltip ===
 const Tooltip = ({ eventos, align = "center" }) => (
   <div
     className={`absolute z-50 w-64 bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-xs text-gray-700 pointer-events-none
       ${align === "left" ? "right-full mr-2" : align === "right" ? "left-full ml-2" : "-translate-x-1/2 left-1/2"}`}
   >
-    {eventos.map((evento) => (
-      <div key={evento.id_evento} className="mb-2 last:mb-0">
-        <p className="font-semibold text-gray-900">{evento.titulo}</p>
-        <p className="flex items-center gap-1">
-          <Clock className="h-3 w-3" />
-          {new Date(evento.fecha_evento).toLocaleDateString("es-ES")} •{" "}
-          {evento.hora_evento
-            ? evento.hora_evento.slice(0, 5)
-            : new Date(evento.fecha_evento).toLocaleTimeString("es-ES", {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-        </p>
-        <p className="flex items-center gap-1">
-          <MapPin className="h-3 w-3" /> {evento.lugar}
-        </p>
-      </div>
-    ))}
+    {eventos.map((evento) => {
+      const d = parseDBDate(evento.fecha_evento);
+      return (
+        <div key={evento.id_evento} className="mb-2 last:mb-0">
+          <p className="font-semibold text-gray-900">{evento.titulo}</p>
+          <p className="flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            {d ? d.toLocaleDateString("es-ES") : ""}
+            {" • "}
+            {evento.hora_evento
+              ? evento.hora_evento.slice(0, 5)
+              : d
+                ? d.toLocaleTimeString("es-ES", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: true, // ✅ formato 12 horas
+                  })
+                : ""}
+          </p>
+          <p className="flex items-center gap-1">
+            <MapPin className="h-3 w-3" /> {evento.lugar}
+          </p>
+        </div>
+      );
+    })}
   </div>
 );
 
 // === Calendar ===
-const MonthCalendar = ({ year, monthIndex, eventos }) => {
+const MonthCalendar = ({ year, monthIndex, eventos = [] }) => {
   const [cursor, setCursor] = useState({ y: year, m: monthIndex });
   const [hovered, setHovered] = useState(null);
 
@@ -89,12 +107,18 @@ const MonthCalendar = ({ year, monthIndex, eventos }) => {
     return days;
   }, [cursor]);
 
-  const eventosPorDia = eventos.reduce((acc, e) => {
-    const key = new Date(e.fecha_evento).toDateString();
+  const eventosPorDia = (Array.isArray(eventos) ? eventos : []).reduce((acc, e) => {
+    if (!e.fecha_evento) return acc;
+    const [y, m, d] = String(e.fecha_evento).split("-").map(Number);
+    const dateObj = new Date(y, m - 1, d);
+    const key = dateObj.toDateString();
     if (!acc[key]) acc[key] = [];
     acc[key].push(e);
     return acc;
   }, {});
+
+  // 👀 único log dentro del calendario
+  console.log("Eventos agrupados por día en calendario:", eventosPorDia);
 
   const monthName = new Intl.DateTimeFormat("es-ES", { month: "long" }).format(
     new Date(cursor.y, cursor.m, 1)
@@ -180,26 +204,22 @@ export default function Dashboard() {
 
   const loadDashboard = useCallback(async () => {
     try {
-      // Estadísticas y próximo evento según filtro
       const resStats = await getDashboardStats(programFilter || null);
       setStats(resStats.data);
 
       const resEvento = await getProximoEvento(programFilter || null);
       setProximoEvento(resEvento.data);
 
-      // Eventos futuros **sin filtrar** para el calendario
-      const resEventos = await getEventosFuturos();
-      setEventosFuturos(resEventos.data);
+      const eventos = await getEventosFuturos();
+      console.log("Eventos obtenidos del backend:", eventos); // 👀 único log aquí
+      setEventosFuturos(Array.isArray(eventos) ? eventos : []);
     } catch (err) {
       console.error("Error cargando dashboard:", err);
     }
   }, [programFilter]);
 
-
-  // Cargar dashboard y programas
   useEffect(() => {
     loadDashboard();
-
     const fetchProgramas = async () => {
       try {
         const res = await getProgramas();
@@ -277,13 +297,23 @@ export default function Dashboard() {
                 </p>
                 <p className="text-sm text-gray-500 flex items-center gap-2">
                   <Clock className="h-4 w-4" />{" "}
-                  {new Date(proximoEvento.fecha_evento).toLocaleDateString("es-ES")} •{" "}
-                  {proximoEvento.hora_evento
-                    ? proximoEvento.hora_evento.slice(0, 5)
-                    : new Date(proximoEvento.fecha_evento).toLocaleTimeString("es-ES", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                  {(() => {
+                    const d = parseDBDate(proximoEvento.fecha_evento);
+                    return (
+                      <>
+                        {d ? d.toLocaleDateString("es-ES") : ""} •{" "}
+                        {proximoEvento.hora_evento
+                          ? proximoEvento.hora_evento.slice(0, 5)
+                          : d
+                            ? d.toLocaleTimeString("es-ES", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                hour12: true,
+                              })
+                            : ""}
+                      </>
+                    );
+                  })()}
                 </p>
               </>
             ) : (
@@ -297,7 +327,7 @@ export default function Dashboard() {
             monthIndex={today.getMonth()} 
             eventos={eventosFuturos} 
           />
-          
+
           {/* Modales */}
           {openModal === "evento" && (
             <Modal title="Crear Evento" onClose={handleCloseModal}>
@@ -329,7 +359,7 @@ export default function Dashboard() {
             <Modal title="Agregar Alumno" onClose={handleCloseModal}>
               <AlumnoForm
                 data={editingData}
-                programas={programas} // <-- pasa los programas al formulario
+                programas={programas}
                 onCancel={handleCloseModal}
                 onSaved={() => {
                   handleCloseModal();

@@ -455,3 +455,12 @@ COMMIT;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+
+
+
+/*
+       Cambio Reciente No agregado a la estructura             */
+
+  ALTER TABLE Evento
+  CHANGE fecha_evento fecha_evento DATE NOT NULL,
+  ADD COLUMN hora_evento TIME NOT NULL AFTER fecha_evento;

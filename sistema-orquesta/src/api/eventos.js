@@ -6,7 +6,7 @@ const API = "http://localhost:4000";
 // Obtener eventos
 export const getEventos = async () => {
   const res = await axios.get(`${API}/eventos`);
-  return res.data; // 👈 aseguramos que devolvemos solo el array
+  return res.data;
 };
 
 // Crear evento
@@ -27,8 +27,13 @@ export const deleteEvento = async (id) => {
   return res.data;
 };
 
-// Eventos futuros (para el calendario)
+// ✅ Eventos futuros y pasados con API base
 export const getEventosFuturos = async () => {
   const res = await axios.get(`${API}/eventos/futuros`);
+  return res.data;
+};
+
+export const getEventosPasados = async () => {
+  const res = await axios.get(`${API}/eventos/pasados`);
   return res.data;
 };

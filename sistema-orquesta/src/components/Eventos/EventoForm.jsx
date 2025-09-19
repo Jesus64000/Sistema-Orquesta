@@ -1,4 +1,3 @@
-// sistema-orquesta/src/components/Eventos/EventoForm.jsx
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { createEvento, updateEvento } from "../../api/eventos";
@@ -8,17 +7,19 @@ export default function EventoForm({ data, onCancel, onSaved }) {
   const [form, setForm] = useState({
     titulo: "",
     fecha_evento: "",
+    hora_evento: "",
     lugar: "",
     descripcion: "",
   });
+
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (data) {
-      // Mapear nombres del backend si vienen distintos
       setForm({
         titulo: data.titulo || "",
         fecha_evento: data.fecha_evento || "",
+        hora_evento: data.hora_evento || "",
         lugar: data.lugar || "",
         descripcion: data.descripcion || "",
       });
@@ -32,19 +33,14 @@ export default function EventoForm({ data, onCancel, onSaved }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.titulo || !form.fecha_evento || !form.lugar) {
-      toast.error("Todos los campos obligatorios deben completarse");
+    if (!form.titulo || !form.fecha_evento || !form.hora_evento || !form.lugar) {
+      toast.error("Título, fecha, hora y lugar son obligatorios");
       return;
     }
 
     try {
       setSaving(true);
-
-      // Asegurarse que fecha_evento esté en formato ISO
-      const payload = {
-        ...form,
-        fecha_evento: form.fecha_evento.replace("T", " "),
-      };
+      const payload = { ...form };
 
       if (data?.id_evento) {
         await updateEvento(data.id_evento, payload);
@@ -52,6 +48,15 @@ export default function EventoForm({ data, onCancel, onSaved }) {
       } else {
         await createEvento(payload);
         toast.success("Evento creado correctamente");
+
+        // Reset form solo si es creación
+        setForm({
+          titulo: "",
+          fecha_evento: "",
+          hora_evento: "",
+          lugar: "",
+          descripcion: "",
+        });
       }
 
       onSaved?.();
@@ -69,37 +74,53 @@ export default function EventoForm({ data, onCancel, onSaved }) {
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Título */}
         <div>
-          <label className="block text-sm font-medium">Título</label>
+          <label className="block text-sm font-medium">Título *</label>
           <input
             type="text"
             name="titulo"
             value={form.titulo}
             onChange={handleChange}
             className="w-full px-3 py-2 border rounded-lg"
+            required
           />
         </div>
 
         {/* Fecha */}
         <div>
-          <label className="block text-sm font-medium">Fecha</label>
+          <label className="block text-sm font-medium">Fecha *</label>
           <input
-            type="datetime-local"
+            type="date"
             name="fecha_evento"
-            value={form.fecha_evento.slice(0, 16)}
+            value={form.fecha_evento}
             onChange={handleChange}
             className="w-full px-3 py-2 border rounded-lg"
+            required
+          />
+        </div>
+
+        {/* Hora */}
+        <div>
+          <label className="block text-sm font-medium">Hora *</label>
+          <input
+            type="time"
+            name="hora_evento"
+            value={form.hora_evento}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border rounded-lg"
+            required
           />
         </div>
 
         {/* Lugar */}
         <div>
-          <label className="block text-sm font-medium">Lugar</label>
+          <label className="block text-sm font-medium">Lugar *</label>
           <input
             type="text"
             name="lugar"
             value={form.lugar}
             onChange={handleChange}
             className="w-full px-3 py-2 border rounded-lg"
+            required
           />
         </div>
 
