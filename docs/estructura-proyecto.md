@@ -51,7 +51,7 @@ Sistema-Orquesta/
 │   ├── config/
 │   │   ├── db.js                   
 │   │   ├── env.js                  
-│   │   └── logger.js                
+│   │   └── logger.js               
 │   ├── tests/
 │   │   ├── alumno.test.js          
 │   │   ├── programa.test.js        

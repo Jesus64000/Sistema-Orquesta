@@ -26,124 +26,84 @@ Plataforma web para la gestión integral de alumnos, programas, instrumentos, ev
 ```
 Sistema-Orquesta/
 │
-├── backend/              
-│   ├── index.js          
-│   ├── controllers/
-│   │   ├── alumnoController.js
-│   │   ├── programaController.js
-│   │   ├── instrumentoController.js
-│   │   ├── eventoController.js
-│   │   ├── usuarioController.js
-│   │   └── orquestaController.js
-│   ├── routes/
-│   │   ├── alumnoRoutes.js
-│   │   ├── programaRoutes.js
-│   │   ├── instrumentoRoutes.js
-│   │   ├── eventoRoutes.js
-│   │   ├── usuarioRoutes.js
-│   │   └── orquestaRoutes.js
-│   ├── models/
-│   │   ├── alumno.js
-│   │   ├── programa.js
-│   │   ├── instrumento.js
-│   │   ├── evento.js
-│   │   ├── usuario.js
-│   │   └── orquesta.js
-│   ├── middlewares/
-│   │   ├── authMiddleware.js
-│   │   ├── errorHandler.js
-│   │   ├── validateAlumno.js
-│   │   ├── validatePrograma.js
-│   │   └── validateEvento.js
-│   ├── utils/
-│   │   ├── exportExcel.js
-│   │   ├── reportGenerator.js
-│   │   ├── dateHelper.js
-│   │   └── fileHelper.js
-│   ├── uploads/
-│   │   ├── alumnos/
-│   │   ├── programas/
-│   │   ├── eventos/
-│   │   └── otros/
-│   ├── config/
-│   │   ├── db.js
-│   │   ├── env.js
-│   │   └── logger.js
-│   ├── tests/
-│   │   ├── alumno.test.js
-│   │   ├── programa.test.js
-│   │   ├── evento.test.js
-│   │   └── usuario.test.js
-│   ├── .env
+├── backend/
+│   ├── db.js
+│   ├── index.js
+│   ├── package.json
 │   ├── README.md
+│   ├── uploads.config.js
+│   ├── helpers/
+│   │   ├── alumnos.js
+│   │   └── historial.js
+│   ├── routes/
+│   │   ├── alumnos.js
+│   │   ├── dashboard.js
+│   │   ├── eventos.js
+│   │   ├── instrumentos.js
+│   │   ├── programas.js
+│   │   ├── reportes.js
+│   │   ├── representantes.js
+│   │   └── usuarios.js
+│   ├── uploads/
 │   └── ...
 │
 ├── sistema-orquesta/
+│   ├── .gitignore
+│   ├── eslint.config.js
+│   ├── index.html
+│   ├── package.json
+│   ├── README.md
+│   ├── vite.config.js
+│   ├── public/
+│   │   └── vite.svg
 │   ├── src/
+│   │   ├── App.css
+│   │   ├── App.jsx
+│   │   ├── index.css
+│   │   ├── main.jsx
 │   │   ├── api/
-│   │   │   ├── alumnoApi.js
-│   │   │   ├── programaApi.js
-│   │   │   ├── instrumentoApi.js
-│   │   │   ├── eventoApi.js
-│   │   │   ├── usuarioApi.js
-│   │   │   └── orquestaApi.js
+│   │   │   ├── alumnos.js
+│   │   │   ├── configuraciones.js
+│   │   │   ├── dashboard.js
+│   │   │   ├── eventos.js
+│   │   │   ├── index.js
+│   │   │   ├── instrumentos.js
+│   │   │   ├── programas.js
+│   │   │   ├── reportes.js
+│   │   │   └── representantes.js
+│   │   ├── assets/
+│   │   │   └── react.svg
 │   │   ├── components/
-│   │   │   ├── Modal.jsx
-│   │   │   ├── ConfirmDialog.jsx
-│   │   │   ├── MultiSelect.jsx
+│   │   │   ├── AlumnoDetalle.jsx
 │   │   │   ├── AlumnoForm.jsx
 │   │   │   ├── AlumnoHistorial.jsx
 │   │   │   ├── AlumnoInstrumento.jsx
-│   │   │   ├── TablaAlumnos.jsx
-│   │   │   ├── TablaProgramas.jsx
-│   │   │   ├── SelectorInstrumento.jsx
-│   │   │   ├── Navbar.jsx
-│   │   │   ├── Sidebar.jsx
-│   │   │   └── Loader.jsx
+│   │   │   ├── ConfirmDialog.jsx
+│   │   │   ├── ConfirmDialogalumnos.jsx
+│   │   │   ├── InfoDialog.jsx
+│   │   │   ├── InstrumentoAsignacion.jsx
+│   │   │   ├── InstrumentoDetalle.jsx
+│   │   │   ├── InstrumentoForm.jsx
+│   │   │   ├── InstrumentoHistorial.jsx
+│   │   │   ├── Modal.jsx
+│   │   │   ├── MultiSelect.jsx
+│   │   │   ├── Alumno/
+│   │   │   │   └── ToggleAlumnoEstado.jsx
+│   │   │   ├── Eventos/
+│   │   │   │   ├── EventoDetalle.jsx
+│   │   │   │   └── EventoForm.jsx
+│   │   ├── context/
+│   │   │   └── ProgramaContext.jsx
 │   │   ├── pages/
 │   │   │   ├── Alumnos.jsx
-│   │   │   ├── Programas.jsx
-│   │   │   ├── Instrumentos.jsx
-│   │   │   ├── Eventos.jsx
+│   │   │   ├── Configuraciones.jsx
 │   │   │   ├── Dashboard.jsx
-│   │   │   ├── Usuarios.jsx
-│   │   │   └── Orquestas.jsx
-│   │   ├── hooks/
-│   │   │   ├── useFetch.js
-│   │   │   ├── useForm.js
-│   │   │   ├── useAuth.js
-│   │   │   └── useModal.js
-│   │   ├── context/
-│   │   │   ├── UserContext.js
-│   │   │   ├── SessionContext.js
-│   │   │   ├── OrquestaContext.js
-│   │   │   └── AuthContext.js
-│   │   ├── assets/
-│   │   │   ├── logo.png
-│   │   │   ├── fondo.jpg
-│   │   │   ├── icono.svg
-│   │   │   └── estilos.css
-│   │   ├── styles/
-│   │   │   ├── main.css
-│   │   │   ├── dashboard.css
-│   │   │   └── tabla.css
+│   │   │   ├── Eventos.jsx
+│   │   │   ├── Instrumentos.jsx
+│   │   │   ├── Miembros.jsx
+│   │   │   ├── Reportes.jsx
 │   │   ├── utils/
-│   │   │   ├── formatDate.js
-│   │   │   ├── validateEmail.js
-│   │   │   └── helpers.js
-│   │   ├── main.jsx
-│   │   └── App.jsx
-│   ├── public/
-│   │   ├── index.html
-│   │   ├── favicon.ico
-│   │   ├── manifest.json
-│   │   └── robots.txt
-│   ├── tests/
-│   │   ├── Modal.test.jsx
-│   │   ├── FormAlumno.test.jsx
-│   │   ├── TablaAlumnos.test.jsx
-│   │   └── Dashboard.test.jsx
-│   ├── README.md
+│   │   │   └── eventBus.js
 │   └── ...
 │
 ├── docs/
@@ -157,7 +117,9 @@ Sistema-Orquesta/
 │   ├── seguridad.md
 │   └── estructura-proyecto.md
 │
-└── README.md
+├── .gitignore
+├── README.md
+└── ...
 ```
 
 ---
@@ -183,13 +145,12 @@ El backend se conecta a una base de datos MySQL y expone endpoints para cada ent
 Desarrollado en **React** (Vite), permite la visualización y gestión de todos los módulos anteriores. Incluye paneles administrativos, formularios, dashboards con estadísticas y componentes reutilizables para una experiencia de usuario moderna y eficiente.
 
 #### Componentes principales integrados:
-- **Modal.jsx:** Ventanas modales reutilizables para formularios y confirmaciones.
-- **ConfirmDialog.jsx:** Diálogos de confirmación para acciones críticas.
-- **MultiSelect.jsx:** Selector múltiple para asignación de programas e instrumentos.
-- **AlumnoForm.jsx:** Formulario para alta y edición de alumnos, con validaciones y soporte multi-programa.
-- **AlumnoHistorial.jsx:** Visualización y gestión del historial de alumnos, incluyendo eventos y cambios de estado.
-- **AlumnoInstrumento.jsx:** Asignación y liberación de instrumentos para alumnos, con integración directa a la API.
-- **Alumnos.jsx:** Página principal de gestión de alumnos, con filtros, orden, paginación, selección múltiple y exportación a CSV.
+- **Componentes generales:** Modal, ConfirmDialog, MultiSelect, InfoDialog, Loader, etc.
+- **Componentes de alumno:** AlumnoDetalle, AlumnoForm, AlumnoHistorial, AlumnoInstrumento, ToggleAlumnoEstado.
+- **Componentes de instrumento:** InstrumentoDetalle, InstrumentoForm, InstrumentoHistorial, InstrumentoAsignacion.
+- **Componentes de evento:** EventoDetalle, EventoForm.
+- **Páginas:** Alumnos, Configuraciones, Dashboard, Eventos, Instrumentos, Miembros, Reportes.
+- **Contextos y hooks personalizados** para gestión de estado y lógica compartida.
 
 La arquitectura del frontend está pensada para facilitar la extensión y el mantenimiento, permitiendo agregar nuevos módulos y funcionalidades de forma sencilla.
 
@@ -210,7 +171,7 @@ La arquitectura del frontend está pensada para facilitar la extensión y el man
    cd backend
    npm install
    ```
-2. Configura la conexión a MySQL en `config/db.js` y variables en `.env`.
+2. Configura la conexión a MySQL en `db.js` y variables en `.env`.
 3. Ejecuta el servidor:
    ```sh
    node index.js
@@ -268,36 +229,28 @@ npm install react axios
 
 ## 🗄️ Estructura del Backend
 
-El archivo principal `index.js` contiene:
-
-- **Conexión a MySQL**: Configuración de pool de conexiones en `config/db.js`.
-- **Rutas REST**: Endpoints para cada entidad (`/programas`, `/alumnos`, `/instrumentos`, `/eventos`, `/usuarios`, `/reportes`, `/dashboard`).
-- **Manejo de errores**: Respuestas claras en caso de error de base de datos o datos inválidos.
-- **Servidor Express**: Inicialización y escucha en el puerto 4000.
-- **Módulos auxiliares**: Funciones para registro de historial, manejo de documentos y lógica de negocio.
-
-Cada endpoint sigue el patrón estándar REST:  
-- `GET` para consultar  
-- `POST` para crear  
-- `PUT` para actualizar  
-- `DELETE` para eliminar
-
-Incluye endpoints avanzados para reportes, exportación de datos y gestión de archivos.
+- **db.js**: Configuración y conexión a MySQL.
+- **index.js**: Inicialización del servidor y rutas.
+- **routes/**: Endpoints RESTful para cada entidad.
+- **helpers/**: Funciones auxiliares de negocio.
+- **uploads/**: Archivos subidos por usuarios.
+- **uploads.config.js**: Configuración de subida de archivos.
+- **package.json**: Dependencias y scripts.
+- **README.md**: Documentación técnica.
 
 ---
 
 ## 🖥️ Estructura del Frontend
 
-- **src/api/**: Centraliza todas las llamadas al backend relacionadas con alumnos, programas, historial, instrumentos y usuarios.
-- **src/components/**: Componentes reutilizables para formularios, modales, selección múltiple y gestión de datos.
-- **src/pages/**: Vistas principales para la gestión de alumnos, programas, instrumentos, eventos y dashboard.
-- **src/hooks/**: Hooks personalizados para lógica compartida.
+- **src/api/**: Centraliza todas las llamadas al backend relacionadas con alumnos, programas, historial, instrumentos, eventos, reportes, representantes y configuraciones.
+- **src/components/**: Componentes reutilizables y específicos, organizados también en subcarpetas (Alumno, Eventos).
+- **src/pages/**: Vistas principales para la gestión de alumnos, programas, instrumentos, eventos, dashboard, miembros y reportes.
 - **src/context/**: Contextos globales para usuario, sesión y estado de la aplicación.
+- **src/hooks/**: Hooks personalizados para lógica compartida.
 - **src/assets/**: Imágenes, íconos y estilos.
-- **src/styles/**: Archivos CSS globales y específicos.
 - **src/utils/**: Funciones auxiliares para validaciones, formateo y helpers.
 - **public/**: Archivos estáticos (index.html, favicon, manifest, robots.txt).
-- **tests/**: Pruebas unitarias de componentes y vistas.
+- **README.md**: Documentación específica del frontend.
 
 La estructura modular permite escalar el sistema y agregar nuevas funcionalidades de manera sencilla.
 
