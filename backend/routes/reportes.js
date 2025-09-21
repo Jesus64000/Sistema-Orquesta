@@ -83,22 +83,30 @@ router.get('/alumnos-por-programa-anio', async (req, res) => {
 
 // Alumnos por edad
 router.get('/alumnos-por-edad', async (req, res) => {
+  const { programa } = req.query;
   try {
-    const [rows] = await pool.query(`
+    let query = `
       SELECT 
         CASE
-          WHEN TIMESTAMPDIFF(YEAR, fecha_nacimiento, CURDATE()) < 7 THEN '<7'
-          WHEN TIMESTAMPDIFF(YEAR, fecha_nacimiento, CURDATE()) BETWEEN 7 AND 12 THEN '7-12'
-          WHEN TIMESTAMPDIFF(YEAR, fecha_nacimiento, CURDATE()) BETWEEN 13 AND 18 THEN '13-18'
-          WHEN TIMESTAMPDIFF(YEAR, fecha_nacimiento, CURDATE()) BETWEEN 19 AND 24 THEN '19-24'
-          WHEN TIMESTAMPDIFF(YEAR, fecha_nacimiento, CURDATE()) BETWEEN 25 AND 30 THEN '25-30'
+          WHEN TIMESTAMPDIFF(YEAR, a.fecha_nacimiento, CURDATE()) < 7 THEN '<7'
+          WHEN TIMESTAMPDIFF(YEAR, a.fecha_nacimiento, CURDATE()) BETWEEN 7 AND 12 THEN '7-12'
+          WHEN TIMESTAMPDIFF(YEAR, a.fecha_nacimiento, CURDATE()) BETWEEN 13 AND 18 THEN '13-18'
+          WHEN TIMESTAMPDIFF(YEAR, a.fecha_nacimiento, CURDATE()) BETWEEN 19 AND 24 THEN '19-24'
+          WHEN TIMESTAMPDIFF(YEAR, a.fecha_nacimiento, CURDATE()) BETWEEN 25 AND 30 THEN '25-30'
           ELSE '30+' 
-        END AS rango_edad,
-        COUNT(*) AS cantidad
-      FROM Alumno
-      GROUP BY rango_edad
-      ORDER BY rango_edad
-    `);
+        END AS edad,
+        COUNT(DISTINCT a.id_alumno) AS cantidad
+      FROM Alumno a
+      INNER JOIN alumno_programa ap ON a.id_alumno = ap.id_alumno
+      INNER JOIN Programa p ON ap.id_programa = p.id_programa
+    `;
+    const params = [];
+    if (programa) {
+      query += ' WHERE p.nombre = ?';
+      params.push(programa);
+    }
+    query += ' GROUP BY edad ORDER BY edad';
+    const [rows] = await pool.query(query, params);
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -107,12 +115,21 @@ router.get('/alumnos-por-edad', async (req, res) => {
 
 // Alumnos por género
 router.get('/alumnos-por-genero', async (req, res) => {
+  const { programa } = req.query;
   try {
-    const [rows] = await pool.query(`
-      SELECT genero, COUNT(*) AS cantidad
-      FROM Alumno
-      GROUP BY genero
-    `);
+    let query = `
+      SELECT a.genero, COUNT(DISTINCT a.id_alumno) AS cantidad
+      FROM Alumno a
+      INNER JOIN alumno_programa ap ON a.id_alumno = ap.id_alumno
+      INNER JOIN Programa p ON ap.id_programa = p.id_programa
+    `;
+    const params = [];
+    if (programa) {
+      query += ' WHERE p.nombre = ?';
+      params.push(programa);
+    }
+    query += ' GROUP BY a.genero';
+    const [rows] = await pool.query(query, params);
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });

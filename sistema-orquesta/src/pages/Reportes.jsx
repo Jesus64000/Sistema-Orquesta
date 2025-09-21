@@ -23,9 +23,9 @@ import AlumnosSection from "../components/Reportes/AlumnosSection";
 import InstrumentosSection from "../components/Reportes/InstrumentosSection";
 import RepresentantesSection from "../components/Reportes/RepresentantesSection";
 import EventosSection from "../components/Reportes/EventosSection";
-import ReportesHeader from "../components/Reportes/Reportes/ReportesHeader";
-import ReportesViewSelector from "../components/Reportes/Reportes/ReportesViewSelector";
-import ReportesTabs from "../components/Reportes/Reportes/ReportesTabs";
+import ReportesHeader from "../components/Reportes/ReportesHeader";
+import ReportesViewSelector from "../components/Reportes/ReportesViewSelector";
+import ReportesTabs from "../components/Reportes/ReportesTabs";
 
 export default function Reportes() {
   const [activeTab, setActiveTab] = useState("alumnos");
@@ -62,9 +62,11 @@ export default function Reportes() {
   const [programasDisponibles, setProgramasDisponibles] = useState([]);
   const [estadosInstrumentoDisponibles, setEstadosInstrumentoDisponibles] = useState([]);
 
+  // Cargar reportes al inicio y cuando cambia el filtro de programa
   useEffect(() => {
     loadReportes();
-  }, []);
+    // eslint-disable-next-line
+  }, [filtroPrograma]);
 
   const loadReportes = async () => {
     try {
@@ -85,11 +87,12 @@ export default function Reportes() {
       setAlumnosPrograma(resAlumnosPrograma.data);
       setProgramasDisponibles(resAlumnosPrograma.data.map(a => a.programa));
 
-      const resAlumnosEdad = await getAlumnosPorEdad();
-      setAlumnosEdad(resAlumnosEdad.data);
+  // Alumnos por edad y género con filtro de programa
+  const resAlumnosEdad = await getAlumnosPorEdad(filtroPrograma);
+  setAlumnosEdad(resAlumnosEdad.data);
 
-      const resAlumnosGenero = await getAlumnosPorGenero();
-      setAlumnosGenero(resAlumnosGenero.data);
+  const resAlumnosGenero = await getAlumnosPorGenero(filtroPrograma);
+  setAlumnosGenero(resAlumnosGenero.data);
 
       const resComparativa = await getAlumnosPorProgramaAnio(2024, 2025);
       setAlumnosComparativa(resComparativa.data);
@@ -172,10 +175,18 @@ export default function Reportes() {
       <div className="space-y-6 mt-4">
         {activeTab === "alumnos" && (
           <AlumnosSection 
-            alumnosPrograma={alumnosPrograma} 
-            alumnosEdad={alumnosEdad} 
-            alumnosGenero={alumnosGenero} 
-            alumnosComparativa={alumnosComparativa} 
+            alumnosPrograma={
+              filtroPrograma === "todos"
+                ? alumnosPrograma
+                : alumnosPrograma.filter(a => a.programa === filtroPrograma)
+            }
+            alumnosEdad={alumnosEdad}
+            alumnosGenero={alumnosGenero}
+            alumnosComparativa={
+              filtroPrograma === "todos"
+                ? alumnosComparativa
+                : alumnosComparativa.filter(c => c.programa === filtroPrograma)
+            }
             viewGlobal={viewGlobal}
           />
         )}

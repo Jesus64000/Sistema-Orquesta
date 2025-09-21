@@ -7,8 +7,14 @@ export const getAlumnosTotal = () => axios.get(`${API_URL}/alumnos-total`);
 export const getAlumnosActivos = () => axios.get(`${API_URL}/alumnos-activos`);
 export const getAlumnosInactivos = () => axios.get(`${API_URL}/alumnos-inactivos`);
 export const getAlumnosPorPrograma = () => axios.get(`${API_URL}/alumnos-por-programa`);
-export const getAlumnosPorEdad = () => axios.get(`${API_URL}/alumnos-por-edad`);
-export const getAlumnosPorGenero = () => axios.get(`${API_URL}/alumnos-por-genero`);
+export const getAlumnosPorEdad = (programa) =>
+  programa && programa !== "todos"
+    ? axios.get(`${API_URL}/alumnos-por-edad`, { params: { programa } })
+    : axios.get(`${API_URL}/alumnos-por-edad`);
+export const getAlumnosPorGenero = (programa) =>
+  programa && programa !== "todos"
+    ? axios.get(`${API_URL}/alumnos-por-genero`, { params: { programa } })
+    : axios.get(`${API_URL}/alumnos-por-genero`);
 
 // -------------------- INSTRUMENTOS --------------------
 export const getInstrumentosTotal = () => axios.get(`${API_URL}/instrumentos-total`);
