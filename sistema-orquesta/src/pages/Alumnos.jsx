@@ -14,11 +14,11 @@ import {
   getAlumnoInstrumento,
 } from "../api/alumnos";
 
-import AlumnoForm from "../components/AlumnoForm";
-import AlumnoHistorial from "../components/AlumnoHistorial";
-import AlumnoInstrumento from "../components/AlumnoInstrumento";
+import AlumnoForm from "../components/Alumno/AlumnoForm";
+import AlumnoHistorial from "../components//Alumno/AlumnoHistorial";
+import AlumnoInstrumento from "../components//Alumno/AlumnoInstrumento";
 import Modal from "../components/Modal";
-import AlumnoDetalle from "../components/AlumnoDetalle";
+import AlumnoDetalle from "../components/Alumno/AlumnoDetalle";
 import ConfirmDialog from "../components/ConfirmDialog";
 import ErrorDialog from "../components/InfoDialog";
 

@@ -1,9 +1,9 @@
-// src/components/AlumnoForm.jsx
+// src/components/Alumno/AlumnoForm.jsx
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import MultiSelect from "./MultiSelect";
-import { createAlumno, updateAlumno } from "../api/alumnos";
-import { getRepresentantes } from "../api/representantes";
+import MultiSelect from "../MultiSelect";
+import { createAlumno, updateAlumno } from "../../api/alumnos";
+import { getRepresentantes } from "../../api/representantes";
 
 export default function AlumnoForm({ data, programas, onCancel, onSaved }) {
   const [formData, setFormData] = useState({

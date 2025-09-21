@@ -1,7 +1,7 @@
-// src/components/AlumnoInstrumento.jsx
+// src/components/Alumno/AlumnoInstrumento.jsx
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { getAlumnoInstrumento } from "../api/alumnos";
+import { getAlumnoInstrumento } from "../../api/alumnos";
 
 export default function AlumnoInstrumento({ idAlumno }) {
   const [instrumento, setInstrumento] = useState(null);

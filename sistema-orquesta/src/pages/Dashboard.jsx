@@ -12,7 +12,7 @@ import { getProgramas } from "../api/programas";
 import Modal from "../components/Modal";
 import EventoForm from "../components/Eventos/EventoForm";
 import InstrumentoForm from "../components/InstrumentoForm";
-import AlumnoForm from "../components/AlumnoForm";
+import AlumnoForm from "../components/Alumno/AlumnoForm";
 
 // === UI Helpers ===
 const Card = ({ children, className = "" }) => (

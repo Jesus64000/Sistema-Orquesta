@@ -1,4 +1,4 @@
-// src/components/AlumnoDetalle.jsx
+// src/components/Alumno/AlumnoDetalle.jsx
 import { useState } from "react";
 import AlumnoInstrumento from "./AlumnoInstrumento";
 import AlumnoHistorial from "./AlumnoHistorial";

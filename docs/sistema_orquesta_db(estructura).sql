@@ -438,4 +438,3 @@ ALTER TABLE `instrumento_historial`
 ALTER TABLE `movimiento_inventario`
   ADD CONSTRAINT `movimiento_inventario_ibfk_1` FOREIGN KEY (`id_instrumento`) REFERENCES `instrumento` (`id_instrumento`);
 COMMIT;
-git config --global core.autocrlf true

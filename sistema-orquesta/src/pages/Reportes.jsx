@@ -1,4 +1,3 @@
-// src/pages/Reportes.jsx
 import { useEffect, useState } from "react";
 import {
   getAlumnosTotal,
@@ -13,22 +12,21 @@ import {
   getRepresentantesPorAlumnos,
   getEventosTotal,
   getEventosPorMes,
-  getUsuariosTotal,
-  getUsuariosPorRol,
   getAlumnosPorProgramaAnio
 } from "../api/reportes";
 
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
-  PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line
-} from "recharts";
+import { BarChart3, Users, Music2, Calendar, UserCheck } from "lucide-react";
 
-import { BarChart3, Users, Music2, Calendar, UserCheck, UserMinus } from "lucide-react";
-
-const COLORS = ["#facc15", "#4ade80", "#60a5fa", "#f87171", "#a78bfa", "#f472b6"];
+// Componentes
+import KpiCard from "../components/Reportes/KpiCard";
+import AlumnosSection from "../components/Reportes/AlumnosSection";
+import InstrumentosSection from "../components/Reportes/InstrumentosSection";
+import RepresentantesSection from "../components/Reportes/RepresentantesSection";
+import EventosSection from "../components/Reportes/EventosSection";
 
 export default function Reportes() {
-  const [activeTab, setActiveTab] = useState("alumnos"); // alumnos, instrumentos, representantes, eventos
+  const [activeTab, setActiveTab] = useState("alumnos");
+  const [viewGlobal, setViewGlobal] = useState("tabla");
 
   // KPIs
   const [totales, setTotales] = useState({
@@ -56,13 +54,10 @@ export default function Reportes() {
   const [eventosPorMes, setEventosPorMes] = useState([]);
 
   // Filtros dinámicos
-const [filtroPrograma, setFiltroPrograma] = useState("todos");
-const [filtroEstadoInstrumento, setFiltroEstadoInstrumento] = useState("todos");
-const [programasDisponibles, setProgramasDisponibles] = useState([]); // para select
-const [estadosInstrumentoDisponibles, setEstadosInstrumentoDisponibles] = useState([]); // para select
-
-// Vista global de reportes: "tabla" o "grafico"
-const [viewGlobal, setViewGlobal] = useState("tabla");
+  const [filtroPrograma, setFiltroPrograma] = useState("todos");
+  const [filtroEstadoInstrumento, setFiltroEstadoInstrumento] = useState("todos");
+  const [programasDisponibles, setProgramasDisponibles] = useState([]);
+  const [estadosInstrumentoDisponibles, setEstadosInstrumentoDisponibles] = useState([]);
 
   useEffect(() => {
     loadReportes();
@@ -85,7 +80,6 @@ const [viewGlobal, setViewGlobal] = useState("tabla");
       // Alumnos
       const resAlumnosPrograma = await getAlumnosPorPrograma();
       setAlumnosPrograma(resAlumnosPrograma.data);
-
       setProgramasDisponibles(resAlumnosPrograma.data.map(a => a.programa));
 
       const resAlumnosEdad = await getAlumnosPorEdad();
@@ -100,7 +94,6 @@ const [viewGlobal, setViewGlobal] = useState("tabla");
       // Instrumentos
       const resInstrumentosEstado = await getInstrumentosPorEstado();
       setInstrumentosEstado(resInstrumentosEstado.data);
-
       setEstadosInstrumentoDisponibles(resInstrumentosEstado.data.map(i => i.estado));
 
       const resInstrumentosCategoria = await getInstrumentosPorCategoria();
@@ -133,20 +126,51 @@ const [viewGlobal, setViewGlobal] = useState("tabla");
       </div>
 
       {/* Selector global Tabla / Gráfico */}
-        <div className="flex gap-2 mb-4 mt-2">
-          <button
-            onClick={() => setViewGlobal("tabla")}
-            className={`px-3 py-1 rounded text-sm ${viewGlobal==="tabla" ? "bg-yellow-400 text-gray-900" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
+      <div className="flex gap-2 mb-4 mt-2">
+        <button
+          onClick={() => setViewGlobal("tabla")}
+          className={`px-3 py-1 rounded text-sm ${viewGlobal==="tabla" ? "bg-yellow-400 text-gray-900" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
+        >
+          Tabla
+        </button>
+        <button
+          onClick={() => setViewGlobal("grafico")}
+          className={`px-3 py-1 rounded text-sm ${viewGlobal==="grafico" ? "bg-yellow-400 text-gray-900" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
+        >
+          Gráfico
+        </button>
+      </div>
+
+      {/* Filtros dinámicos */}
+      {activeTab === "alumnos" && (
+        <div className="flex gap-2 mb-4">
+          <select
+            value={filtroPrograma}
+            onChange={(e) => setFiltroPrograma(e.target.value)}
+            className="px-3 py-1 border rounded"
           >
-            Tabla
-          </button>
-          <button
-            onClick={() => setViewGlobal("grafico")}
-            className={`px-3 py-1 rounded text-sm ${viewGlobal==="grafico" ? "bg-yellow-400 text-gray-900" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
-          >
-            Gráfico
-          </button>
+            <option value="todos">Todos los programas</option>
+            {programasDisponibles.map((p, i) => (
+              <option key={i} value={p}>{p}</option>
+            ))}
+          </select>
         </div>
+      )}
+
+      {activeTab === "instrumentos" && (
+        <div className="flex gap-2 mb-4">
+          <select
+            value={filtroEstadoInstrumento}
+            onChange={(e) => setFiltroEstadoInstrumento(e.target.value)}
+            className="px-3 py-1 border rounded"
+          >
+            <option value="todos">Todos los estados</option>
+            {estadosInstrumentoDisponibles.map((e, i) => (
+              <option key={i} value={e}>{e}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -155,8 +179,6 @@ const [viewGlobal, setViewGlobal] = useState("tabla");
         <KpiCard icon={UserCheck} value={totales.representantes} label="Representantes" color="text-green-400"/>
         <KpiCard icon={Calendar} value={totales.eventos} label="Eventos" color="text-pink-400"/>
       </div>
-
-
 
       {/* Tabs */}
       <div className="flex gap-2 border-b mt-4">
@@ -173,195 +195,36 @@ const [viewGlobal, setViewGlobal] = useState("tabla");
 
       {/* Tab content */}
       <div className="space-y-6 mt-4">
-        {activeTab === "alumnos" && <AlumnosSection 
-          alumnosPrograma={alumnosPrograma} 
-          alumnosEdad={alumnosEdad} 
-          alumnosGenero={alumnosGenero} 
-          alumnosComparativa={alumnosComparativa} 
-          viewGlobal={viewGlobal}
-        />}
-        {activeTab === "instrumentos" && <InstrumentosSection 
-          instrumentosEstado={instrumentosEstado} 
-          instrumentosCategoria={instrumentosCategoria} 
-          instrumentosTop={instrumentosTop} 
-          viewGlobal={viewGlobal}
-        />}
-        {activeTab === "representantes" && <RepresentantesSection 
-          representantesPorAlumnos={representantesPorAlumnos} 
-          viewGlobal={viewGlobal}
-        />}
-        {activeTab === "eventos" && <EventosSection 
-          eventosPorMes={eventosPorMes} 
-          viewGlobal={viewGlobal}
-        />}
+        {activeTab === "alumnos" && (
+          <AlumnosSection 
+            alumnosPrograma={alumnosPrograma} 
+            alumnosEdad={alumnosEdad} 
+            alumnosGenero={alumnosGenero} 
+            alumnosComparativa={alumnosComparativa} 
+            viewGlobal={viewGlobal}
+          />
+        )}
+        {activeTab === "instrumentos" && (
+          <InstrumentosSection 
+            instrumentosEstado={instrumentosEstado} 
+            instrumentosCategoria={instrumentosCategoria} 
+            instrumentosTop={instrumentosTop} 
+            viewGlobal={viewGlobal}
+          />
+        )}
+        {activeTab === "representantes" && (
+          <RepresentantesSection 
+            representantesPorAlumnos={representantesPorAlumnos} 
+            viewGlobal={viewGlobal}
+          />
+        )}
+        {activeTab === "eventos" && (
+          <EventosSection 
+            eventosPorMes={eventosPorMes} 
+            viewGlobal={viewGlobal}
+          />
+        )}
       </div>
-    </div>
-  );
-}
-
-/* ------------------ COMPONENTES ------------------ */
-
-function KpiCard({ icon: Icon, value, label, color }) {
-  return (
-    <div className="bg-white p-4 rounded-2xl shadow flex flex-col items-center">
-      <Icon className={`h-6 w-6 ${color}`} />
-      <p className="font-bold text-lg">{value}</p>
-      <span>{label}</span>
-    </div>
-  );
-}
-
-/* ---- Alumnos ---- */
-function AlumnosSection({ alumnosPrograma, alumnosEdad, alumnosGenero, alumnosComparativa, viewGlobal }) {
-  if (viewGlobal === "tabla") {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <ReportTable title="Alumnos por Programa" data={alumnosPrograma} cols={["programa","cantidad"]}/>
-        <ReportTable title="Alumnos por Edad" data={alumnosEdad} cols={["edad","cantidad"]}/>
-        <ReportTable title="Alumnos por Género" data={alumnosGenero} cols={["genero","cantidad"]}/>
-        <ReportTable title="Comparativa Alumnos 2024-2025" data={alumnosComparativa} cols={["programa","cantidad"]}/>
-      </div>
-    );
-  } else {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <ReportBarChart title="Alumnos por Programa" data={alumnosPrograma} dataKey="cantidad" nameKey="programa"/>
-        <ReportBarChart title="Alumnos por Edad" data={alumnosEdad} dataKey="cantidad" nameKey="edad"/>
-        <ReportPieChart title="Alumnos por Género" data={alumnosGenero} dataKey="cantidad" nameKey="genero"/>
-        <ReportBarChart title="Comparativa Alumnos 2024-2025" data={alumnosComparativa} dataKey="cantidad" nameKey="programa"/>
-      </div>
-    );
-  }
-}
-
-/* ---- Instrumentos ---- */
-function InstrumentosSection({ instrumentosEstado, instrumentosCategoria, instrumentosTop, viewGlobal }) {
-  if (viewGlobal === "tabla") {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <ReportTable title="Instrumentos por Estado" data={instrumentosEstado} cols={["estado","cantidad"]}/>
-        <ReportTable title="Instrumentos por Categoría" data={instrumentosCategoria} cols={["categoria","cantidad"]}/>
-        <ReportTable title="Top Instrumentos Asignados" data={instrumentosTop} cols={["nombre","cantidad"]}/>
-      </div>
-    );
-  } else {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <ReportPieChart title="Instrumentos por Estado" data={instrumentosEstado} dataKey="cantidad" nameKey="estado"/>
-        <ReportBarChart title="Instrumentos por Categoría" data={instrumentosCategoria} dataKey="cantidad" nameKey="categoria"/>
-        <ReportBarChart title="Top Instrumentos Asignados" data={instrumentosTop} dataKey="cantidad" nameKey="nombre"/>
-      </div>
-    );
-  }
-}
-
-/* ---- Representantes ---- */
-function RepresentantesSection({ representantesPorAlumnos, viewGlobal }) {
-  if (viewGlobal === "tabla") {
-    return (
-      <div className="grid grid-cols-1 gap-4">
-        <ReportTable title="Representantes por Alumnos" data={representantesPorAlumnos} cols={["nombre","cantidad"]}/>
-      </div>
-    );
-  } else {
-    // Representantes no tiene gráficos específicos, pero podemos mostrar un PieChart
-    return (
-      <div className="grid grid-cols-1 gap-4">
-        <ReportPieChart title="Representantes por Alumnos" data={representantesPorAlumnos} dataKey="cantidad" nameKey="nombre"/>
-      </div>
-    );
-  }
-}
-
-
-/* ---- Eventos ---- */
-function EventosSection({ eventosPorMes, viewGlobal }) {
-  if (viewGlobal === "tabla") {
-    return <ReportTable title="Eventos por Mes" data={eventosPorMes} cols={["mes","cantidad"]}/>;
-  } else {
-    return (
-      <div className="grid grid-cols-1 gap-4">
-        <div className="bg-white rounded-2xl shadow-md p-6">
-          <h2 className="font-semibold mb-3">Eventos por Mes</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={eventosPorMes}>
-              <CartesianGrid strokeDasharray="3 3"/>
-              <XAxis dataKey="mes"/>
-              <YAxis/>
-              <Tooltip/>
-              <Legend/>
-              <Line type="monotone" dataKey="cantidad" stroke="#4ade80"/>
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-    );
-  }
-}
-
-
-/* ------------------ Reportes genéricos ------------------ */
-
-function ReportTable({ title, data, cols, Icon }) {
-  return (
-    <div className="bg-white rounded-2xl shadow-sm border p-4">
-      <h2 className="font-semibold mb-3 flex items-center gap-2">
-        {Icon && <Icon className="h-4 w-4"/>}
-        {title}
-      </h2>
-      <table className="w-full text-sm border-collapse">
-        <thead>
-          <tr className="bg-gray-100">
-            {cols.map(c => <th key={c} className="px-4 py-2 border-b">{c.charAt(0).toUpperCase() + c.slice(1)}</th>)}
-          </tr>
-        </thead>
-        <tbody>
-          {data.length > 0 ? data.map((row,i)=>(
-            <tr key={i}>
-              {cols.map(c=><td key={c} className="px-4 py-2 border-b">{row[c]}</td>)}
-            </tr>
-          )) : (
-            <tr>
-              <td colSpan={cols.length} className="text-center py-4 text-gray-500">No hay datos</td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function ReportBarChart({ title, data, dataKey, nameKey }) {
-  return (
-    <div className="bg-white rounded-2xl shadow-md p-6">
-      <h2 className="font-semibold mb-3">{title}</h2>
-      <ResponsiveContainer width="100%" height={250}>
-        <BarChart data={data}>
-          <CartesianGrid strokeDasharray="3 3"/>
-          <XAxis dataKey={nameKey}/>
-          <YAxis/>
-          <Tooltip/>
-          <Legend/>
-          <Bar dataKey={dataKey} fill="#facc15"/>
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
-  );
-}
-
-function ReportPieChart({ title, data, dataKey, nameKey }) {
-  return (
-    <div className="bg-white rounded-2xl shadow-md p-6">
-      <h2 className="font-semibold mb-3">{title}</h2>
-      <ResponsiveContainer width="100%" height={250}>
-        <PieChart>
-          <Pie data={data} dataKey={dataKey} nameKey={nameKey} cx="50%" cy="50%" outerRadius={80} label>
-            {data.map((_,index)=><Cell key={index} fill={COLORS[index % COLORS.length]}/>)}
-          </Pie>
-          <Tooltip/>
-          <Legend/>
-        </PieChart>
-      </ResponsiveContainer>
     </div>
   );
 }

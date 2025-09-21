@@ -1,7 +1,7 @@
-// src/components/AlumnoHistorial.jsx
+// src/components/Alumno/AlumnoHistorial.jsx
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { getAlumnoHistorial, addAlumnoHistorial } from "../api/alumnos";
+import { getAlumnoHistorial, addAlumnoHistorial } from "../../api/alumnos";
 
 export default function AlumnoHistorial({ idAlumno }) {
   const [historial, setHistorial] = useState([]);
