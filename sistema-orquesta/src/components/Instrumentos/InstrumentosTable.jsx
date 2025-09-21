@@ -57,7 +57,7 @@ export default function InstrumentosTable({
               <td className="px-3 py-2">{i.categoria_nombre}</td>
               <td className="px-3 py-2">{i.numero_serie}</td>
               <td className="px-3 py-2">
-                <Badge>{i.estado}</Badge>
+                <Badge>{i.estado_nombre}</Badge>
               </td>
               <td className="px-3 py-2">
                 {/* Mostrar nombre del alumno asignado si existe */}

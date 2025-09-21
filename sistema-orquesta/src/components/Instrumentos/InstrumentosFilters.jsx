@@ -1,9 +1,11 @@
 import { Search, Filter } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getCategorias } from "../../api/administracion/categorias";
+import { getEstados } from "../../api/administracion/estados";
 
 export default function InstrumentosFilters({ search, setSearch, fEstado, setFEstado, fCategoria, setFCategoria }) {
   const [categorias, setCategorias] = useState([]);
+  const [estados, setEstados] = useState([]);
 
   useEffect(() => {
     const fetchCategorias = async () => {
@@ -14,7 +16,16 @@ export default function InstrumentosFilters({ search, setSearch, fEstado, setFEs
         setCategorias([]);
       }
     };
+    const fetchEstados = async () => {
+      try {
+        const res = await getEstados();
+        setEstados(Array.isArray(res.data) ? res.data : []);
+      } catch {
+        setEstados([]);
+      }
+    };
     fetchCategorias();
+    fetchEstados();
   }, []);
 
   return (
@@ -31,10 +42,9 @@ export default function InstrumentosFilters({ search, setSearch, fEstado, setFEs
       </div>
       <select value={fEstado} onChange={(e) => setFEstado(e.target.value)} className="px-3 py-2 border rounded-lg bg-white">
         <option value="">Todos los estados</option>
-        <option>Disponible</option>
-        <option>Asignado</option>
-        <option>Mantenimiento</option>
-        <option>Baja</option>
+        {estados.map((est) => (
+          <option key={est.id_estado} value={est.id_estado}>{est.nombre}</option>
+        ))}
       </select>
       <div className="flex items-center gap-2 px-3 py-2 border rounded-lg bg-white">
         <Filter className="h-4 w-4 text-gray-500" />

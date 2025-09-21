@@ -11,6 +11,7 @@ export default function EventosAdmin() {
   const [editId, setEditId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const fetchEventos = async () => {
     setLoading(true);
@@ -54,18 +55,36 @@ export default function EventosAdmin() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setSuccess("");
+    if (!form.nombre.trim()) {
+      setError("El nombre es obligatorio.");
+      return;
+    }
+    if (!form.fecha) {
+      setError("La fecha es obligatoria.");
+      return;
+    }
+    // Evitar duplicados
+    const existe = eventos.some(ev => ev.nombre.trim().toLowerCase() === form.nombre.trim().toLowerCase() && ev.id_evento !== editId);
+    if (existe) {
+      setError("Ya existe un evento con ese nombre.");
+      return;
+    }
     setLoading(true);
     try {
       if (editId) {
         await updateEvento(editId, form);
+        setSuccess("Evento actualizado correctamente.");
       } else {
         await createEvento(form);
+        setSuccess("Evento creado correctamente.");
       }
       setForm({ nombre: "", fecha: "", programa: "", instrumento: "" });
       setEditId(null);
       fetchEventos();
-    } catch {
-      setError("Error al guardar");
+    } catch (err) {
+      setError("Error al guardar: " + (err?.response?.data?.message || ""));
     }
     setLoading(false);
   };
@@ -117,14 +136,16 @@ export default function EventosAdmin() {
             ))}
           </select>
         </div>
-        <button type="submit" className="bg-yellow-400 text-gray-900 font-bold px-4 py-2 rounded shadow hover:bg-yellow-300 transition">
+        <button type="submit" className="bg-yellow-400 text-gray-900 font-bold px-4 py-2 rounded shadow hover:bg-yellow-300 transition flex items-center gap-2" disabled={loading}>
+          {loading && <span className="loader border-2 border-t-2 border-yellow-600 rounded-full w-4 h-4 animate-spin"></span>}
           {editId ? "Actualizar" : "Agregar"}
         </button>
         {editId && (
-          <button type="button" onClick={() => { setEditId(null); setForm({ nombre: "", fecha: "", programa: "", instrumento: "" }); }} className="ml-2 text-xs text-gray-500 underline">Cancelar</button>
+          <button type="button" onClick={() => { setEditId(null); setForm({ nombre: "", fecha: "", programa: "", instrumento: "" }); setError(""); setSuccess(""); }} className="ml-2 text-xs text-gray-500 underline">Cancelar</button>
         )}
       </form>
       {error && <div className="text-red-500 mb-2">{error}</div>}
+      {success && <div className="text-green-600 mb-2">{success}</div>}
       <div className="overflow-x-auto">
         <table className="w-full text-sm border-collapse">
           <thead>

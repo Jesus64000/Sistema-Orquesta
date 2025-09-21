@@ -7,6 +7,7 @@ export default function RepresentantesAdmin() {
   const [editId, setEditId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const fetchRepresentantes = async () => {
     setLoading(true);
@@ -30,18 +31,32 @@ export default function RepresentantesAdmin() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setSuccess("");
+    if (!form.nombre.trim()) {
+      setError("El nombre es obligatorio.");
+      return;
+    }
+    // Evitar duplicados
+    const existe = representantes.some(r => r.nombre.trim().toLowerCase() === form.nombre.trim().toLowerCase() && r.id_representante !== editId);
+    if (existe) {
+      setError("Ya existe un representante con ese nombre.");
+      return;
+    }
     setLoading(true);
     try {
       if (editId) {
         await updateRepresentante(editId, form);
+        setSuccess("Representante actualizado correctamente.");
       } else {
         await createRepresentante(form);
+        setSuccess("Representante creado correctamente.");
       }
       setForm({ nombre: "", telefono: "" });
       setEditId(null);
       fetchRepresentantes();
-    } catch {
-      setError("Error al guardar");
+    } catch (err) {
+      setError("Error al guardar: " + (err?.response?.data?.message || ""));
     }
     setLoading(false);
   };
@@ -75,14 +90,16 @@ export default function RepresentantesAdmin() {
           <label className="block text-xs text-yellow-500 font-semibold mb-1">Teléfono</label>
           <input name="telefono" value={form.telefono} onChange={handleChange} className="border rounded px-3 py-1 w-40" />
         </div>
-        <button type="submit" className="bg-yellow-400 text-gray-900 font-bold px-4 py-2 rounded shadow hover:bg-yellow-300 transition">
+        <button type="submit" className="bg-yellow-400 text-gray-900 font-bold px-4 py-2 rounded shadow hover:bg-yellow-300 transition flex items-center gap-2" disabled={loading}>
+          {loading && <span className="loader border-2 border-t-2 border-yellow-600 rounded-full w-4 h-4 animate-spin"></span>}
           {editId ? "Actualizar" : "Agregar"}
         </button>
         {editId && (
-          <button type="button" onClick={() => { setEditId(null); setForm({ nombre: "", telefono: "" }); }} className="ml-2 text-xs text-gray-500 underline">Cancelar</button>
+          <button type="button" onClick={() => { setEditId(null); setForm({ nombre: "", telefono: "" }); setError(""); setSuccess(""); }} className="ml-2 text-xs text-gray-500 underline">Cancelar</button>
         )}
       </form>
       {error && <div className="text-red-500 mb-2">{error}</div>}
+      {success && <div className="text-green-600 mb-2">{success}</div>}
       <div className="overflow-x-auto">
         <table className="w-full text-sm border-collapse">
           <thead>

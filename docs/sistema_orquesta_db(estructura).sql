@@ -2,7 +2,6 @@ SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
 SET time_zone = "+00:00";
 
---
 -- Base de datos: `db_orquesta`
 --
 
@@ -451,3 +450,11 @@ ALTER TABLE `movimiento_inventario`
 ALTER TABLE `usuario`
   ADD CONSTRAINT `fk_usuario_rol` FOREIGN KEY (`id_rol`) REFERENCES `rol` (`id_rol`) ON DELETE SET NULL;
 COMMIT;
+
+
+-- Tabla para los estados de instrumentos
+CREATE TABLE `estados` (
+  `id_estado` int(11) NOT NULL AUTO_INCREMENT,
+  `nombre` varchar(100) NOT NULL,
+  PRIMARY KEY (`id_estado`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;

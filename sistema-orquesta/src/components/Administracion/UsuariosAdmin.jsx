@@ -1,14 +1,25 @@
+
 import React, { useEffect, useState } from "react";
+import ConfirmDialog from "../ConfirmDialog";
 import { getUsuarios, createUsuario, updateUsuario, deleteUsuario } from "../../api/administracion/usuarios";
 import { getRoles } from "../../api/administracion/roles";
 
+// Validación de email simple
+function validarEmail(email) {
+  return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
+}
+
 export default function UsuariosAdmin() {
+  // Confirmación personalizada para eliminar
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [toDeleteId, setToDeleteId] = useState(null);
   const [usuarios, setUsuarios] = useState([]);
   const [roles, setRoles] = useState([]);
   const [form, setForm] = useState({ nombre: "", email: "", id_rol: "" });
   const [editId, setEditId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
 
   const fetchUsuarios = async () => {
@@ -43,18 +54,47 @@ export default function UsuariosAdmin() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setSuccess("");
+    // Validaciones
+    if (!form.nombre.trim()) {
+      setError("El nombre es obligatorio.");
+      return;
+    }
+    if (!form.email.trim()) {
+      setError("El email es obligatorio.");
+      return;
+    }
+    if (!validarEmail(form.email)) {
+      setError("El email no es válido.");
+      return;
+    }
+    if (!form.id_rol) {
+      setError("Debe seleccionar un rol.");
+      return;
+    }
+    // Evitar duplicados (nombre o email)
+    const existe = usuarios.some(u =>
+      (u.email === form.email && u.id_usuario !== editId)
+    );
+    if (existe) {
+      setError("Ya existe un usuario con ese email.");
+      return;
+    }
     setLoading(true);
     try {
       if (editId) {
         await updateUsuario(editId, form);
+        setSuccess("Usuario actualizado correctamente.");
       } else {
         await createUsuario(form);
+        setSuccess("Usuario creado correctamente.");
       }
       setForm({ nombre: "", email: "", id_rol: "" });
       setEditId(null);
       fetchUsuarios();
-    } catch {
-      setError("Error al guardar");
+    } catch (err) {
+      setError("Error al guardar: " + (err?.response?.data?.message || ""));
     }
     setLoading(false);
   };
@@ -64,11 +104,23 @@ export default function UsuariosAdmin() {
     setEditId(u.id_usuario);
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("¿Eliminar este usuario?")) return;
+  // Abre el diálogo de confirmación
+  const handleDelete = (id) => {
+    setToDeleteId(id);
+    setConfirmOpen(true);
+  };
+
+  // Confirma la eliminación
+  const confirmDelete = async () => {
+    if (!toDeleteId) return;
     setLoading(true);
+    setError("");
+    setSuccess("");
     try {
-  await deleteUsuario(id);
+      await deleteUsuario(toDeleteId);
+      setSuccess("Usuario eliminado correctamente.");
+      setToDeleteId(null);
+      setConfirmOpen(false);
       fetchUsuarios();
     } catch {
       setError("Error al eliminar");
@@ -101,11 +153,21 @@ export default function UsuariosAdmin() {
           {editId ? "Actualizar" : "Agregar"}
         </button>
         {editId && (
-          <button type="button" onClick={() => { setEditId(null); setForm({ nombre: "", email: "", rol: "" }); }} className="ml-2 text-xs text-gray-500 underline">Cancelar</button>
+          <button type="button" onClick={() => { setEditId(null); setForm({ nombre: "", email: "", id_rol: "" }); setError(""); setSuccess(""); }} className="ml-2 text-xs text-gray-500 underline">Cancelar</button>
         )}
       </form>
       {error && <div className="text-red-500 mb-2">{error}</div>}
+      {success && <div className="text-green-600 mb-2">{success}</div>}
       <div className="overflow-x-auto">
+        <ConfirmDialog
+          open={confirmOpen}
+          title="Eliminar usuario"
+          message="¿Estás seguro de que deseas eliminar este usuario? Esta acción no se puede deshacer."
+          onCancel={() => { setConfirmOpen(false); setToDeleteId(null); }}
+          onConfirm={confirmDelete}
+          confirmLabel="Eliminar"
+          confirmColor="bg-red-600 hover:bg-red-700"
+        />
         <table className="w-full text-sm border-collapse">
           <thead>
             <tr className="bg-gray-100">

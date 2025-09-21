@@ -93,7 +93,8 @@ export default function Instrumentos() {
       const byText =
         i.nombre?.toLowerCase().includes(search.toLowerCase()) ||
         i.numero_serie?.toLowerCase().includes(search.toLowerCase());
-      const byEstado = fEstado ? i.estado === fEstado : true;
+      // Comparar id_estado (numérico) con fEstado (string o numérico)
+      const byEstado = fEstado ? String(i.id_estado) === String(fEstado) : true;
       const byCategoria = fCategoria ? String(i.id_categoria) === String(fCategoria) : true;
       return byText && byEstado && byCategoria;
     });

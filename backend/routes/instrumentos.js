@@ -9,9 +9,10 @@ const router = Router();
 router.get('/', async (_req, res) => {
   try {
     const [rows] = await pool.query(`
-      SELECT i.*, c.nombre as categoria_nombre
+      SELECT i.*, c.nombre as categoria_nombre, e.nombre as estado_nombre
       FROM Instrumento i
       LEFT JOIN Categoria c ON i.id_categoria = c.id_categoria
+      LEFT JOIN Estados e ON i.id_estado = e.id_estado
       ORDER BY i.nombre ASC
     `);
     res.json(rows);
@@ -26,9 +27,10 @@ router.get('/:id', async (req, res) => {
     const { id } = req.params;
 
     const [[instrumento]] = await pool.query(
-      `SELECT i.*, c.nombre as categoria_nombre
+      `SELECT i.*, c.nombre as categoria_nombre, e.nombre as estado_nombre
        FROM Instrumento i
        LEFT JOIN Categoria c ON i.id_categoria = c.id_categoria
+       LEFT JOIN Estados e ON i.id_estado = e.id_estado
        WHERE i.id_instrumento = ?`,
       [id]
     );
@@ -66,24 +68,23 @@ router.get('/:id', async (req, res) => {
 // POST /instrumentos
 router.post('/', async (req, res) => {
   try {
-
     const {
       nombre,
       id_categoria,
       numero_serie,
-      estado = 'Disponible',
+      id_estado,
       fecha_adquisicion = null,
       ubicacion = '',
     } = req.body;
 
-    if (!nombre || !id_categoria || !numero_serie) {
-      return res.status(400).json({ error: 'nombre, id_categoria y numero_serie son requeridos' });
+    if (!nombre || !id_categoria || !numero_serie || !id_estado) {
+      return res.status(400).json({ error: 'nombre, id_categoria, numero_serie e id_estado son requeridos' });
     }
 
     const [result] = await pool.query(
-      `INSERT INTO Instrumento (nombre, id_categoria, numero_serie, estado, fecha_adquisicion, ubicacion)
+      `INSERT INTO Instrumento (nombre, id_categoria, numero_serie, id_estado, fecha_adquisicion, ubicacion)
        VALUES (?, ?, ?, ?, ?, ?)`,
-      [nombre, id_categoria, numero_serie, estado, fecha_adquisicion, ubicacion]
+      [nombre, id_categoria, numero_serie, id_estado, fecha_adquisicion, ubicacion]
     );
 
     await registrarHistorialInstrumento(
@@ -92,11 +93,14 @@ router.post('/', async (req, res) => {
       `Instrumento creado: ${nombre} (${numero_serie})`
     );
 
-    // Obtener el nombre de la categoría para la respuesta
+    // Obtener el nombre de la categoría y estado para la respuesta
     let categoria_nombre = null;
+    let estado_nombre = null;
     try {
       const [[cat]] = await pool.query('SELECT nombre FROM Categoria WHERE id_categoria = ?', [id_categoria]);
       categoria_nombre = cat ? cat.nombre : null;
+      const [[est]] = await pool.query('SELECT nombre FROM Estados WHERE id_estado = ?', [id_estado]);
+      estado_nombre = est ? est.nombre : null;
     } catch {}
 
     res.status(201).json({
@@ -105,7 +109,8 @@ router.post('/', async (req, res) => {
       id_categoria,
       categoria_nombre,
       numero_serie,
-      estado,
+      id_estado,
+      estado_nombre,
       fecha_adquisicion,
       ubicacion,
     });
@@ -118,15 +123,14 @@ router.post('/', async (req, res) => {
 // PUT /instrumentos/:id
 router.put('/:id', async (req, res) => {
   try {
-
     const { id } = req.params;
-    const { nombre, id_categoria, numero_serie, estado, fecha_adquisicion, ubicacion } = req.body;
+    const { nombre, id_categoria, numero_serie, id_estado, fecha_adquisicion, ubicacion } = req.body;
 
     const [result] = await pool.query(
       `UPDATE Instrumento
-       SET nombre=?, id_categoria=?, numero_serie=?, estado=?, fecha_adquisicion=?, ubicacion=?
+       SET nombre=?, id_categoria=?, numero_serie=?, id_estado=?, fecha_adquisicion=?, ubicacion=?
        WHERE id_instrumento=?`,
-      [nombre, id_categoria, numero_serie, estado, fecha_adquisicion, ubicacion, id]
+      [nombre, id_categoria, numero_serie, id_estado, fecha_adquisicion, ubicacion, id]
     );
 
     if (result.affectedRows === 0) {
@@ -140,11 +144,14 @@ router.put('/:id', async (req, res) => {
       'sistema'
     );
 
-    // Obtener el nombre de la categoría para la respuesta
+    // Obtener el nombre de la categoría y estado para la respuesta
     let categoria_nombre = null;
+    let estado_nombre = null;
     try {
       const [[cat]] = await pool.query('SELECT nombre FROM Categoria WHERE id_categoria = ?', [id_categoria]);
       categoria_nombre = cat ? cat.nombre : null;
+      const [[est]] = await pool.query('SELECT nombre FROM Estados WHERE id_estado = ?', [id_estado]);
+      estado_nombre = est ? est.nombre : null;
     } catch {}
 
     res.json({
@@ -153,7 +160,8 @@ router.put('/:id', async (req, res) => {
       id_categoria,
       categoria_nombre,
       numero_serie,
-      estado,
+      id_estado,
+      estado_nombre,
       fecha_adquisicion,
       ubicacion
     });

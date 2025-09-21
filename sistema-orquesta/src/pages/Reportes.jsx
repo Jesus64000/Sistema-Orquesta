@@ -6,7 +6,6 @@ import {
   getAlumnosPorGenero,
   getInstrumentosTotal,
   getInstrumentosPorEstado,
-  getInstrumentosPorCategoria,
   getInstrumentosTopAsignados,
   getRepresentantesTotal,
   getRepresentantesPorAlumnos,
@@ -14,6 +13,7 @@ import {
   getEventosPorMes,
   getAlumnosPorProgramaAnio
 } from "../api/reportes";
+import { getEstados } from "../api/administracion/estados";
 
 import { Users, Music2, Calendar, UserCheck } from "lucide-react";
 
@@ -59,10 +59,14 @@ export default function Reportes() {
   // Filtros dinámicos
   const [filtroPrograma, setFiltroPrograma] = useState("todos");
   const [filtroEstadoInstrumento, setFiltroEstadoInstrumento] = useState("todos");
+  const [filtroCategoriaInstrumento, setFiltroCategoriaInstrumento] = useState("todos");
   const [programasDisponibles, setProgramasDisponibles] = useState([]);
   const [estadosInstrumentoDisponibles, setEstadosInstrumentoDisponibles] = useState([]);
+  const [categoriasInstrumentoDisponibles, setCategoriasInstrumentoDisponibles] = useState([]);
 
   // Cargar reportes al inicio y cuando cambia el filtro de programa
+
+  // Cargar reportes al inicio y cuando cambia el filtro de programa o filtroEstadoInstrumento
   useEffect(() => {
     const cargar = async () => {
       try {
@@ -93,12 +97,23 @@ export default function Reportes() {
         const resComparativa = await getAlumnosPorProgramaAnio(2024, 2025);
         setAlumnosComparativa(resComparativa.data);
 
-        // Instrumentos
-        const resInstrumentosEstado = await getInstrumentosPorEstado();
-        setInstrumentosEstado(resInstrumentosEstado.data);
-        setEstadosInstrumentoDisponibles(resInstrumentosEstado.data.map(i => i.estado));
 
-        const resInstrumentosCategoria = await getInstrumentosPorCategoria();
+  // Instrumentos (usar ambos filtros)
+  const resInstrumentosEstado = await getInstrumentosPorEstado(filtroEstadoInstrumento, filtroCategoriaInstrumento);
+  setInstrumentosEstado(resInstrumentosEstado.data);
+
+        // Estados disponibles
+        const resEstados = await getEstados();
+        setEstadosInstrumentoDisponibles(Array.isArray(resEstados.data) ? resEstados.data : []);
+
+        // Categorías disponibles
+        const { getCategorias } = await import("../api/administracion/categorias");
+        const resCategorias = await getCategorias();
+        setCategoriasInstrumentoDisponibles(Array.isArray(resCategorias.data) ? resCategorias.data : []);
+
+        // Instrumentos por categoría (usar ambos filtros)
+        const { getInstrumentosPorCategoria } = await import("../api/reportes");
+        const resInstrumentosCategoria = await getInstrumentosPorCategoria(filtroCategoriaInstrumento, filtroEstadoInstrumento);
         setInstrumentosCategoria(resInstrumentosCategoria.data);
 
         const resInstrumentosTop = await getInstrumentosTopAsignados();
@@ -116,7 +131,7 @@ export default function Reportes() {
       }
     };
     cargar();
-  }, [filtroPrograma]);
+  }, [filtroPrograma, filtroEstadoInstrumento, filtroCategoriaInstrumento]);
 
 
   return (
@@ -151,8 +166,18 @@ export default function Reportes() {
             className="px-3 py-1 border rounded"
           >
             <option value="todos">Todos los estados</option>
-            {estadosInstrumentoDisponibles.map((e, i) => (
-              <option key={i} value={e}>{e}</option>
+            {estadosInstrumentoDisponibles.map((e) => (
+              <option key={e.id_estado} value={e.id_estado}>{e.nombre}</option>
+            ))}
+          </select>
+          <select
+            value={filtroCategoriaInstrumento}
+            onChange={(e) => setFiltroCategoriaInstrumento(e.target.value)}
+            className="px-3 py-1 border rounded"
+          >
+            <option value="todos">Todas las categorías</option>
+            {categoriasInstrumentoDisponibles.map((c) => (
+              <option key={c.id_categoria} value={c.id_categoria}>{c.nombre}</option>
             ))}
           </select>
         </div>
@@ -190,9 +215,13 @@ export default function Reportes() {
         )}
         {activeTab === "instrumentos" && (
           <InstrumentosSection 
-            instrumentosEstado={instrumentosEstado} 
-            instrumentosCategoria={instrumentosCategoria} 
-            instrumentosTop={instrumentosTop} 
+            instrumentosEstado={
+              filtroEstadoInstrumento === "todos"
+                ? instrumentosEstado
+                : instrumentosEstado.filter(i => String(i.id_estado) === String(filtroEstadoInstrumento))
+            }
+            instrumentosCategoria={instrumentosCategoria}
+            instrumentosTop={instrumentosTop}
             viewGlobal={viewGlobal}
           />
         )}

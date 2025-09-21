@@ -1,23 +1,21 @@
+//sistema-orquesta/sistema-orquesta/src/pages/Administracion.jsx
 import React, { useState } from "react";
-import ProgramasAdmin from "./Administracion/ProgramasAdmin";
-import CategoriasAdmin from "./Administracion/CategoriasAdmin";
-import UsuariosAdmin from "./Administracion/UsuariosAdmin";
-import RolesAdmin from "./Administracion/RolesAdmin";
-import InstrumentosAdmin from "./Administracion/InstrumentosAdmin";
-import EstadosAdmin from "./Administracion/EstadosAdmin";
-import RepresentantesAdmin from "./Administracion/RepresentantesAdmin";
-import EventosAdmin from "./Administracion/EventosAdmin";
-import AyudaAdmin from "./Administracion/AyudaAdmin";
+import ProgramasAdmin from "../components/Administracion/ProgramasAdmin";
+import CategoriasAdmin from "../components/Administracion/CategoriasAdmin";
+import UsuariosAdmin from "../components/Administracion/UsuariosAdmin";
+import RolesAdmin from "../components/Administracion/RolesAdmin";
+import EstadosAdmin from "../components/Administracion/EstadosAdmin";
+import AyudaAdmin from "../components/Administracion/AyudaAdmin";
 
 const SECCIONES = [
   { key: "programas", label: "Programas" },
   { key: "categorias", label: "Categorías de instrumentos" },
   { key: "usuarios", label: "Usuarios" },
   { key: "roles", label: "Roles y permisos" },
-  { key: "instrumentos", label: "Instrumentos" },
+  // { key: "instrumentos", label: "Instrumentos" },
   { key: "estados", label: "Estados de instrumentos" },
-  { key: "representantes", label: "Representantes" },
-  { key: "eventos", label: "Eventos" },
+  // { key: "representantes", label: "Representantes" },
+  // { key: "eventos", label: "Eventos" },
   { key: "ayuda", label: "Ayuda / Documentación" },
 ];
 
@@ -49,10 +47,10 @@ export default function Administracion() {
   {seccion === "categorias" && <CategoriasAdmin />}
   {seccion === "usuarios" && <UsuariosAdmin />}
   {seccion === "roles" && <RolesAdmin />}
-  {seccion === "instrumentos" && <InstrumentosAdmin />}
+  {/* {seccion === "instrumentos" && <InstrumentosAdmin />} */}
   {seccion === "estados" && <EstadosAdmin />}
-  {seccion === "representantes" && <RepresentantesAdmin />}
-  {seccion === "eventos" && <EventosAdmin />}
+  {/* {seccion === "representantes" && <RepresentantesAdmin />} */}
+  {/* {seccion === "eventos" && <EventosAdmin />} */}
   {seccion === "ayuda" && <AyudaAdmin />}
       </main>
     </div>

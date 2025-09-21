@@ -21,9 +21,13 @@ import adminUsuariosRouter from "./routes/administracion/usuarios.js";
 import adminRolesRouter from "./routes/administracion/roles.js";
 import adminCategoriasRouter from "./routes/administracion/categorias.js";
 import adminInstrumentosRouter from "./routes/administracion/instrumentos.js";
+// import adminInstrumentosRouter from "./routes/administracion/instrumentos.js";
 import adminEstadosRouter from "./routes/administracion/estados.js";
 import adminRepresentantesRouter from "./routes/administracion/representantes.js";
+// import adminRepresentantesRouter from "./routes/administracion/representantes.js";
 import adminEventosRouter from "./routes/administracion/eventos.js";
+// import adminEventosRouter from "./routes/administracion/eventos.js";
+import adminProgramasRouter from "./routes/administracion/programas.js";
 
 const app = express();
 
@@ -46,10 +50,12 @@ app.use("/dashboard", dashboardRouter);
 app.use("/administracion/usuarios", adminUsuariosRouter);
 app.use("/administracion/roles", adminRolesRouter);
 app.use("/administracion/categorias", adminCategoriasRouter);
-app.use("/administracion/instrumentos", adminInstrumentosRouter);
+// app.use("/administracion/instrumentos", adminInstrumentosRouter);
 app.use("/administracion/estados", adminEstadosRouter);
-app.use("/administracion/representantes", adminRepresentantesRouter);
+// app.use("/administracion/representantes", adminRepresentantesRouter);
 app.use("/administracion/eventos", adminEventosRouter);
+// app.use("/administracion/eventos", adminEventosRouter);
+app.use("/administracion/programas", adminProgramasRouter);
 
 // --------------------
 // Servidor

@@ -152,14 +152,34 @@ router.get('/instrumentos-total', async (req, res) => {
 });
 
 // Instrumentos por estado
+// Permite filtrar por uno o varios id_estado: /reportes/instrumentos-por-estado?id_estado=1,2
 router.get('/instrumentos-por-estado', async (req, res) => {
   try {
+    let where = [];
+    let params = [];
+    if (req.query.id_estado) {
+      const ids = req.query.id_estado.split(',').map(Number).filter(Boolean);
+      if (ids.length > 0) {
+        where.push(`i.id_estado IN (${ids.map(() => '?').join(',')})`);
+        params.push(...ids);
+      }
+    }
+    if (req.query.id_categoria) {
+      const ids = req.query.id_categoria.split(',').map(Number).filter(Boolean);
+      if (ids.length > 0) {
+        where.push(`i.id_categoria IN (${ids.map(() => '?').join(',')})`);
+        params.push(...ids);
+      }
+    }
+    const whereClause = where.length ? `WHERE ${where.join(' AND ')}` : '';
     const [rows] = await pool.query(`
-      SELECT COALESCE(estado, 'Desconocido') AS estado, COUNT(id_instrumento) AS cantidad
-      FROM Instrumento
-      GROUP BY COALESCE(estado, 'Desconocido')
+      SELECT e.id_estado, COALESCE(e.nombre, 'Desconocido') AS estado, COUNT(i.id_instrumento) AS cantidad
+      FROM Instrumento i
+      LEFT JOIN Estados e ON i.id_estado = e.id_estado
+      ${whereClause}
+      GROUP BY e.id_estado, e.nombre
       ORDER BY estado
-    `);
+    `, params);
     res.json(rows);
   } catch (err) {
     console.error('Error en /reportes/instrumentos-por-estado:', err);
@@ -168,15 +188,34 @@ router.get('/instrumentos-por-estado', async (req, res) => {
 });
 
 // Instrumentos por categoría
+// Permite filtrar por uno o varios id_categoria: /reportes/instrumentos-por-categoria?id_categoria=1,2
 router.get('/instrumentos-por-categoria', async (req, res) => {
   try {
+    let where = [];
+    let params = [];
+    if (req.query.id_categoria) {
+      const ids = req.query.id_categoria.split(',').map(Number).filter(Boolean);
+      if (ids.length > 0) {
+        where.push(`i.id_categoria IN (${ids.map(() => '?').join(',')})`);
+        params.push(...ids);
+      }
+    }
+    if (req.query.id_estado) {
+      const ids = req.query.id_estado.split(',').map(Number).filter(Boolean);
+      if (ids.length > 0) {
+        where.push(`i.id_estado IN (${ids.map(() => '?').join(',')})`);
+        params.push(...ids);
+      }
+    }
+    const whereClause = where.length ? `WHERE ${where.join(' AND ')}` : '';
     const [rows] = await pool.query(`
-      SELECT c.nombre AS categoria, COUNT(i.id_instrumento) AS cantidad
+      SELECT c.id_categoria, c.nombre AS categoria, COUNT(i.id_instrumento) AS cantidad
       FROM Instrumento i
       LEFT JOIN categoria c ON i.id_categoria = c.id_categoria
-      GROUP BY c.nombre
+      ${whereClause}
+      GROUP BY c.id_categoria, c.nombre
       ORDER BY cantidad DESC
-    `);
+    `, params);
     res.json(rows);
   } catch (err) {
     console.error('Error en /reportes/instrumentos-por-categoria:', err);

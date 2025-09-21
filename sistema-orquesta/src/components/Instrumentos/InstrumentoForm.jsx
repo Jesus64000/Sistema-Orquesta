@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { createInstrumento, updateInstrumento } from "../../api/instrumentos";
 import { getCategorias } from "../../api/administracion/categorias";
+import { getEstados } from "../../api/administracion/estados";
 import toast from "react-hot-toast";
 
 
@@ -28,13 +29,14 @@ export default function InstrumentoForm({ data, onCancel, onSaved }) {
           nombre: "",
           id_categoria: "",
           numero_serie: "",
-          estado: "Disponible",
+          id_estado: "",
           fecha_adquisicion: "",
           ubicacion: "",
         }
   );
   const [loading, setLoading] = useState(false);
   const [categorias, setCategorias] = useState([]);
+  const [estados, setEstados] = useState([]);
 
   useEffect(() => {
     const fetchCategorias = async () => {
@@ -45,7 +47,16 @@ export default function InstrumentoForm({ data, onCancel, onSaved }) {
         setCategorias([]);
       }
     };
+    const fetchEstados = async () => {
+      try {
+        const res = await getEstados();
+        setEstados(Array.isArray(res.data) ? res.data : []);
+      } catch {
+        setEstados([]);
+      }
+    };
     fetchCategorias();
+    fetchEstados();
   }, []);
 
   // Si data cambia (edición), actualizar el form con la fecha formateada
@@ -53,8 +64,9 @@ export default function InstrumentoForm({ data, onCancel, onSaved }) {
     if (data) {
       setForm({
         ...data,
-        id_categoria: data.id_categoria || "",
-        fecha_adquisicion: formatDateToInput(data.fecha_adquisicion),
+  id_categoria: data.id_categoria || "",
+  id_estado: data.id_estado || "",
+  fecha_adquisicion: formatDateToInput(data.fecha_adquisicion),
       });
     }
   }, [data]);
@@ -70,6 +82,7 @@ export default function InstrumentoForm({ data, onCancel, onSaved }) {
       const payload = {
         ...form,
         id_categoria: form.id_categoria,
+        id_estado: form.id_estado,
       };
       if (data) {
         await updateInstrumento(data.id_instrumento, payload);
@@ -122,14 +135,15 @@ export default function InstrumentoForm({ data, onCancel, onSaved }) {
       />
 
       <select
-        value={form.estado}
-        onChange={(e) => handleChange("estado", e.target.value)}
+        value={form.id_estado}
+        onChange={(e) => handleChange("id_estado", e.target.value)}
         className="w-full p-2 border rounded-lg"
+        required
       >
-        <option>Disponible</option>
-        <option>Asignado</option>
-        <option>Mantenimiento</option>
-        <option>Baja</option>
+        <option value="">Selecciona un estado</option>
+        {estados.map((est) => (
+          <option key={est.id_estado} value={est.id_estado}>{est.nombre}</option>
+        ))}
       </select>
 
       <input

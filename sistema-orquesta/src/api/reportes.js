@@ -18,8 +18,18 @@ export const getAlumnosPorGenero = (programa) =>
 
 // -------------------- INSTRUMENTOS --------------------
 export const getInstrumentosTotal = () => axios.get(`${API_URL}/instrumentos-total`);
-export const getInstrumentosPorEstado = () => axios.get(`${API_URL}/instrumentos-por-estado`);
-export const getInstrumentosPorCategoria = () => axios.get(`${API_URL}/instrumentos-por-categoria`);
+export const getInstrumentosPorEstado = (id_estado, id_categoria) => {
+  const params = {};
+  if (id_estado && id_estado !== "todos") params.id_estado = id_estado;
+  if (id_categoria && id_categoria !== "todos") params.id_categoria = id_categoria;
+  return axios.get(`${API_URL}/instrumentos-por-estado`, Object.keys(params).length ? { params } : undefined);
+};
+export const getInstrumentosPorCategoria = (id_categoria, id_estado) => {
+  const params = {};
+  if (id_categoria && id_categoria !== "todos") params.id_categoria = id_categoria;
+  if (id_estado && id_estado !== "todos") params.id_estado = id_estado;
+  return axios.get(`${API_URL}/instrumentos-por-categoria`, Object.keys(params).length ? { params } : undefined);
+};
 export const getInstrumentosTopAsignados = () => axios.get(`${API_URL}/instrumentos-top-asignados`);
 
 // -------------------- REPRESENTANTES --------------------
