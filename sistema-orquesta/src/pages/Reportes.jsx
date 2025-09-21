@@ -64,62 +64,60 @@ export default function Reportes() {
 
   // Cargar reportes al inicio y cuando cambia el filtro de programa
   useEffect(() => {
-    loadReportes();
-    // eslint-disable-next-line
+    const cargar = async () => {
+      try {
+        // KPIs
+        const resAlumnos = await getAlumnosTotal();
+        const resInstrumentos = await getInstrumentosTotal();
+        const resRepresentantes = await getRepresentantesTotal();
+        const resEventos = await getEventosTotal();
+        setTotales({
+          alumnos: resAlumnos.data.total,
+          instrumentos: resInstrumentos.data.total,
+          representantes: resRepresentantes.data.total,
+          eventos: resEventos.data.total,
+        });
+
+        // Alumnos
+        const resAlumnosPrograma = await getAlumnosPorPrograma();
+        setAlumnosPrograma(resAlumnosPrograma.data);
+        setProgramasDisponibles(resAlumnosPrograma.data.map(a => a.programa));
+
+        // Alumnos por edad y género con filtro de programa
+        const resAlumnosEdad = await getAlumnosPorEdad(filtroPrograma);
+        setAlumnosEdad(resAlumnosEdad.data);
+
+        const resAlumnosGenero = await getAlumnosPorGenero(filtroPrograma);
+        setAlumnosGenero(resAlumnosGenero.data);
+
+        const resComparativa = await getAlumnosPorProgramaAnio(2024, 2025);
+        setAlumnosComparativa(resComparativa.data);
+
+        // Instrumentos
+        const resInstrumentosEstado = await getInstrumentosPorEstado();
+        setInstrumentosEstado(resInstrumentosEstado.data);
+        setEstadosInstrumentoDisponibles(resInstrumentosEstado.data.map(i => i.estado));
+
+        const resInstrumentosCategoria = await getInstrumentosPorCategoria();
+        setInstrumentosCategoria(resInstrumentosCategoria.data);
+
+        const resInstrumentosTop = await getInstrumentosTopAsignados();
+        setInstrumentosTop(resInstrumentosTop.data);
+
+        // Representantes
+        const resRepPorAlumnos = await getRepresentantesPorAlumnos();
+        setRepresentantesPorAlumnos(resRepPorAlumnos.data);
+
+        // Eventos
+        const resEventosPorMes = await getEventosPorMes();
+        setEventosPorMes(resEventosPorMes.data);
+      } catch (err) {
+        console.error("Error cargando reportes:", err);
+      }
+    };
+    cargar();
   }, [filtroPrograma]);
 
-  const loadReportes = async () => {
-    try {
-      // KPIs
-      const resAlumnos = await getAlumnosTotal();
-      const resInstrumentos = await getInstrumentosTotal();
-      const resRepresentantes = await getRepresentantesTotal();
-      const resEventos = await getEventosTotal();
-      setTotales({
-        alumnos: resAlumnos.data.total,
-        instrumentos: resInstrumentos.data.total,
-        representantes: resRepresentantes.data.total,
-        eventos: resEventos.data.total,
-      });
-
-      // Alumnos
-      const resAlumnosPrograma = await getAlumnosPorPrograma();
-      setAlumnosPrograma(resAlumnosPrograma.data);
-      setProgramasDisponibles(resAlumnosPrograma.data.map(a => a.programa));
-
-  // Alumnos por edad y género con filtro de programa
-  const resAlumnosEdad = await getAlumnosPorEdad(filtroPrograma);
-  setAlumnosEdad(resAlumnosEdad.data);
-
-  const resAlumnosGenero = await getAlumnosPorGenero(filtroPrograma);
-  setAlumnosGenero(resAlumnosGenero.data);
-
-      const resComparativa = await getAlumnosPorProgramaAnio(2024, 2025);
-      setAlumnosComparativa(resComparativa.data);
-
-      // Instrumentos
-      const resInstrumentosEstado = await getInstrumentosPorEstado();
-      setInstrumentosEstado(resInstrumentosEstado.data);
-      setEstadosInstrumentoDisponibles(resInstrumentosEstado.data.map(i => i.estado));
-
-      const resInstrumentosCategoria = await getInstrumentosPorCategoria();
-      setInstrumentosCategoria(resInstrumentosCategoria.data);
-
-      const resInstrumentosTop = await getInstrumentosTopAsignados();
-      setInstrumentosTop(resInstrumentosTop.data);
-
-      // Representantes
-      const resRepPorAlumnos = await getRepresentantesPorAlumnos();
-      setRepresentantesPorAlumnos(resRepPorAlumnos.data);
-
-      // Eventos
-      const resEventosPorMes = await getEventosPorMes();
-      setEventosPorMes(resEventosPorMes.data);
-
-    } catch (err) {
-      console.error("Error cargando reportes:", err);
-    }
-  };
 
   return (
     <div className="space-y-6 p-4">

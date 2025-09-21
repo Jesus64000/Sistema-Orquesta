@@ -41,9 +41,17 @@ export default function MultiSelect({ options = [], value = [], onChange, placeh
             selected.map((s) => (
               <span key={s.id_programa} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-yellow-100 text-gray-800 border border-yellow-200">
                 {s.nombre}
-                <button onClick={(e) => { e.stopPropagation(); toggle(s.id_programa); }} className="ml-1">
+                <span
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Quitar ${s.nombre}`}
+                  onClick={(e) => { e.stopPropagation(); toggle(s.id_programa); }}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); toggle(s.id_programa); } }}
+                  className="ml-1 cursor-pointer focus:outline-none"
+                  style={{ display: 'inline-flex' }}
+                >
                   <X className="h-3 w-3" />
-                </button>
+                </span>
               </span>
             ))
           )}

@@ -1,7 +1,7 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import { 
-  Gauge, Users, Music2, Calendar, BarChart3, Settings, LogOut
+  Gauge, Users, Music2, Calendar, BarChart3, Settings, LogOut, Wrench
 } from "lucide-react";
 import { Toaster } from "react-hot-toast";
 
@@ -13,6 +13,7 @@ import Instrumentos from "./pages/Instrumentos";
 import Eventos from "./pages/Eventos";
 import Reportes from "./pages/Reportes";
 import Configuraciones from "./pages/Configuraciones";
+import Administracion from "./pages/Administracion";
 
 // Sidebar item
 const SidebarItem = ({ icon: Icon, label, to }) => (
@@ -49,6 +50,7 @@ export default function App() {
               <SidebarItem icon={Calendar} label="Eventos" to="/eventos" />
               <SidebarItem icon={BarChart3} label="Reportes" to="/reportes" />
               <SidebarItem icon={Settings} label="Configuraciones" to="/configuraciones" />
+              <SidebarItem icon={Wrench} label="Administración" to="/administracion" />
             </div>
 
             <div className="mt-8 pt-4 border-t border-gray-200">
@@ -68,6 +70,7 @@ export default function App() {
               <Route path="/eventos" element={<Eventos />} />
               <Route path="/reportes" element={<Reportes />} />
               <Route path="/configuraciones" element={<Configuraciones />} />
+              <Route path="/administracion" element={<Administracion />} />
             </Routes>
           </main>
         </div>

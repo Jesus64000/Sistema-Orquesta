@@ -2,7 +2,6 @@ SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
 SET time_zone = "+00:00";
 
-
 --
 -- Base de datos: `db_orquesta`
 --
@@ -125,12 +124,12 @@ CREATE TABLE `evento` (
 CREATE TABLE `instrumento` (
   `id_instrumento` int(11) NOT NULL,
   `nombre` varchar(100) NOT NULL,
-  `categoria` enum('Cuerda','Viento','Percusión','Mobiliario','Teclado') NOT NULL,
   `numero_serie` varchar(50) NOT NULL,
   `estado` enum('Disponible','Asignado','Mantenimiento','Baja') NOT NULL DEFAULT 'Disponible',
   `fecha_adquisicion` date DEFAULT NULL,
   `foto_url` varchar(255) DEFAULT NULL,
-  `ubicacion` varchar(100) DEFAULT NULL
+  `ubicacion` varchar(100) DEFAULT NULL,
+  `id_categoria` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -200,8 +199,8 @@ CREATE TABLE `usuario` (
   `nombre` varchar(100) NOT NULL,
   `email` varchar(100) NOT NULL,
   `password_hash` varchar(255) NOT NULL,
-  `rol` enum('Admin','Consultor') NOT NULL,
-  `fecha_creacion` timestamp NOT NULL DEFAULT current_timestamp()
+  `fecha_creacion` timestamp NOT NULL DEFAULT current_timestamp(),
+  `id_rol` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -264,7 +263,8 @@ ALTER TABLE `evento`
 --
 ALTER TABLE `instrumento`
   ADD PRIMARY KEY (`id_instrumento`),
-  ADD UNIQUE KEY `numero_serie` (`numero_serie`);
+  ADD UNIQUE KEY `numero_serie` (`numero_serie`),
+  ADD KEY `fk_instrumento_categoria` (`id_categoria`);
 
 --
 -- Indices de la tabla `instrumento_historial`
@@ -298,7 +298,8 @@ ALTER TABLE `representante`
 --
 ALTER TABLE `usuario`
   ADD PRIMARY KEY (`id_usuario`),
-  ADD UNIQUE KEY `email` (`email`);
+  ADD UNIQUE KEY `email` (`email`),
+  ADD KEY `fk_usuario_rol` (`id_rol`);
 
 --
 -- AUTO_INCREMENT de las tablas volcadas
@@ -426,6 +427,12 @@ ALTER TABLE `asignacion_instrumento`
   ADD CONSTRAINT `asignacion_instrumento_ibfk_2` FOREIGN KEY (`id_alumno`) REFERENCES `alumno` (`id_alumno`);
 
 --
+-- Filtros para la tabla `instrumento`
+--
+ALTER TABLE `instrumento`
+  ADD CONSTRAINT `fk_instrumento_categoria` FOREIGN KEY (`id_categoria`) REFERENCES `categoria` (`id_categoria`) ON DELETE SET NULL;
+
+--
 -- Filtros para la tabla `instrumento_historial`
 --
 ALTER TABLE `instrumento_historial`
@@ -437,4 +444,10 @@ ALTER TABLE `instrumento_historial`
 --
 ALTER TABLE `movimiento_inventario`
   ADD CONSTRAINT `movimiento_inventario_ibfk_1` FOREIGN KEY (`id_instrumento`) REFERENCES `instrumento` (`id_instrumento`);
+
+--
+-- Filtros para la tabla `usuario`
+--
+ALTER TABLE `usuario`
+  ADD CONSTRAINT `fk_usuario_rol` FOREIGN KEY (`id_rol`) REFERENCES `rol` (`id_rol`) ON DELETE SET NULL;
 COMMIT;

@@ -53,7 +53,7 @@ export default function InstrumentoDetalle({ instrumento, onClose }) {
               </div>
               <div>
                 <p className="text-xs text-gray-500">Categoría</p>
-                <p className="font-medium">{instrumento.categoria}</p>
+                <p className="font-medium">{instrumento.categoria_nombre}</p>
               </div>
               <div>
                 <p className="text-xs text-gray-500">Número de serie</p>
@@ -72,6 +72,16 @@ export default function InstrumentoDetalle({ instrumento, onClose }) {
               <div>
                 <p className="text-xs text-gray-500">Ubicación</p>
                 <p className="font-medium">{instrumento.ubicacion || "—"}</p>
+              </div>
+              <div className="md:col-span-2">
+                <p className="text-xs text-gray-500">Asignado a</p>
+                {instrumento.asignado && instrumento.asignado.nombre ? (
+                  <span className="inline-block font-semibold text-blue-700 text-sm bg-blue-50 rounded px-2 py-0.5">
+                    {instrumento.asignado.nombre}
+                  </span>
+                ) : (
+                  <span className="text-xs text-gray-400">—</span>
+                )}
               </div>
             </div>
           )}

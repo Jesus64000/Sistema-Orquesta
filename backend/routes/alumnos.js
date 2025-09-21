@@ -449,21 +449,23 @@ router.put('/:id/nota', async (req, res) => {
 // Obtener instrumento asignado activo
 router.get('/:id/instrumento', async (req, res) => {
   try {
-      const { id } = req.params;
-      const [rows] = await pool.query(
-        `SELECT i.id_instrumento, i.nombre, i.categoria, i.numero_serie, i.estado as estado_instrumento, ai.fecha_asignacion
-        FROM Asignacion_Instrumento ai
-        JOIN Instrumento i ON ai.id_instrumento = i.id_instrumento
-        WHERE ai.id_alumno = ? AND ai.estado = 'Activo'
-        ORDER BY ai.fecha_asignacion DESC
-        LIMIT 1`,
-        [id]
-      );
-      res.json(rows[0] || null);
-    } catch (err) {
-      console.error("Error en GET /alumnos/:id/instrumento", err);
-      res.status(500).json({ error: "Error obteniendo instrumento" });
-    }
+    const { id } = req.params;
+    const [rows] = await pool.query(
+      `SELECT i.id_instrumento, i.nombre, i.numero_serie, i.estado as estado_instrumento, ai.fecha_asignacion,
+              c.nombre as categoria_nombre
+       FROM Asignacion_Instrumento ai
+       JOIN Instrumento i ON ai.id_instrumento = i.id_instrumento
+       LEFT JOIN Categoria c ON i.id_categoria = c.id_categoria
+       WHERE ai.id_alumno = ? AND ai.estado = 'Activo'
+       ORDER BY ai.fecha_asignacion DESC
+       LIMIT 1`,
+      [id]
+    );
+    res.json(rows[0] || null);
+  } catch (err) {
+    console.error("Error en GET /alumnos/:id/instrumento", err);
+    res.status(500).json({ error: "Error obteniendo instrumento" });
+  }
 });
 
 // Asignar instrumento a alumno

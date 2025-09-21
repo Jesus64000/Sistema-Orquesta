@@ -10,13 +10,10 @@ export default function InstrumentoAsignacion({ instrumento }) {
   // 🔄 Cargar asignación actual del instrumento
   const loadAsignacion = async () => {
     try {
-      // Traer todos los alumnos y filtrar el que tiene este instrumento asignado
-      const res = await fetch("http://localhost:4000/alumnos");
+      // Traer el detalle del instrumento, que incluye el alumno asignado completo
+      const res = await fetch(`http://localhost:4000/instrumentos/${instrumento.id_instrumento}`);
       const data = await res.json();
-      const asignacion = data.find(alumno =>
-        alumno.instrumentos?.some(i => i.id_instrumento === instrumento.id_instrumento)
-      );
-      setAsignado(asignacion || null); // null si está libre
+      setAsignado(data.asignado || null);
     } catch (err) {
       console.error("Error cargando asignación:", err);
       setAsignado(null);
@@ -94,13 +91,20 @@ export default function InstrumentoAsignacion({ instrumento }) {
   return (
     <div className="space-y-4">
       {asignado ? (
-        <div className="p-3 border rounded-lg bg-red-50">
-          <p className="text-sm text-gray-700">
-            Este instrumento ya está asignado a: <b>{asignado.nombre}</b>
-          </p>
+        <div className="p-3 border rounded-lg bg-blue-50">
+          <h4 className="font-semibold mb-2">Alumno asignado</h4>
+          <div className="space-y-1 text-sm">
+            <p><span className="font-medium">Nombre:</span> {asignado.nombre}</p>
+            {asignado.genero && <p><span className="font-medium">Género:</span> {asignado.genero}</p>}
+            {asignado.telefono_contacto && <p><span className="font-medium">Teléfono:</span> {asignado.telefono_contacto}</p>}
+            {asignado.estado && <p><span className="font-medium">Estado:</span> {asignado.estado}</p>}
+            {asignado.programas && Array.isArray(asignado.programas) && asignado.programas.length > 0 && (
+              <p><span className="font-medium">Programas:</span> {asignado.programas.map(p => p.nombre).join(', ')}</p>
+            )}
+          </div>
           <button
             onClick={devolver}
-            className="mt-2 px-3 py-1 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600"
+            className="mt-3 px-3 py-1 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600"
           >
             Devolver instrumento
           </button>

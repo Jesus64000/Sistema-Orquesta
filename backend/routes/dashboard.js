@@ -59,7 +59,12 @@ router.get('/stats', async (req, res) => {
     }
 
     // personal (admins)
-    const [p] = await pool.query(`SELECT COUNT(*) AS total FROM Usuario WHERE rol = 'Admin'`);
+    const [p] = await pool.query(`
+      SELECT COUNT(*) AS total
+      FROM Usuario u
+      JOIN rol r ON u.id_rol = r.id_rol
+      WHERE r.nombre = 'Admin'`
+    );
     const personal = p[0]?.total ?? 0;
 
     res.json({ totalAlumnos, activos, nuevosHoy, personal });
@@ -102,14 +107,13 @@ router.get('/eventos-futuros', async (req, res) => {
         FROM Evento
         WHERE (fecha_evento > CURDATE())
           OR (fecha_evento = CURDATE() AND hora_evento >= CURTIME())
-        ORDER BY fecha_evento ASC, hora_evento ASC
       `;
     const params = [];
     if (programa_id) {
       query += ' AND id_programa = ?';
       params.push(programa_id);
     }
-      query += ' ORDER BY fecha_evento ASC, hora_evento ASC';
+    query += ' ORDER BY fecha_evento ASC, hora_evento ASC';
     const [rows] = await pool.query(query, params);
     res.json(rows);
   } catch (err) {

@@ -171,9 +171,10 @@ router.get('/instrumentos-por-estado', async (req, res) => {
 router.get('/instrumentos-por-categoria', async (req, res) => {
   try {
     const [rows] = await pool.query(`
-      SELECT categoria, COUNT(*) AS cantidad
-      FROM Instrumento
-      GROUP BY categoria
+      SELECT c.nombre AS categoria, COUNT(i.id_instrumento) AS cantidad
+      FROM Instrumento i
+      LEFT JOIN categoria c ON i.id_categoria = c.id_categoria
+      GROUP BY c.nombre
       ORDER BY cantidad DESC
     `);
     res.json(rows);

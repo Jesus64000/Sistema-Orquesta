@@ -8,7 +8,12 @@ const router = Router();
 // GET /instrumentos
 router.get('/', async (_req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM Instrumento ORDER BY nombre ASC');
+    const [rows] = await pool.query(`
+      SELECT i.*, c.nombre as categoria_nombre
+      FROM Instrumento i
+      LEFT JOIN Categoria c ON i.id_categoria = c.id_categoria
+      ORDER BY i.nombre ASC
+    `);
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -21,14 +26,17 @@ router.get('/:id', async (req, res) => {
     const { id } = req.params;
 
     const [[instrumento]] = await pool.query(
-      'SELECT * FROM Instrumento WHERE id_instrumento = ?',
+      `SELECT i.*, c.nombre as categoria_nombre
+       FROM Instrumento i
+       LEFT JOIN Categoria c ON i.id_categoria = c.id_categoria
+       WHERE i.id_instrumento = ?`,
       [id]
     );
     if (!instrumento) return res.status(404).json({ error: 'Instrumento no encontrado' });
 
-    // ¿Está asignado actualmente?
-    const [asignado] = await pool.query(
-      `SELECT a.id_alumno, a.nombre, ai.fecha_asignacion
+    // ¿Está asignado actualmente? Traer todos los datos relevantes del alumno
+    const [asignadoRows] = await pool.query(
+      `SELECT a.id_alumno, a.nombre, a.genero, a.telefono_contacto, a.estado, ai.fecha_asignacion
        FROM Asignacion_Instrumento ai
        JOIN Alumno a ON ai.id_alumno = a.id_alumno
        WHERE ai.id_instrumento = ? AND ai.estado = 'Activo'
@@ -36,8 +44,19 @@ router.get('/:id', async (req, res) => {
        LIMIT 1`,
       [id]
     );
-
-    res.json({ ...instrumento, asignado: asignado[0] || null });
+    let asignado = null;
+    if (asignadoRows[0]) {
+      // Traer programas del alumno asignado
+      const [programas] = await pool.query(
+        `SELECT p.id_programa, p.nombre
+         FROM alumno_programa ap
+         JOIN Programa p ON ap.id_programa = p.id_programa
+         WHERE ap.id_alumno = ?`,
+        [asignadoRows[0].id_alumno]
+      );
+      asignado = { ...asignadoRows[0], programas };
+    }
+    res.json({ ...instrumento, asignado });
   } catch (err) {
     console.error('Error en GET /instrumentos/:id', err);
     res.status(500).json({ error: err.message });
@@ -47,23 +66,24 @@ router.get('/:id', async (req, res) => {
 // POST /instrumentos
 router.post('/', async (req, res) => {
   try {
+
     const {
       nombre,
-      categoria,
+      id_categoria,
       numero_serie,
       estado = 'Disponible',
       fecha_adquisicion = null,
       ubicacion = '',
     } = req.body;
 
-    if (!nombre || !categoria || !numero_serie) {
-      return res.status(400).json({ error: 'nombre, categoria y numero_serie son requeridos' });
+    if (!nombre || !id_categoria || !numero_serie) {
+      return res.status(400).json({ error: 'nombre, id_categoria y numero_serie son requeridos' });
     }
 
     const [result] = await pool.query(
-      `INSERT INTO Instrumento (nombre, categoria, numero_serie, estado, fecha_adquisicion, ubicacion)
+      `INSERT INTO Instrumento (nombre, id_categoria, numero_serie, estado, fecha_adquisicion, ubicacion)
        VALUES (?, ?, ?, ?, ?, ?)`,
-      [nombre, categoria, numero_serie, estado, fecha_adquisicion, ubicacion]
+      [nombre, id_categoria, numero_serie, estado, fecha_adquisicion, ubicacion]
     );
 
     await registrarHistorialInstrumento(
@@ -72,10 +92,18 @@ router.post('/', async (req, res) => {
       `Instrumento creado: ${nombre} (${numero_serie})`
     );
 
+    // Obtener el nombre de la categoría para la respuesta
+    let categoria_nombre = null;
+    try {
+      const [[cat]] = await pool.query('SELECT nombre FROM Categoria WHERE id_categoria = ?', [id_categoria]);
+      categoria_nombre = cat ? cat.nombre : null;
+    } catch {}
+
     res.status(201).json({
       id_instrumento: result.insertId,
       nombre,
-      categoria,
+      id_categoria,
+      categoria_nombre,
       numero_serie,
       estado,
       fecha_adquisicion,
@@ -90,14 +118,15 @@ router.post('/', async (req, res) => {
 // PUT /instrumentos/:id
 router.put('/:id', async (req, res) => {
   try {
+
     const { id } = req.params;
-    const { nombre, categoria, numero_serie, estado, fecha_adquisicion, ubicacion } = req.body;
+    const { nombre, id_categoria, numero_serie, estado, fecha_adquisicion, ubicacion } = req.body;
 
     const [result] = await pool.query(
       `UPDATE Instrumento
-       SET nombre=?, categoria=?, numero_serie=?, estado=?, fecha_adquisicion=?, ubicacion=?
+       SET nombre=?, id_categoria=?, numero_serie=?, estado=?, fecha_adquisicion=?, ubicacion=?
        WHERE id_instrumento=?`,
-      [nombre, categoria, numero_serie, estado, fecha_adquisicion, ubicacion, id]
+      [nombre, id_categoria, numero_serie, estado, fecha_adquisicion, ubicacion, id]
     );
 
     if (result.affectedRows === 0) {
@@ -111,7 +140,23 @@ router.put('/:id', async (req, res) => {
       'sistema'
     );
 
-    res.json({ id_instrumento: Number(id), nombre, categoria, numero_serie, estado, fecha_adquisicion, ubicacion });
+    // Obtener el nombre de la categoría para la respuesta
+    let categoria_nombre = null;
+    try {
+      const [[cat]] = await pool.query('SELECT nombre FROM Categoria WHERE id_categoria = ?', [id_categoria]);
+      categoria_nombre = cat ? cat.nombre : null;
+    } catch {}
+
+    res.json({
+      id_instrumento: Number(id),
+      nombre,
+      id_categoria,
+      categoria_nombre,
+      numero_serie,
+      estado,
+      fecha_adquisicion,
+      ubicacion
+    });
   } catch (err) {
     console.error('Error en PUT /instrumentos/:id', err);
     res.status(500).json({ error: err.message });

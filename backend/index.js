@@ -6,14 +6,24 @@ import express from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
 import pool from "./db.js"; // Asegúrate de tener la conexión a la base de datos
-import alumnosRouter from "./routes/alumnos.js"; // Importa las rutas de alumnos
-import programasRouter from "./routes/programas.js"; // Importa las rutas de programas
-import instrumentosRouter from "./routes/instrumentos.js"; // Importa las rutas de instrumentos
-import representantesRouter from "./routes/representantes.js"; // Importa las rutas de representantes
-import eventosRouter from "./routes/eventos.js"; // Importa las rutas de eventos
-import reportesRouter from "./routes/reportes.js"; // Importa las rutas de reportes
-import usuariosRouter from "./routes/usuarios.js"; // Importa las rutas de usuarios
-import dashboardRouter from "./routes/dashboard.js"; // Importa las rutas de dashboard
+
+import alumnosRouter from "./routes/alumnos.js";
+import programasRouter from "./routes/programas.js";
+import instrumentosRouter from "./routes/instrumentos.js";
+import representantesRouter from "./routes/representantes.js";
+import eventosRouter from "./routes/eventos.js";
+import reportesRouter from "./routes/reportes.js";
+import usuariosRouter from "./routes/usuarios.js";
+import dashboardRouter from "./routes/dashboard.js";
+
+// Administración
+import adminUsuariosRouter from "./routes/administracion/usuarios.js";
+import adminRolesRouter from "./routes/administracion/roles.js";
+import adminCategoriasRouter from "./routes/administracion/categorias.js";
+import adminInstrumentosRouter from "./routes/administracion/instrumentos.js";
+import adminEstadosRouter from "./routes/administracion/estados.js";
+import adminRepresentantesRouter from "./routes/administracion/representantes.js";
+import adminEventosRouter from "./routes/administracion/eventos.js";
 
 const app = express();
 
@@ -21,15 +31,25 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// Rutas
-app.use("/alumnos", alumnosRouter); // Rutas de alumnos
-app.use("/programas", programasRouter); // Rutas de programas
-app.use("/instrumentos", instrumentosRouter); // Rutas de instrumentos
-app.use("/representantes", representantesRouter); // Rutas de representantes
-app.use("/eventos", eventosRouter); // Rutas de eventos
-app.use("/reportes", reportesRouter); // Rutas de reportes
-app.use("/usuarios", usuariosRouter); // Rutas de usuarios
-app.use("/dashboard", dashboardRouter); // Rutas de dashboard
+
+// Rutas principales
+app.use("/alumnos", alumnosRouter);
+app.use("/programas", programasRouter);
+app.use("/instrumentos", instrumentosRouter);
+app.use("/representantes", representantesRouter);
+app.use("/eventos", eventosRouter);
+app.use("/reportes", reportesRouter);
+app.use("/usuarios", usuariosRouter);
+app.use("/dashboard", dashboardRouter);
+
+// Rutas de administración (todas bajo /administracion/{entidad})
+app.use("/administracion/usuarios", adminUsuariosRouter);
+app.use("/administracion/roles", adminRolesRouter);
+app.use("/administracion/categorias", adminCategoriasRouter);
+app.use("/administracion/instrumentos", adminInstrumentosRouter);
+app.use("/administracion/estados", adminEstadosRouter);
+app.use("/administracion/representantes", adminRepresentantesRouter);
+app.use("/administracion/eventos", adminEventosRouter);
 
 // --------------------
 // Servidor

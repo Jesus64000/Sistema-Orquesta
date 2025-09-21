@@ -56,11 +56,25 @@ export default function Instrumentos() {
   const [editing, setEditing] = useState(null);
 
   // Load data
+  // Cargar instrumentos y su asignación
   const loadData = async () => {
     setLoading(true);
     try {
       const res = await getInstrumentos();
-      setInstrumentos(res.data || []);
+      const baseList = res.data || [];
+      // Para cada instrumento, obtener asignado (si está asignado)
+      const withAsignado = await Promise.all(
+        baseList.map(async (inst) => {
+          try {
+            const detailRes = await fetch(`http://localhost:4000/instrumentos/${inst.id_instrumento}`);
+            const detail = await detailRes.json();
+            return { ...inst, asignado: detail.asignado || null };
+          } catch {
+            return { ...inst, asignado: null };
+          }
+        })
+      );
+      setInstrumentos(withAsignado);
     } catch (e) {
       toast.error("Error cargando instrumentos");
       console.error(e);
@@ -80,7 +94,7 @@ export default function Instrumentos() {
         i.nombre?.toLowerCase().includes(search.toLowerCase()) ||
         i.numero_serie?.toLowerCase().includes(search.toLowerCase());
       const byEstado = fEstado ? i.estado === fEstado : true;
-      const byCategoria = fCategoria ? i.categoria === fCategoria : true;
+      const byCategoria = fCategoria ? String(i.id_categoria) === String(fCategoria) : true;
       return byText && byEstado && byCategoria;
     });
 
@@ -88,6 +102,11 @@ export default function Instrumentos() {
     list.sort((a, b) => {
       let vA = a[sortBy];
       let vB = b[sortBy];
+      // Si se ordena por categoria, usar categoria_nombre
+      if (sortBy === "categoria" || sortBy === "categoria_nombre") {
+        vA = a.categoria_nombre || "";
+        vB = b.categoria_nombre || "";
+      }
       if (typeof vA === "string") vA = vA.toLowerCase();
       if (typeof vB === "string") vB = vB.toLowerCase();
       if (vA < vB) return sortDir === "asc" ? -1 : 1;
@@ -160,7 +179,7 @@ export default function Instrumentos() {
           try {
             const res = await fetch(`http://localhost:4000/instrumentos/${id}`);
             const data = await res.json();
-            setViewDetail(data);
+            setViewDetail({ ...data, asignado: data.asignado || null });
           } catch (err) {
             console.error(err);
             toast.error("Error cargando detalle del instrumento");
@@ -197,7 +216,10 @@ export default function Instrumentos() {
 
       {/* Detalle */}
       {viewDetail && (
-        <InstrumentoDetalle instrumento={viewDetail} onClose={() => setViewDetail(null)} />
+        <InstrumentoDetalle
+          instrumento={viewDetail}
+          onClose={() => { setViewDetail(null); loadData(); }}
+        />
       )}
 
       {/* Confirmar eliminar */}

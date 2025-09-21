@@ -37,6 +37,7 @@ export default function InstrumentosTable({
             <th className="px-3 py-2 border-b">Categoría</th>
             <th className="px-3 py-2 border-b">Número de serie</th>
             <th className="px-3 py-2 border-b">Estado</th>
+            <th className="px-3 py-2 border-b">Asignado a</th>
             <th className="px-3 py-2 border-b">Fecha adquisición</th>
             <th className="px-3 py-2 border-b">Ubicación</th>
             <th className="px-3 py-2 border-b">Acciones</th>
@@ -53,10 +54,18 @@ export default function InstrumentosTable({
                 />
               </td>
               <td className="px-3 py-2">{i.nombre}</td>
-              <td className="px-3 py-2">{i.categoria}</td>
+              <td className="px-3 py-2">{i.categoria_nombre}</td>
               <td className="px-3 py-2">{i.numero_serie}</td>
               <td className="px-3 py-2">
                 <Badge>{i.estado}</Badge>
+              </td>
+              <td className="px-3 py-2">
+                {/* Mostrar nombre del alumno asignado si existe */}
+                {i.asignado && i.asignado.nombre ? (
+                  <span className="text-xs text-blue-700 font-semibold">{i.asignado.nombre}</span>
+                ) : (
+                  <span className="text-xs text-gray-400">—</span>
+                )}
               </td>
               <td className="px-3 py-2">{i.fecha_adquisicion?.slice(0, 10)}</td>
               <td className="px-3 py-2">{i.ubicacion}</td>
