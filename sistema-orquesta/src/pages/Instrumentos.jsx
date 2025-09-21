@@ -10,8 +10,12 @@ import {
   deleteInstrumento,
 } from "../api/instrumentos";
 
-import InstrumentoForm from "../components/InstrumentoForm";
-import InstrumentoDetalle from "../components/InstrumentoDetalle";
+import InstrumentoForm from "../components/Instrumentos/InstrumentoForm";
+import InstrumentoDetalle from "../components/Instrumentos/InstrumentoDetalle";
+import InstrumentosHeader from "../components/Instrumentos/InstrumentosHeader";
+import InstrumentosFilters from "../components/Instrumentos/InstrumentosFilters";
+import InstrumentosTable from "../components/Instrumentos/InstrumentosTable";
+import InstrumentosPagination from "../components/Instrumentos/InstrumentosPagination";
 import Modal from "../components/Modal";
 import ConfirmDialog from "../components/ConfirmDialog";
 
@@ -130,171 +134,55 @@ export default function Instrumentos() {
   return (
     <div className="space-y-6">
       {/* Encabezado */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">Gestión de Instrumentos</h1>
-          <p className="text-sm text-gray-500">Administra los instrumentos disponibles.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-yellow-400 text-gray-900 hover:bg-yellow-500 shadow-sm">
-            <PlusCircle className="h-4 w-4" />
-            Agregar Instrumento
-          </button>
-        </div>
-      </div>
+      <InstrumentosHeader onCreate={openCreate} />
 
       {/* Filtros */}
-      <div className="bg-white p-4 rounded-xl border shadow-sm flex flex-col md:flex-row gap-3">
-        <div className="flex-1 flex items-center gap-2 px-3 py-2 border rounded-lg bg-white shadow-sm">
-          <Search className="h-4 w-4 text-gray-500" />
-          <input
-            type="text"
-            placeholder="Buscar..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 outline-none text-sm"
-          />
-        </div>
-        <select value={fEstado} onChange={(e) => setFEstado(e.target.value)} className="px-3 py-2 border rounded-lg bg-white">
-          <option value="">Todos los estados</option>
-          <option>Disponible</option>
-          <option>Asignado</option>
-          <option>Mantenimiento</option>
-          <option>Baja</option>
-        </select>
-        <div className="flex items-center gap-2 px-3 py-2 border rounded-lg bg-white">
-          <Filter className="h-4 w-4 text-gray-500" />
-          <select value={fCategoria} onChange={(e) => setFCategoria(e.target.value)} className="flex-1 outline-none text-sm bg-transparent">
-            <option value="">Todas las categorías</option>
-            <option>Cuerda</option>
-            <option>Viento</option>
-            <option>Percusión</option>
-            <option>Mobiliario</option>
-            <option>Teclado</option>
-          </select>
-        </div>
-      </div>
+      <InstrumentosFilters
+        search={search}
+        setSearch={setSearch}
+        fEstado={fEstado}
+        setFEstado={setFEstado}
+        fCategoria={fCategoria}
+        setFCategoria={setFCategoria}
+      />
 
       {/* Tabla */}
-      <div className="overflow-x-auto bg-white border rounded-2xl shadow-sm">
-        <table className="w-full text-sm text-left border-collapse">
-          <thead className="bg-gray-100 text-gray-600">
-            <tr>
-              {/* Selección múltiple */}
-              <th className="px-3 py-2">
-                <input
-                  type="checkbox"
-                  onChange={(e) =>
-                    setSelected(
-                      e.target.checked ? instrumentosPage.map((i) => i.id_instrumento) : []
-                    )
-                  }
-                  checked={
-                    selected.length === instrumentosPage.length && instrumentosPage.length > 0
-                  }
-                />
-              </th>
-
-              <th className="px-3 py-2 border-b cursor-pointer" onClick={() => toggleSort("nombre")}>
-                <div className="flex items-center gap-1">
-                  Nombre
-                  {sortBy === "nombre" &&
-                    (sortDir === "asc" ? (
-                      <ChevronUp className="h-3 w-3" />
-                    ) : (
-                      <ChevronDown className="h-3 w-3" />
-                    ))}
-                </div>
-              </th>
-              <th className="px-3 py-2 border-b">Categoría</th>
-              <th className="px-3 py-2 border-b">Número de serie</th>
-              <th className="px-3 py-2 border-b">Estado</th>
-              <th className="px-3 py-2 border-b">Fecha adquisición</th>
-              <th className="px-3 py-2 border-b">Ubicación</th>
-              <th className="px-3 py-2 border-b">Acciones</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {instrumentosPage.map((i) => (
-              <tr key={i.id_instrumento} className="hover:bg-gray-50">
-                <td className="px-3 py-2">
-                  <input
-                    type="checkbox"
-                    checked={selected.includes(i.id_instrumento)}
-                    onChange={() => toggleSelect(i.id_instrumento)}
-                  />
-                </td>
-
-                <td className="px-3 py-2">{i.nombre}</td>
-                <td className="px-3 py-2">{i.categoria}</td>
-                <td className="px-3 py-2">{i.numero_serie}</td>
-                <td className="px-3 py-2">
-                  <Badge>{i.estado}</Badge>
-                </td>
-                <td className="px-3 py-2">{i.fecha_adquisicion?.slice(0, 10)}</td>
-                <td className="px-3 py-2">{i.ubicacion}</td>
-
-                {/* Acciones */}
-                <td className="px-3 py-2 flex gap-2">
-                  <button
-                    onClick={() => openEdit(i)}
-                    className="p-1.5 bg-blue-50 text-blue-600 rounded-lg border hover:bg-blue-100"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() =>
-                      setConfirm({ open: true, id: i.id_instrumento, name: i.nombre })
-                    }
-                    className="p-1.5 bg-red-50 text-red-600 rounded-lg border hover:bg-red-100"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={async () => {
-                      try {
-                        const res = await fetch(`http://localhost:4000/instrumentos/${i.id_instrumento}`);
-                        const data = await res.json();
-                        setViewDetail(data); // 👈 ahora incluye asignado
-                      } catch (err) {
-                        console.error(err);
-                        toast.error("Error cargando detalle del instrumento");
-                      }
-                    }}
-                    className="p-1.5 bg-yellow-50 text-yellow-600 rounded-lg border hover:bg-yellow-100"
-                  >
-                    <Eye className="h-4 w-4" />
-                  </button>
-                </td>
-              </tr>
-            ))}
-
-            {/* Loader amigable */}
-            {instrumentosPage.length === 0 && (
-              <tr>
-                <td colSpan="8" className="text-center py-10 text-gray-500">
-                  {loading ? (
-                    <div className="flex flex-col items-center gap-2">
-                      <span className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-yellow-500"></span>
-                      <span>Cargando instrumentos...</span>
-                    </div>
-                  ) : (
-                    "No se encontraron instrumentos"
-                  )}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <InstrumentosTable
+        instrumentosPage={instrumentosPage}
+        selected={selected}
+        toggleSelect={toggleSelect}
+        sortBy={sortBy}
+        sortDir={sortDir}
+        toggleSort={toggleSort}
+        openEdit={openEdit}
+        setConfirm={setConfirm}
+        openDetail={async (id) => {
+          try {
+            const res = await fetch(`http://localhost:4000/instrumentos/${id}`);
+            const data = await res.json();
+            setViewDetail(data);
+          } catch (err) {
+            console.error(err);
+            toast.error("Error cargando detalle del instrumento");
+          }
+        }}
+      />
+      {/* Loader amigable */}
+      {instrumentosPage.length === 0 && (
+        <div className="text-center py-10 text-gray-500">
+          {loading ? (
+            <div className="flex flex-col items-center gap-2">
+              <span className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-yellow-500"></span>
+              <span>Cargando instrumentos...</span>
+            </div>
+          ) : (
+            "No se encontraron instrumentos"
+          )}
+        </div>
+      )}
 
       {/* Paginación */}
-      <div className="flex justify-end items-center gap-2">
-        <button disabled={page <= 1} onClick={() => setPage(page - 1)} className="px-3 py-1 border rounded disabled:opacity-50">Anterior</button>
-        <span className="text-sm">Página {page} de {totalPages}</span>
-        <button disabled={page >= totalPages} onClick={() => setPage(page + 1)} className="px-3 py-1 border rounded disabled:opacity-50">Siguiente</button>
-      </div>
+      <InstrumentosPagination page={page} totalPages={totalPages} setPage={setPage} />
 
       {/* Formulario */}
       {showForm && (

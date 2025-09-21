@@ -8,6 +8,10 @@ import toast from "react-hot-toast";
 import { getEventos, deleteEvento } from "../api/eventos";
 import EventoForm from "../components/Eventos/EventoForm";
 import EventoDetalle from "../components/Eventos/EventoDetalle";
+import EventosHeader from "../components/Eventos/EventosHeader";
+import EventosFilters from "../components/Eventos/EventosFilters";
+import EventosTable from "../components/Eventos/EventosTable";
+import EventosPagination from "../components/Eventos/EventosPagination";
 import Modal from "../components/Modal";
 import ConfirmDialog from "../components/ConfirmDialog";
 
@@ -98,6 +102,9 @@ export default function Eventos() {
   const toggleSelect = (id) => {
     setSelected(s => s.includes(id) ? s.filter(i => i !== id) : [...s, id]);
   };
+  const toggleSelectAll = (checked) => {
+    setSelected(checked ? eventosPage.map(ev => ev.id_evento) : []);
+  };
 
   const openCreate = () => { setEditing(null); setShowForm(true); };
   const openEdit = (ev) => { setEditing(ev); setShowForm(true); };
@@ -117,135 +124,33 @@ export default function Eventos() {
   return (
     <div className="space-y-6">
       {/* Encabezado */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">Gestión de Eventos</h1>
-          <p className="text-sm text-gray-500">Administra todos los eventos de la orquesta.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={openCreate}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-yellow-400 text-gray-900 hover:bg-yellow-500 shadow-sm"
-          >
-            <PlusCircle className="h-4 w-4" />
-            Agregar Evento
-          </button>
-        </div>
-      </div>
+      <EventosHeader onCreate={openCreate} />
 
       {/* Filtros */}
-      <div className="bg-white p-4 rounded-xl border shadow-sm flex flex-col md:flex-row gap-3">
-        <div className="flex-1 flex items-center gap-2 px-3 py-2 border rounded-lg bg-white shadow-sm">
-          <Search className="h-4 w-4 text-gray-500" />
-          <input
-            type="text"
-            placeholder="Buscar por título o descripción..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 outline-none text-sm"
-          />
-        </div>
-      </div>
+      <EventosFilters search={search} setSearch={setSearch} />
 
       {/* Tabla */}
-      <div className="overflow-x-auto bg-white border rounded-2xl shadow-sm">
-        <table className="w-full text-sm text-left border-collapse">
-          <thead className="bg-gray-100 text-gray-600">
-            <tr>
-              <th className="px-3 py-2">
-                <input
-                  type="checkbox"
-                  onChange={(e) => setSelected(
-                    e.target.checked ? eventosPage.map(ev => ev.id_evento) : []
-                  )}
-                  checked={selected.length === eventosPage.length && eventosPage.length > 0}
-                />
-              </th>
-              <th className="px-3 py-2 border-b cursor-pointer" onClick={() => toggleSort("titulo")}>
-                <div className="flex items-center gap-1">
-                  Título
-                  {sortBy === "titulo" &&
-                    (sortDir === "asc" ? (
-                      <ChevronUp className="h-3 w-3" />
-                    ) : (
-                      <ChevronDown className="h-3 w-3" />
-                    ))}
-                </div>
-              </th>
-              <th className="px-3 py-2 border-b">Descripción</th>
-              <th className="px-3 py-2 border-b cursor-pointer" onClick={() => toggleSort("fecha_evento")}>
-                Fecha
-                {sortBy === "fecha_evento" &&
-                  (sortDir === "asc" ? (
-                    <ChevronUp className="h-3 w-3 inline" />
-                  ) : (
-                    <ChevronDown className="h-3 w-3 inline" />
-                  ))}
-              </th>
-              <th className="px-3 py-2 border-b">Hora</th>
-              <th className="px-3 py-2 border-b">Lugar</th>
-              <th className="px-3 py-2 border-b">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {eventosPage.map(ev => (
-              <tr key={ev.id_evento} className="hover:bg-gray-50">
-                <td className="px-3 py-2">
-                  <input
-                    type="checkbox"
-                    checked={selected.includes(ev.id_evento)}
-                    onChange={() => toggleSelect(ev.id_evento)}
-                  />
-                </td>
-                <td className="px-3 py-2">{ev.titulo}</td>
-                <td className="px-3 py-2">{ev.descripcion || "-"}</td>
-                {/* ✅ Mostrar fecha ya formateada desde el backend */}
-                <td className="px-3 py-2">{ev.fecha_evento || "-"}</td>
-                {/* ✅ Mostrar hora ya formateada desde el backend */}
-                <td className="px-3 py-2">
-                  {ev.hora_evento ? new Date(`1970-01-01T${ev.hora_evento}`).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit", hour12: true }) : "-"}
-                </td>
-                <td className="px-3 py-2">{ev.lugar}</td>
-                <td className="px-3 py-2 flex gap-2">
-                  <button
-                    onClick={() => openEdit(ev)}
-                    className="p-1.5 bg-blue-50 text-blue-600 rounded-lg border hover:bg-blue-100"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => setViewDetail(ev)}
-                    className="p-1.5 bg-yellow-50 text-yellow-600 rounded-lg border hover:bg-yellow-100"
-                  >
-                    <Eye className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => setConfirm({ open: true, id: ev.id_evento, name: ev.titulo })}
-                    className="p-1.5 bg-red-50 text-red-600 rounded-lg border hover:bg-red-100"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </td>
-              </tr>
-            ))}
 
-            {eventosPage.length === 0 && (
-              <tr>
-                <td colSpan="7" className="text-center py-10 text-gray-500">
-                  {loading ? "Cargando eventos..." : "No se encontraron eventos"}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <EventosTable
+        eventosPage={eventosPage}
+        selected={selected}
+        toggleSelect={toggleSelect}
+        toggleSelectAll={toggleSelectAll}
+        sortBy={sortBy}
+        sortDir={sortDir}
+        toggleSort={toggleSort}
+        openEdit={openEdit}
+        setViewDetail={setViewDetail}
+        setConfirm={setConfirm}
+      />
+      {eventosPage.length === 0 && (
+        <div className="text-center py-10 text-gray-500">
+          {loading ? "Cargando eventos..." : "No se encontraron eventos"}
+        </div>
+      )}
 
       {/* Paginación */}
-      <div className="flex justify-end items-center gap-2">
-        <button disabled={page <= 1} onClick={() => setPage(page - 1)} className="px-3 py-1 border rounded disabled:opacity-50">Anterior</button>
-        <span className="text-sm">Página {page} de {totalPages}</span>
-        <button disabled={page >= totalPages} onClick={() => setPage(page + 1)} className="px-3 py-1 border rounded disabled:opacity-50">Siguiente</button>
-      </div>
+      <EventosPagination page={page} totalPages={totalPages} setPage={setPage} />
 
       {/* Formulario */}
       {showForm && (

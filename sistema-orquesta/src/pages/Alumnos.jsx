@@ -1,8 +1,5 @@
 // sistema-orquesta/src/pages/Alumnos.jsx
 import { useEffect, useMemo, useState } from "react";
-import {
-  UserPlus, Search, Edit, Trash2, Filter, ChevronUp, ChevronDown,
-} from "lucide-react";
 import toast from "react-hot-toast";
 
 import {
@@ -14,21 +11,21 @@ import {
   getAlumnoInstrumento,
 } from "../api/alumnos";
 
-import AlumnoForm from "../components/Alumno/AlumnoForm";
-import AlumnoHistorial from "../components//Alumno/AlumnoHistorial";
-import AlumnoInstrumento from "../components//Alumno/AlumnoInstrumento";
+import AlumnoForm from "../components/Alumnos/AlumnoForm";
+import AlumnoHistorial from "../components/Alumnos/AlumnoHistorial";
+import AlumnoInstrumento from "../components/Alumnos/AlumnoInstrumento";
 import Modal from "../components/Modal";
-import AlumnoDetalle from "../components/Alumno/AlumnoDetalle";
+import AlumnoDetalle from "../components/Alumnos/AlumnoDetalle";
 import ConfirmDialog from "../components/ConfirmDialog";
 import ErrorDialog from "../components/InfoDialog";
 
+import AlumnosHeader from "../components/Alumnos/AlumnosHeader";
+import AlumnosFilters from "../components/Alumnos/AlumnosFilters";
+import AlumnosTable from "../components/Alumnos/AlumnosTable";
+import AlumnosPagination from "../components/Alumnos/AlumnosPagination";
 
-// === Helpers UI ===
-const Badge = ({ children }) => (
-  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-700 border">
-    {children}
-  </span>
-);
+
+
 
 
 export default function Alumnos() {
@@ -249,208 +246,48 @@ export default function Alumnos() {
   return (
     <div className="space-y-6">
       {/* Encabezado */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">Gestión de Alumnos</h1>
-          <p className="text-sm text-gray-500">Administra alumnos y sus programas.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          {selected.length > 0 && (
-            <>
-              <button onClick={bulkExport} className="px-3 py-2 rounded-lg bg-green-500 text-white">
-                Exportar seleccionados
-              </button>
-            </>
-          )}
-          <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-yellow-400 text-gray-900 hover:bg-yellow-500 shadow-sm">
-            <UserPlus className="h-4 w-4" />
-            Agregar Alumno
-          </button>
-        </div>
-      </div>
+      <AlumnosHeader selected={selected} onExport={bulkExport} onCreate={openCreate} />
 
       {/* Filtros */}
-      <div className="bg-white p-4 rounded-xl border shadow-sm flex flex-col md:flex-row gap-3">
-        <div className="flex-1 flex items-center gap-2 px-3 py-2 border rounded-lg bg-white shadow-sm">
-          <Search className="h-4 w-4 text-gray-500" />
-          <input
-            type="text"
-            placeholder="Buscar..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 outline-none text-sm"
-          />
-        </div>
-        <select value={fEstado} onChange={(e) => setFEstado(e.target.value)} className="px-3 py-2 border rounded-lg bg-white">
-          <option>Activo</option>
-          <option>Inactivo</option>
-          <option>Retirado</option>
-          <option value="">Todos</option>
-        </select>
-        <div className="flex items-center gap-2 px-3 py-2 border rounded-lg bg-white">
-          <Filter className="h-4 w-4 text-gray-500" />
-          <select value={fPrograma} onChange={(e) => setFPrograma(e.target.value)} className="flex-1 outline-none text-sm bg-transparent">
-            <option value="">Todos</option>
-            {programas.map((p) => (
-              <option key={p.id_programa} value={p.id_programa}>{p.nombre}</option>
-            ))}
-          </select>
-        </div>
-      </div>
+      <AlumnosFilters
+        search={search}
+        setSearch={setSearch}
+        fEstado={fEstado}
+        setFEstado={setFEstado}
+        fPrograma={fPrograma}
+        setFPrograma={setFPrograma}
+        programas={programas}
+      />
 
       {/* Tabla */}
-      <div className="overflow-x-auto bg-white border rounded-2xl shadow-sm">
-        <table className="w-full text-sm text-left border-collapse">
-          <thead className="bg-gray-100 text-gray-600">
-            <tr>
-              {/* Selección múltiple */}
-              <th className="px-3 py-2">
-                <input
-                  type="checkbox"
-                  onChange={(e) =>
-                    setSelected(
-                      e.target.checked ? alumnosPage.map((a) => a.id_alumno) : []
-                    )
-                  }
-                  checked={
-                    selected.length === alumnosPage.length && alumnosPage.length > 0
-                  }
-                />
-              </th>
-
-              {/* Columnas */}
-              <th
-                className="px-3 py-2 border-b cursor-pointer"
-                onClick={() => toggleSort("nombre")}
-              >
-                <div className="flex items-center gap-1">
-                  Nombre
-                  {sortBy === "nombre" &&
-                    (sortDir === "asc" ? (
-                      <ChevronUp className="h-3 w-3" />
-                    ) : (
-                      <ChevronDown className="h-3 w-3" />
-                    ))}
-                </div>
-              </th>
-
-              <th className="px-3 py-2 border-b">Edad</th>
-              <th className="px-3 py-2 border-b">Fecha nacimiento</th>
-              <th className="px-3 py-2 border-b">Género</th>
-              <th className="px-3 py-2 border-b">Teléfono</th>
-              <th className="px-3 py-2 border-b">Representante</th>
-              <th className="px-3 py-2 border-b">Estado</th>
-              <th className="px-3 py-2 border-b">Programas</th>
-              <th className="px-3 py-2 border-b">Acciones</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {alumnosPage.map((a) => (
-              <tr key={a.id_alumno} className="hover:bg-gray-50">
-                <td className="px-3 py-2">
-                  <input
-                    type="checkbox"
-                    checked={selected.includes(a.id_alumno)}
-                    onChange={() => toggleSelect(a.id_alumno)}
-                  />
-                </td>
-
-                <td className="px-3 py-2">{a.nombre}</td>
-                <td className="px-3 py-2">{a.edad} años</td>
-                <td className="px-3 py-2">{a.fecha_nacimiento?.slice(0, 10)}</td>
-                <td className="px-3 py-2">{a.genero}</td>
-                <td className="px-3 py-2">{a.telefono_contacto}</td>
-
-                {/* Representante */}
-                <td className="px-3 py-2">
-                  {a.representante_nombre ? (
-                    <div className="flex flex-col">
-                      <span className="font-medium">{a.representante_nombre}</span>
-                      <span className="text-xs text-gray-500">
-                        {a.representante_telefono}
-                      </span>
-                      <span className="text-xs text-gray-400">
-                        {a.representante_email}
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="text-xs text-gray-400">Sin representante</span>
-                  )}
-                </td>
-
-                <td className="px-3 py-2">{a.estado}</td>
-
-                {/* Programas */}
-                <td className="px-3 py-2">
-                  <div className="flex flex-wrap gap-1">
-                    {(a.programas || []).map((p) => (
-                      <Badge key={p.id_programa}>{p.nombre}</Badge>
-                    ))}
-                    {(!a.programas || a.programas.length === 0) && (
-                      <span className="text-xs text-gray-400">Sin programas</span>
-                    )}
-                  </div>
-                </td>
-
-                {/* Acciones */}
-                  <td className="px-3 py-2 flex gap-2">
-                    <button
-                      onClick={() => openEdit(a)}
-                      className="p-1.5 bg-blue-50 text-blue-600 rounded-lg border hover:bg-blue-100"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </button>
-
-                    {/* Activar / Desactivar con verificación de instrumentos */}
-                    <button
-                      onClick={() => handleEstadoClick(a)}
-                      disabled={checkingId === a.id_alumno}
-                      className={`p-1.5 rounded-lg border ${
-                        a.estado === "Activo"
-                          ? "bg-red-50 text-red-600 hover:bg-red-100"
-                          : "bg-green-50 text-green-600 hover:bg-green-100"
-                      } ${checkingId === a.id_alumno ? "opacity-60 cursor-not-allowed" : ""}`}
-                    >
-                      {checkingId === a.id_alumno ? "..." : (a.estado === "Activo" ? "Desactivar" : "Activar")}
-                    </button>
-
-                    <button
-                      onClick={() => openDetail(a)}
-                      className="p-1.5 bg-yellow-50 text-yellow-600 rounded-lg border hover:bg-yellow-100"
-                    >
-                      Ver
-                    </button>
-                  </td>
-
-              </tr>
-            ))}
-
-            {/* Loader amigable */}
-            {alumnosPage.length === 0 && (
-              <tr>
-                <td colSpan="10" className="text-center py-10 text-gray-500">
-                  {loading ? (
-                    <div className="flex flex-col items-center gap-2">
-                      <span className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-yellow-500"></span>
-                      <span>Cargando alumnos...</span>
-                    </div>
-                  ) : (
-                    "No se encontraron alumnos"
-                  )}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      <AlumnosTable
+        alumnosPage={alumnosPage}
+        selected={selected}
+        toggleSelect={toggleSelect}
+        sortBy={sortBy}
+        sortDir={sortDir}
+        toggleSort={toggleSort}
+        openEdit={openEdit}
+        handleEstadoClick={handleEstadoClick}
+        checkingId={checkingId}
+        openDetail={openDetail}
+      />
+      {/* Loader amigable */}
+      {alumnosPage.length === 0 && (
+        <div className="text-center py-10 text-gray-500">
+          {loading ? (
+            <div className="flex flex-col items-center gap-2">
+              <span className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-yellow-500"></span>
+              <span>Cargando alumnos...</span>
+            </div>
+          ) : (
+            "No se encontraron alumnos"
+          )}
+        </div>
+      )}
       
       {/* Paginación */}
-      <div className="flex justify-end items-center gap-2">
-        <button disabled={page <= 1} onClick={() => setPage(page - 1)} className="px-3 py-1 border rounded disabled:opacity-50">Anterior</button>
-        <span className="text-sm">Página {page} de {totalPages}</span>
-        <button disabled={page >= totalPages} onClick={() => setPage(page + 1)} className="px-3 py-1 border rounded disabled:opacity-50">Siguiente</button>
-      </div>
+      <AlumnosPagination page={page} totalPages={totalPages} setPage={setPage} />
 
       {/* Formulario */}
       {showForm && (

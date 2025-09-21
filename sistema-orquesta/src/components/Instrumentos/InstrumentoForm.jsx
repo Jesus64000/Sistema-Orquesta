@@ -1,6 +1,6 @@
 // src/components/InstrumentoForm.jsx
 import { useState } from "react";
-import { createInstrumento, updateInstrumento } from "../api/instrumentos";
+import { createInstrumento, updateInstrumento } from "../../api/instrumentos";
 
 import toast from "react-hot-toast";
 

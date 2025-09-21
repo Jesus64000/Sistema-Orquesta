@@ -1,7 +1,7 @@
 // src/components/InstrumentoHistorial.jsx
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { getInstrumentoHistorial } from "../api/instrumentos";
+import { getInstrumentoHistorial } from "../../api/instrumentos";
 
 export default function InstrumentoHistorial({ idInstrumento }) {
   const [historial, setHistorial] = useState([]);

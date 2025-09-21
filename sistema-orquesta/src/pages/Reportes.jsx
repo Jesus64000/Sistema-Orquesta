@@ -15,7 +15,7 @@ import {
   getAlumnosPorProgramaAnio
 } from "../api/reportes";
 
-import { BarChart3, Users, Music2, Calendar, UserCheck } from "lucide-react";
+import { Users, Music2, Calendar, UserCheck } from "lucide-react";
 
 // Componentes
 import KpiCard from "../components/Reportes/KpiCard";
@@ -23,6 +23,9 @@ import AlumnosSection from "../components/Reportes/AlumnosSection";
 import InstrumentosSection from "../components/Reportes/InstrumentosSection";
 import RepresentantesSection from "../components/Reportes/RepresentantesSection";
 import EventosSection from "../components/Reportes/EventosSection";
+import ReportesHeader from "../components/Reportes/Reportes/ReportesHeader";
+import ReportesViewSelector from "../components/Reportes/Reportes/ReportesViewSelector";
+import ReportesTabs from "../components/Reportes/Reportes/ReportesTabs";
 
 export default function Reportes() {
   const [activeTab, setActiveTab] = useState("alumnos");
@@ -118,28 +121,10 @@ export default function Reportes() {
   return (
     <div className="space-y-6 p-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <BarChart3 className="h-6 w-6" />
-          Reportes
-        </h1>
-      </div>
+      <ReportesHeader />
 
       {/* Selector global Tabla / Gráfico */}
-      <div className="flex gap-2 mb-4 mt-2">
-        <button
-          onClick={() => setViewGlobal("tabla")}
-          className={`px-3 py-1 rounded text-sm ${viewGlobal==="tabla" ? "bg-yellow-400 text-gray-900" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
-        >
-          Tabla
-        </button>
-        <button
-          onClick={() => setViewGlobal("grafico")}
-          className={`px-3 py-1 rounded text-sm ${viewGlobal==="grafico" ? "bg-yellow-400 text-gray-900" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
-        >
-          Gráfico
-        </button>
-      </div>
+      <ReportesViewSelector viewGlobal={viewGlobal} setViewGlobal={setViewGlobal} />
 
       {/* Filtros dinámicos */}
       {activeTab === "alumnos" && (
@@ -181,17 +166,7 @@ export default function Reportes() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b mt-4">
-        {["alumnos","instrumentos","representantes","eventos"].map(tab => (
-          <button
-            key={tab}
-            onClick={()=>setActiveTab(tab)}
-            className={`px-4 py-2 rounded-t-lg ${activeTab===tab ? "bg-yellow-400 text-gray-900 font-semibold" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
-          >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
-          </button>
-        ))}
-      </div>
+      <ReportesTabs activeTab={activeTab} setActiveTab={setActiveTab} />
 
       {/* Tab content */}
       <div className="space-y-6 mt-4">
