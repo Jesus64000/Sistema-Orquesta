@@ -451,11 +451,17 @@ router.get('/:id/instrumento', async (req, res) => {
   try {
     const { id } = req.params;
     const [rows] = await pool.query(
-      `SELECT i.id_instrumento, i.nombre, i.numero_serie, i.estado as estado_instrumento, ai.fecha_asignacion,
-              c.nombre as categoria_nombre
+    `SELECT 
+      i.id_instrumento,
+      i.nombre,
+      i.numero_serie,
+      COALESCE(e.nombre, 'Desconocido') AS estado_instrumento,
+      ai.fecha_asignacion,
+      c.nombre AS categoria_nombre
        FROM Asignacion_Instrumento ai
        JOIN Instrumento i ON ai.id_instrumento = i.id_instrumento
        LEFT JOIN Categoria c ON i.id_categoria = c.id_categoria
+       LEFT JOIN Estados e ON i.id_estado = e.id_estado
        WHERE ai.id_alumno = ? AND ai.estado = 'Activo'
        ORDER BY ai.fecha_asignacion DESC
        LIMIT 1`,
@@ -476,9 +482,15 @@ router.post('/:id/instrumento', async (req, res) => {
       if (!id_instrumento) return res.status(400).json({ error: "id_instrumento requerido" });
 
       // verificar disponibilidad
-      const [[inst]] = await pool.query("SELECT * FROM Instrumento WHERE id_instrumento = ?", [id_instrumento]);
+      const [[inst]] = await pool.query(
+        `SELECT i.*, COALESCE(e.nombre, 'Desconocido') AS estado_nombre
+         FROM Instrumento i
+         LEFT JOIN Estados e ON i.id_estado = e.id_estado
+         WHERE i.id_instrumento = ?`,
+        [id_instrumento]
+      );
       if (!inst) return res.status(404).json({ error: "Instrumento no encontrado" });
-      if (inst.estado !== "Disponible") return res.status(400).json({ error: "Instrumento no disponible" });
+      if (inst.estado_nombre !== "Disponible") return res.status(400).json({ error: "Instrumento no disponible" });
 
       // registrar asignación
       await pool.query(
@@ -495,8 +507,13 @@ router.post('/:id/instrumento', async (req, res) => {
         usuario
       );
 
-      // actualizar estado instrumento
-      await pool.query(`UPDATE Instrumento SET estado = 'Asignado' WHERE id_instrumento = ?`, [id_instrumento]);
+      // actualizar estado instrumento -> id_estado = (estado 'Asignado')
+      const [[estAsig]] = await pool.query(
+        `SELECT id_estado FROM Estados WHERE nombre = 'Asignado' LIMIT 1`
+      );
+      if (estAsig && estAsig.id_estado) {
+        await pool.query(`UPDATE Instrumento SET id_estado = ? WHERE id_instrumento = ?`, [estAsig.id_estado, id_instrumento]);
+      }
 
       await registrarHistorial(id, "ASIGNACION_INSTRUMENTO", `Instrumento ${id_instrumento} asignado`, usuario);
 
@@ -529,8 +546,11 @@ router.delete('/:id/instrumento', async (req, res) => {
       [asign.id_asignacion]
     );
 
-    // actualizar instrumento a Disponible
-    await pool.query(`UPDATE Instrumento SET estado = 'Disponible' WHERE id_instrumento = ?`, [asign.id_instrumento]);
+    // actualizar instrumento a Disponible (id_estado)
+    const [[estDisp]] = await pool.query(`SELECT id_estado FROM Estados WHERE nombre = 'Disponible' LIMIT 1`);
+    if (estDisp && estDisp.id_estado) {
+      await pool.query(`UPDATE Instrumento SET id_estado = ? WHERE id_instrumento = ?`, [estDisp.id_estado, asign.id_instrumento]);
+    }
 
     await registrarHistorial(id, "ASIGNACION_INSTRUMENTO", `Instrumento ${asign.id_instrumento} devuelto`, usuario);
 
@@ -577,11 +597,14 @@ router.put('/:id/instrumento/devolver', async (req, res) => {
       [id_instrumento, `Devuelto por alumno ID: ${id}`, "sistema"]
     );
 
-    // 4️⃣ Actualizar estado del instrumento a "Disponible"
-    await pool.query(
-      "UPDATE instrumento SET estado = 'Disponible' WHERE id_instrumento = ?",
-      [id_instrumento]
-    );
+    // 4️⃣ Actualizar estado del instrumento a "Disponible" (id_estado)
+    const [[estDisp]] = await pool.query(`SELECT id_estado FROM Estados WHERE nombre = 'Disponible' LIMIT 1`);
+    if (estDisp && estDisp.id_estado) {
+      await pool.query(
+        "UPDATE Instrumento SET id_estado = ? WHERE id_instrumento = ?",
+        [estDisp.id_estado, id_instrumento]
+      );
+    }
 
     res.json({ message: "Instrumento devuelto correctamente" });
   } catch (err) {

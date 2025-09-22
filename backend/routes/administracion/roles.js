@@ -5,7 +5,7 @@ import db from '../../db.js';
 // Listar roles
 router.get('/', async (req, res) => {
   try {
-    const [rows] = await db.query('SELECT * FROM roles');
+    const [rows] = await db.query('SELECT id_rol, nombre, permisos FROM Rol');
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: 'Error al obtener roles' });
@@ -14,10 +14,10 @@ router.get('/', async (req, res) => {
 
 // Crear rol
 router.post('/', async (req, res) => {
-  const { nombre, permisos } = req.body;
+  const { nombre, permisos = null } = req.body;
   try {
-    await db.query('INSERT INTO roles (nombre, permisos) VALUES (?, ?)', [nombre, permisos]);
-    res.json({ success: true });
+    const [result] = await db.query('INSERT INTO Rol (nombre, permisos) VALUES (?, ?)', [nombre, permisos]);
+    res.json({ success: true, id_rol: result.insertId });
   } catch (err) {
     res.status(500).json({ error: 'Error al crear rol' });
   }
@@ -25,9 +25,9 @@ router.post('/', async (req, res) => {
 
 // Editar rol
 router.put('/:id', async (req, res) => {
-  const { nombre, permisos } = req.body;
+  const { nombre, permisos = null } = req.body;
   try {
-    await db.query('UPDATE roles SET nombre=?, permisos=? WHERE id_rol=?', [nombre, permisos, req.params.id]);
+    await db.query('UPDATE Rol SET nombre=?, permisos=? WHERE id_rol=?', [nombre, permisos, req.params.id]);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Error al editar rol' });
@@ -37,7 +37,7 @@ router.put('/:id', async (req, res) => {
 // Eliminar rol
 router.delete('/:id', async (req, res) => {
   try {
-    await db.query('DELETE FROM roles WHERE id_rol=?', [req.params.id]);
+    await db.query('DELETE FROM Rol WHERE id_rol=?', [req.params.id]);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Error al eliminar rol' });
