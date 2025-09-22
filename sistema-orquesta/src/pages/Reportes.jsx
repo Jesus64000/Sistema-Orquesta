@@ -26,6 +26,7 @@ import EventosSection from "../components/Reportes/EventosSection";
 import ReportesHeader from "../components/Reportes/ReportesHeader";
 import ReportesViewSelector from "../components/Reportes/ReportesViewSelector";
 import ReportesTabs from "../components/Reportes/ReportesTabs";
+import SegmentedDropdown from "../components/SegmentedDropdown";
 
 export default function Reportes() {
   const [activeTab, setActiveTab] = useState("alumnos");
@@ -145,41 +146,35 @@ export default function Reportes() {
       {/* Filtros dinámicos */}
       {activeTab === "alumnos" && (
         <div className="flex gap-2 mb-4">
-          <select
-            value={filtroPrograma}
-            onChange={(e) => setFiltroPrograma(e.target.value)}
-            className="px-3 py-1 border rounded"
-          >
-            <option value="todos">Todos los programas</option>
-            {programasDisponibles.map((p, i) => (
-              <option key={i} value={p}>{p}</option>
-            ))}
-          </select>
+          <SegmentedDropdown
+            label="Programa"
+            options={[{ key: "todos", label: "Todos los programas" }, ...programasDisponibles.map((p) => ({ key: String(p), label: p }))]}
+            selectedKey={String(filtroPrograma)}
+            onSelect={(k) => setFiltroPrograma(k)}
+            align="left"
+            matchTriggerWidth
+          />
         </div>
       )}
 
       {activeTab === "instrumentos" && (
         <div className="flex gap-2 mb-4">
-          <select
-            value={filtroEstadoInstrumento}
-            onChange={(e) => setFiltroEstadoInstrumento(e.target.value)}
-            className="px-3 py-1 border rounded"
-          >
-            <option value="todos">Todos los estados</option>
-            {estadosInstrumentoDisponibles.map((e) => (
-              <option key={e.id_estado} value={e.id_estado}>{e.nombre}</option>
-            ))}
-          </select>
-          <select
-            value={filtroCategoriaInstrumento}
-            onChange={(e) => setFiltroCategoriaInstrumento(e.target.value)}
-            className="px-3 py-1 border rounded"
-          >
-            <option value="todos">Todas las categorías</option>
-            {categoriasInstrumentoDisponibles.map((c) => (
-              <option key={c.id_categoria} value={c.id_categoria}>{c.nombre}</option>
-            ))}
-          </select>
+          <SegmentedDropdown
+            label="Estado"
+            options={[{ key: "todos", label: "Todos los estados" }, ...estadosInstrumentoDisponibles.map((e) => ({ key: String(e.id_estado), label: e.nombre }))]}
+            selectedKey={String(filtroEstadoInstrumento)}
+            onSelect={(k) => setFiltroEstadoInstrumento(k)}
+            align="left"
+            matchTriggerWidth
+          />
+          <SegmentedDropdown
+            label="Categoría"
+            options={[{ key: "todos", label: "Todas las categorías" }, ...categoriasInstrumentoDisponibles.map((c) => ({ key: String(c.id_categoria), label: c.nombre }))]}
+            selectedKey={String(filtroCategoriaInstrumento)}
+            onSelect={(k) => setFiltroCategoriaInstrumento(k)}
+            align="left"
+            matchTriggerWidth
+          />
         </div>
       )}
 

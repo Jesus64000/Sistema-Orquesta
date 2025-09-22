@@ -4,10 +4,18 @@ import pool from '../db.js';
 import upload from '../uploads.config.js';
 import { registrarHistorial, registrarHistorialInstrumento } from '../helpers/historial.js';
 import alumnosHelpers from '../helpers/alumnos.js';
+import XLSX from 'xlsx';
+import PDFDocument from 'pdfkit';
 
 const { fetchProgramasPorAlumnos, fetchAlumnosWithPrograms } = alumnosHelpers;
 
 const router = Router();
+
+// Valida id numérico y evita que rutas como "estado-masivo" coincidan con ":id"
+router.param('id', (req, res, next, val) => {
+  if (!/^\d+$/.test(String(val))) return next('route');
+  next();
+});
 
 // Listar alumnos con filtros opcionales: ?search=&estado=&programa_id=&edad_min=&edad_max=
 router.get('/', async (req, res) => {
@@ -261,47 +269,6 @@ router.put('/:id/desactivar', async (req, res) => {
   }
 });
 
-// PUT /alumnos/:id/estado
-router.put('/:id/estado', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    // Obtener estado actual del alumno
-    const [alumno] = await pool.query(
-      'SELECT estado FROM Alumno WHERE id_alumno = ?',
-      [id]
-    );
-
-    if (!alumno.length) {
-      return res.status(404).json({ error: 'Alumno no encontrado' });
-    }
-
-    // Alternar estado
-    const nuevoEstado = alumno[0].estado === 'Activo' ? 'Inactivo' : 'Activo';
-
-    // Actualizar estado en la DB
-    await pool.query(
-      'UPDATE Alumno SET estado = ? WHERE id_alumno = ?',
-      [nuevoEstado, id]
-    );
-
-    // Insertar en historial
-    await pool.query(
-      `INSERT INTO alumno_historial (id_alumno, tipo, descripcion, usuario)
-       VALUES (?, 'ESTADO', ?, ?)`,
-      [
-        id,
-        `Alumno cambiado a ${nuevoEstado}`,
-        req.user?.nombre || 'Sistema', // 👈 aquí depende de si manejas login
-      ]
-    );
-
-    res.json({ id_alumno: id, estado: nuevoEstado });
-  } catch (err) {
-    console.error('Error cambiando estado:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
 
 
 // Eliminar alumno
@@ -372,32 +339,219 @@ router.post('/export-masivo', async (req, res) => {
 
       const alumnos = await fetchAlumnosWithPrograms({ ids });
 
-      if (format === "csv") {
-        const headers = ["id_alumno", "nombre", "fecha_nacimiento", "genero", "telefono_contacto", "estado", "programas", "nota"];
-        const lines = [headers.join(",")];
-        for (const a of alumnos) {
-          const programasStr = (a.programas || []).map((p) => p.nombre).join(" | ");
-          const row = [
-            a.id_alumno,
-            `"${String(a.nombre || "").replace(/"/g, '""')}"`,
-            a.fecha_nacimiento ? a.fecha_nacimiento.slice(0, 10) : "",
-            a.genero || "",
-            `"${String(a.telefono_contacto || "").replace(/"/g, '""')}"`,
-            a.estado || "",
-            `"${String(programasStr).replace(/"/g, '""')}"`,
-            `"${String(a.nota || "").replace(/"/g, '""')}"`,
-          ];
-          lines.push(row.join(","));
+      const rows = alumnos.map((a) => {
+        let fn = '';
+        try {
+          const v = a.fecha_nacimiento;
+          if (typeof v === 'string') fn = v.slice(0, 10);
+          else if (v instanceof Date) fn = v.toISOString().slice(0, 10);
+          else if (v) {
+            const nd = new Date(v);
+            if (!isNaN(nd)) fn = nd.toISOString().slice(0, 10);
+          }
+        } catch {}
+        return {
+          id_alumno: a.id_alumno,
+          nombre: a.nombre || "",
+          fecha_nacimiento: fn,
+          genero: a.genero || "",
+          telefono_contacto: a.telefono_contacto || "",
+          estado: a.estado || "",
+          programas: (a.programas || []).map((p) => p.nombre).join(" | "),
+          nota: a.nota || "",
+        };
+      });
+
+      if (format === 'csv') {
+        const headers = Object.keys(rows[0] || { id_alumno: '', nombre: '', fecha_nacimiento: '', genero: '', telefono_contacto: '', estado: '', programas: '', nota: '' });
+        const lines = [headers.join(',')];
+        for (const r of rows) {
+          const vals = headers.map((h) => `"${String(r[h] ?? '').replace(/"/g, '""')}"`);
+          lines.push(vals.join(','));
         }
-        const csv = lines.join("\n");
-        res.setHeader("Content-Type", "text/csv; charset=utf-8");
-        res.setHeader("Content-Disposition", `attachment; filename="alumnos_export_masivo_${Date.now()}.csv"`);
+        const csv = lines.join('\n');
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="alumnos_export_masivo_${Date.now()}.csv"`);
         return res.send(csv);
       }
-      res.status(400).json({ error: "Formato no soportado" });
+
+      if (format === 'xlsx' || format === 'excel') {
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(rows);
+        XLSX.utils.book_append_sheet(wb, ws, 'Alumnos');
+        const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="alumnos_export_masivo_${Date.now()}.xlsx"`);
+        return res.send(buf);
+      }
+
+      if (format === 'pdf') {
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="alumnos_export_masivo_${Date.now()}.pdf"`);
+        const doc = new PDFDocument({ margin: 30, size: 'A4' });
+        doc.pipe(res);
+
+        doc.fontSize(14).text('Exportación de Alumnos', { align: 'center' });
+        doc.moveDown();
+
+        const colTitles = ['ID', 'Nombre', 'F. Nac.', 'Género', 'Teléfono', 'Estado', 'Programas'];
+        const colWidths = [40, 150, 70, 50, 90, 60, 180];
+
+        const drawRow = (vals, isHeader = false) => {
+          doc.font(isHeader ? 'Helvetica-Bold' : 'Helvetica');
+          for (let i = 0; i < vals.length; i++) {
+            const text = String(vals[i] ?? '');
+            doc.text(text, { continued: i < vals.length - 1, width: colWidths[i] });
+          }
+          doc.text('\n');
+        };
+
+        drawRow(colTitles, true);
+        doc.moveDown(0.2);
+
+        rows.forEach((r) => {
+          drawRow([
+            r.id_alumno,
+            r.nombre,
+            r.fecha_nacimiento,
+            r.genero,
+            r.telefono_contacto,
+            r.estado,
+            r.programas,
+          ]);
+        });
+
+        doc.end();
+        return; // stream finaliza la respuesta
+      }
+
+      res.status(400).json({ error: 'Formato no soportado. Usa csv | xlsx | pdf' });
     } catch (err) {
-      console.error("Error en POST /alumnos/export-masivo:", err);
-      res.status(500).json({ error: err.message });
+      console.error('Error en POST /alumnos/export-masivo:', err);
+      if (!res.headersSent) res.status(500).json({ error: err.message });
+  }
+});
+
+// Importación masiva (CSV o XLSX) - multipart/form-data field: file
+router.post('/import-masivo', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: "Archivo requerido (field 'file')" });
+
+    const wb = XLSX.readFile(req.file.path);
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+
+    let created = 0, updated = 0, errors = 0;
+
+    for (const r of rows) {
+      try {
+        // Mapeo de columnas esperadas
+        const id_alumno = r.id_alumno || r.ID || r.Id || null;
+        const nombre = r.nombre || r.Nombre || '';
+        const fecha_nacimiento = r.fecha_nacimiento || r['fecha nacimiento'] || r['Fecha Nacimiento'] || null;
+        const genero = r.genero || r.Genero || r.Género || '';
+        const telefono_contacto = r.telefono_contacto || r.Telefono || r['Teléfono'] || '';
+        const estado = r.estado || r.Estado || 'Activo';
+        const programasStr = r.programas || r.Programas || '';
+
+        if (!nombre) continue; // fila inválida
+
+        if (id_alumno) {
+          // actualizar si existe
+          await pool.query(
+            `UPDATE Alumno SET nombre=?, fecha_nacimiento=?, genero=?, telefono_contacto=?, estado=? WHERE id_alumno=?`,
+            [nombre, fecha_nacimiento || null, genero, telefono_contacto, estado, id_alumno]
+          );
+          updated++;
+
+          // reemplazar programas si vienen
+          if (programasStr) {
+            const progNombres = String(programasStr).split('|').map(s => s.trim()).filter(Boolean);
+            await pool.query(`DELETE FROM alumno_programa WHERE id_alumno = ?`, [id_alumno]);
+            for (const pn of progNombres.slice(0, 2)) {
+              const [[pr]] = await pool.query(`SELECT id_programa FROM Programa WHERE nombre = ? LIMIT 1`, [pn]);
+              if (pr) await pool.query(`INSERT INTO alumno_programa (id_alumno, id_programa) VALUES (?, ?)`, [id_alumno, pr.id_programa]);
+            }
+          }
+        } else {
+          // crear
+          const [ins] = await pool.query(
+            `INSERT INTO Alumno (nombre, fecha_nacimiento, genero, telefono_contacto, estado) VALUES (?, ?, ?, ?, ?)`,
+            [nombre, fecha_nacimiento || null, genero, telefono_contacto, estado]
+          );
+          const newId = ins.insertId;
+          created++;
+
+          if (programasStr) {
+            const progNombres = String(programasStr).split('|').map(s => s.trim()).filter(Boolean);
+            for (const pn of progNombres.slice(0, 2)) {
+              const [[pr]] = await pool.query(`SELECT id_programa FROM Programa WHERE nombre = ? LIMIT 1`, [pn]);
+              if (pr) await pool.query(`INSERT INTO alumno_programa (id_alumno, id_programa) VALUES (?, ?)`, [newId, pr.id_programa]);
+            }
+          }
+        }
+      } catch (e) {
+        errors++;
+      }
+    }
+
+    res.json({ message: 'Importación completada', created, updated, errors });
+  } catch (err) {
+    console.error('Error en POST /alumnos/import-masivo:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Acciones masivas: agregar o quitar programa a un conjunto de alumnos
+// body: { ids: number[], id_programa: number, action: 'add' | 'remove' }
+router.post('/programa-masivo', async (req, res) => {
+  try {
+    const { ids = [], id_programa, action = 'add' } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: 'ids array requerido' });
+    if (!id_programa) return res.status(400).json({ error: 'id_programa requerido' });
+
+    if (action === 'add') {
+      for (const id of ids) {
+        await pool.query(`INSERT IGNORE INTO alumno_programa (id_alumno, id_programa) VALUES (?, ?)`, [id, id_programa]);
+      }
+    } else if (action === 'remove') {
+      await pool.query(`DELETE FROM alumno_programa WHERE id_programa = ? AND id_alumno IN (?)`, [id_programa, ids]);
+    } else {
+      return res.status(400).json({ error: 'action debe ser add o remove' });
+    }
+    res.json({ message: 'Operación masiva de programa completada' });
+  } catch (err) {
+    console.error('Error en POST /alumnos/programa-masivo:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Desactivación masiva de alumnos (soft delete: estado = 'Inactivo')
+router.post('/desactivar-masivo', async (req, res) => {
+  try {
+    const { ids = [], usuario = 'sistema' } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: 'ids array requerido' });
+
+    // Validar que ningún alumno tenga instrumento activo
+    const [asigs] = await pool.query(
+      `SELECT DISTINCT ai.id_alumno
+       FROM Asignacion_Instrumento ai
+       WHERE ai.estado = 'Activo' AND ai.id_alumno IN (?)`,
+      [ids]
+    );
+    if (asigs.length > 0) {
+      const bloqueados = asigs.map(r => r.id_alumno);
+      return res.status(400).json({ error: 'Algunos alumnos tienen instrumentos asignados activos. Deben devolverlos antes de desactivar.', bloqueados });
+    }
+
+    await pool.query(`UPDATE Alumno SET estado = 'Inactivo' WHERE id_alumno IN (?)`, [ids]);
+    for (const id of ids) {
+      await registrarHistorial(id, 'ESTADO', 'Desactivación masiva (estado=Inactivo)', usuario);
+    }
+    res.json({ message: 'Alumnos desactivados correctamente' });
+  } catch (err) {
+    console.error('Error en POST /alumnos/desactivar-masivo:', err);
+    res.status(500).json({ error: err.message });
   }
 });
 

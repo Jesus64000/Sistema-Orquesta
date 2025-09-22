@@ -6,7 +6,9 @@ import {
   getAlumnos,
   deleteAlumno,
   getProgramas,
-  exportAlumnosCSV,
+  exportAlumnos,
+  estadoMasivo,
+  programaMasivo,
   getAlumno,
   getAlumnoInstrumento,
 } from "../api/alumnos";
@@ -14,7 +16,6 @@ import {
 import AlumnoForm from "../components/Alumnos/AlumnoForm";
 import AlumnoHistorial from "../components/Alumnos/AlumnoHistorial";
 import AlumnoInstrumento from "../components/Alumnos/AlumnoInstrumento";
-import Modal from "../components/Modal";
 import AlumnoDetalle from "../components/Alumnos/AlumnoDetalle";
 import ConfirmDialog from "../components/ConfirmDialog";
 import ErrorDialog from "../components/InfoDialog";
@@ -23,6 +24,7 @@ import AlumnosHeader from "../components/Alumnos/AlumnosHeader";
 import AlumnosFilters from "../components/Alumnos/AlumnosFilters";
 import AlumnosTable from "../components/Alumnos/AlumnosTable";
 import AlumnosPagination from "../components/Alumnos/AlumnosPagination";
+import Modal from "../components/Modal";
 
 
 
@@ -53,6 +55,15 @@ export default function Alumnos() {
 
   // Selección múltiple
   const [selected, setSelected] = useState([]);
+  const toggleSelectAllPage = () => {
+    const idsPage = alumnosPage.map(a => a.id_alumno);
+    const allSelected = idsPage.every(id => selected.includes(id));
+    if (allSelected) {
+      setSelected(prev => prev.filter(id => !idsPage.includes(id)));
+    } else {
+      setSelected(prev => Array.from(new Set([...prev, ...idsPage])));
+    }
+  };
 
   // Form
   const [showForm, setShowForm] = useState(false);
@@ -216,17 +227,59 @@ export default function Alumnos() {
     }
   };
 
-  const bulkExport = async () => {
+  const bulkExport = async (format = 'csv') => {
+    if (!selected.length) return toast.error('Selecciona al menos un alumno');
     try {
-      const res = await exportAlumnosCSV({ ids: selected });
-      const blob = new Blob([res.data], { type: "text/csv" });
+      const res = await exportAlumnos({ ids: selected, format });
+      const mime = format === 'pdf'
+        ? 'application/pdf'
+        : (format === 'xlsx' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'text/csv');
+      const ext = format === 'pdf' ? 'pdf' : (format === 'xlsx' ? 'xlsx' : 'csv');
+      const blob = new Blob([res.data], { type: mime });
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
+      const a = document.createElement('a');
       a.href = url;
-      a.download = `alumnos_export_${Date.now()}.csv`;
+      a.download = `alumnos_export_${Date.now()}.${ext}`;
       a.click();
-    } catch {
-      toast.error("Error exportando alumnos");
+    } catch (e) {
+      console.error(e);
+      toast.error('Error exportando alumnos');
+    }
+  };
+
+
+  // Modal Acciones masivas
+  const [massActionOpen, setMassActionOpen] = useState(false);
+  const [massActionType, setMassActionType] = useState(null); // 'estado' | 'programa' | 'desactivar'
+  const [massEstado, setMassEstado] = useState('Activo');
+  const [massProgramaId, setMassProgramaId] = useState('');
+  const [massProgramaAction, setMassProgramaAction] = useState('add');
+
+  const handleMassAction = (type) => {
+    setMassActionType(type);
+    setMassActionOpen(true);
+  };
+
+  const runMassAction = async () => {
+    try {
+      if (massActionType === 'estado') {
+        await estadoMasivo({ ids: selected, estado: massEstado });
+        toast.success('Estado actualizado');
+        await loadData();
+      } else if (massActionType === 'programa') {
+        if (!massProgramaId) return toast.error('Selecciona programa');
+        await programaMasivo({ ids: selected, id_programa: Number(massProgramaId), action: massProgramaAction });
+        toast.success('Programas actualizados');
+        await loadData();
+      } else if (massActionType === 'desactivar') {
+        await estadoMasivo({ ids: selected, estado: 'Inactivo' });
+        toast.success('Alumnos desactivados');
+        await loadData();
+      }
+      setMassActionOpen(false);
+    } catch (e) {
+      console.error(e);
+      toast.error('Acción masiva falló');
     }
   };
 
@@ -246,7 +299,12 @@ export default function Alumnos() {
   return (
     <div className="space-y-6">
       {/* Encabezado */}
-      <AlumnosHeader selected={selected} onExport={bulkExport} onCreate={openCreate} />
+      <AlumnosHeader
+        selected={selected}
+        onExportFormat={(fmt) => bulkExport(fmt)}
+        onMassActions={handleMassAction}
+        onCreate={openCreate}
+      />
 
       {/* Filtros */}
       <AlumnosFilters
@@ -264,6 +322,7 @@ export default function Alumnos() {
         alumnosPage={alumnosPage}
         selected={selected}
         toggleSelect={toggleSelect}
+        onToggleAllPage={toggleSelectAllPage}
         sortBy={sortBy}
         sortDir={sortDir}
         toggleSort={toggleSort}
@@ -351,6 +410,70 @@ export default function Alumnos() {
           }
         }}
       />
+
+      {/* Modal Acciones Masivas */}
+      {massActionOpen && (
+        <Modal title="Acciones masivas" onClose={() => setMassActionOpen(false)}>
+          <div className="space-y-4">
+            <div className="text-sm text-gray-600">Seleccionados: {selected.length}</div>
+            <div className="flex gap-2">
+              <button
+                className={`px-3 py-1.5 rounded border ${massActionType === 'estado' ? 'bg-gray-200' : 'bg-white'}`}
+                onClick={() => setMassActionType('estado')}
+              >Estado</button>
+              <button
+                className={`px-3 py-1.5 rounded border ${massActionType === 'programa' ? 'bg-gray-200' : 'bg-white'}`}
+                onClick={() => setMassActionType('programa')}
+              >Programa</button>
+              <button
+                className={`px-3 py-1.5 rounded border ${massActionType === 'desactivar' ? 'bg-gray-200' : 'bg-white'}`}
+                onClick={() => setMassActionType('desactivar')}
+              >Desactivar</button>
+            </div>
+
+            {massActionType === 'estado' && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Nuevo estado</label>
+                <div className="flex gap-2">
+                  {['Activo','Inactivo','Retirado'].map((e) => (
+                    <button key={e} className={`px-3 py-1.5 rounded-full border text-xs ${massEstado === e ? 'bg-yellow-400 border-yellow-500 text-gray-900' : 'bg-white'}`} onClick={() => setMassEstado(e)}>{e}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {massActionType === 'programa' && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Programa</label>
+                <select className="px-3 py-2 border rounded w-full" value={massProgramaId} onChange={(e) => setMassProgramaId(e.target.value)}>
+                  <option value="">Selecciona programa</option>
+                  {programas.map((p) => (
+                    <option key={p.id_programa} value={p.id_programa}>{p.nombre}</option>
+                  ))}
+                </select>
+                <div className="flex gap-2 items-center">
+                  <label className="text-sm font-medium">Acción:</label>
+                  <select className="px-3 py-2 border rounded" value={massProgramaAction} onChange={(e) => setMassProgramaAction(e.target.value)}>
+                    <option value="add">Asignar</option>
+                    <option value="remove">Quitar</option>
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {massActionType === 'desactivar' && (
+              <div className="p-3 bg-yellow-50 text-yellow-700 rounded border border-yellow-200 text-sm">
+                Esta acción desactivará a los alumnos seleccionados (no se eliminarán).
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button className="px-3 py-2 rounded border" onClick={() => setMassActionOpen(false)}>Cancelar</button>
+              <button className="px-3 py-2 rounded bg-yellow-400 text-gray-900" onClick={runMassAction}>Aplicar</button>
+            </div>
+          </div>
+        </Modal>
+      )}
 
       {/* Error si no se puede desactivar */}
       <ErrorDialog

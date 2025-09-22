@@ -2,12 +2,13 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   PlusCircle, Wrench, ClipboardList, MapPin, Clock,
-  ChevronLeft, ChevronRight, UserCheck, UserPlus, Hourglass, Briefcase, Filter
+  ChevronLeft, ChevronRight, UserCheck, Filter
 } from "lucide-react";
 
-import { getDashboardStats, getProximoEvento } from "../api/dashboard";
+import { getDashboardStats, getProximoEvento, getCumpleaniosProximos } from "../api/dashboard";
 import { getEventosFuturos } from "../api/eventos";
 import { getProgramas } from "../api/programas";
+import SegmentedDropdown from "../components/SegmentedDropdown";
 
 import Modal from "../components/Modal";
 import EventoForm from "../components/Eventos/EventoForm";
@@ -21,10 +22,12 @@ const Card = ({ children, className = "" }) => (
   </div>
 );
 
-const QuickAction = ({ icon: Icon, label, onClick }) => (
+const QuickAction = ({ icon: Icon, label, onClick, disabled = false }) => (
   <button
     onClick={onClick}
-    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow-400 text-gray-900 hover:bg-yellow-500 text-xs shadow-sm"
+    disabled={disabled}
+    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs shadow-sm transition
+      ${disabled ? "bg-yellow-300 text-gray-700 opacity-60 cursor-not-allowed" : "bg-yellow-400 text-gray-900 hover:bg-yellow-500"}`}
   >
     {Icon && <Icon className="h-4 w-4" />}
     <span>{label}</span>
@@ -42,6 +45,8 @@ const QuickStat = ({ label, value, icon: Icon }) => (
     </div>
   </div>
 );
+
+// SegmentedDropdown ahora es un componente compartido en ../components/SegmentedDropdown
 
 // util: parsear datetimes que vienen de la BD
 const parseDBDate = (val) => {
@@ -195,7 +200,13 @@ export default function Dashboard() {
   const [openModal, setOpenModal] = useState(null);
   const [editingData, setEditingData] = useState(null);
   const [programas, setProgramas] = useState([]);
+  const [cumples, setCumples] = useState([]);
+  const [loadingStats, setLoadingStats] = useState(false);
   const today = new Date();
+
+  // nuevos controles locales para breakdown
+  const [alumnoFiltro, setAlumnoFiltro] = useState("total"); // total|activos|inactivos|retirados
+  const [instFiltro, setInstFiltro] = useState("total"); // total|disponibles|asignados|mantenimiento|baja
 
   const handleCloseModal = () => {
     setOpenModal(null);
@@ -204,17 +215,24 @@ export default function Dashboard() {
 
   const loadDashboard = useCallback(async () => {
     try {
+      setLoadingStats(true);
       const resStats = await getDashboardStats(programFilter || null);
-      setStats(resStats.data);
+      setStats(resStats.data || {});
 
       const resEvento = await getProximoEvento(programFilter || null);
       setProximoEvento(resEvento.data);
 
       const eventos = await getEventosFuturos();
-      console.log("Eventos obtenidos del backend:", eventos); // 👀 único log aquí
+      console.log("Eventos obtenidos del backend:", eventos);
       setEventosFuturos(Array.isArray(eventos) ? eventos : []);
+
+      // cargar cumpleaños
+      const resCum = await getCumpleaniosProximos(30, programFilter || null);
+      setCumples(Array.isArray(resCum.data) ? resCum.data : []);
     } catch (err) {
       console.error("Error cargando dashboard:", err);
+    } finally {
+      setLoadingStats(false);
     }
   }, [programFilter]);
 
@@ -231,6 +249,65 @@ export default function Dashboard() {
     fetchProgramas();
   }, [loadDashboard]);
 
+  // helpers para valores según filtro
+  const alumnosDisplay = (() => {
+    if (!stats) return 0;
+    switch (alumnoFiltro) {
+      case "activos":
+        return stats.alumnosActivos || 0;
+      case "inactivos":
+        return stats.alumnosInactivos || 0;
+      case "retirados":
+        return stats.alumnosRetirados || 0;
+      default:
+        return stats.totalAlumnos || 0;
+    }
+  })();
+
+  const instrumentosDisplay = (() => {
+    if (!stats) return 0;
+    switch (instFiltro) {
+      case "disponibles":
+        return stats.instrumentosDisponibles || 0;
+      case "asignados":
+        return stats.instrumentosAsignados || 0;
+      case "mantenimiento":
+        return stats.instrumentosMantenimiento || 0;
+      case "baja":
+        return stats.instrumentosBaja || 0;
+      default:
+        return stats.instrumentosTotal || 0;
+    }
+  })();
+
+  // conteos para mostrar en los botones de filtro
+  const alumnoCounts = {
+    total: stats.totalAlumnos || 0,
+    activos: stats.alumnosActivos || 0,
+    inactivos: stats.alumnosInactivos || 0,
+    retirados: stats.alumnosRetirados || 0,
+  };
+  const instCounts = {
+    total: stats.instrumentosTotal || 0,
+    disponibles: stats.instrumentosDisponibles || 0,
+    asignados: stats.instrumentosAsignados || 0,
+    mantenimiento: stats.instrumentosMantenimiento || 0,
+    baja: stats.instrumentosBaja || 0,
+  };
+  const alumnoOptions = [
+    { key: "total", label: "Total", count: alumnoCounts.total },
+    { key: "activos", label: "Activos", count: alumnoCounts.activos },
+    { key: "inactivos", label: "Inactivos", count: alumnoCounts.inactivos },
+    { key: "retirados", label: "Retirados", count: alumnoCounts.retirados },
+  ];
+  const instOptions = [
+    { key: "total", label: "Total", count: instCounts.total },
+    { key: "disponibles", label: "Disp.", count: instCounts.disponibles },
+    { key: "asignados", label: "Asig.", count: instCounts.asignados },
+    { key: "mantenimiento", label: "Mant.", count: instCounts.mantenimiento },
+    { key: "baja", label: "Baja", count: instCounts.baja },
+  ];
+
   return (
     <div>
       {/* Top bar */}
@@ -246,18 +323,15 @@ export default function Dashboard() {
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-gray-200 shadow-sm">
             <Filter className="h-4 w-4 text-gray-500" />
-            <select
-              value={programFilter}
-              onChange={(e) => setProgramFilter(e.target.value)}
-              className="bg-transparent outline-none text-sm"
-            >
-              <option value="">General</option>
-              {programas.map((p) => (
-                <option key={p.id_programa} value={p.id_programa}>
-                  {p.nombre}
-                </option>
-              ))}
-            </select>
+            <SegmentedDropdown
+              label="Programa"
+              options={[{ key: "", label: "General" }, ...programas.map(p => ({ key: String(p.id_programa), label: p.nombre }))]}
+              selectedKey={String(programFilter)}
+              onSelect={(k) => setProgramFilter(k)}
+              disabled={loadingStats}
+              align="left"
+              matchTriggerWidth
+            />
           </div>
         </div>
       </div>
@@ -268,20 +342,90 @@ export default function Dashboard() {
           <Card>
             <p className="text-sm font-medium mb-3">Acciones Rápidas</p>
             <div className="flex gap-2 flex-wrap">
-              <QuickAction icon={PlusCircle} label="Agregar Alumno" onClick={() => setOpenModal("alumno")} />
-              <QuickAction icon={Wrench} label="Registrar Instrumento" onClick={() => setOpenModal("instrumento")} />
-              <QuickAction icon={ClipboardList} label="Crear Evento" onClick={() => setOpenModal("evento")} />
+              <QuickAction icon={PlusCircle} label="Agregar Alumno" onClick={() => setOpenModal("alumno")} disabled={loadingStats} />
+              <QuickAction icon={Wrench} label="Registrar Instrumento" onClick={() => setOpenModal("instrumento")} disabled={loadingStats} />
+              <QuickAction icon={ClipboardList} label="Crear Evento" onClick={() => setOpenModal("evento")} disabled={loadingStats} />
             </div>
           </Card>
 
+          {/* KPIs: Alumnos, Instrumentos, Programas */}
           <Card>
             <p className="text-sm font-medium mb-3">Estadísticas Rápidas</p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <QuickStat label="Total Alumnos" value={stats.totalAlumnos || 0} icon={UserCheck} />
-              <QuickStat label="Activos hoy" value={stats.activos || 0} icon={UserPlus} />
-              <QuickStat label="Nuevos ingresos" value={stats.nuevosHoy || 0} icon={Hourglass} />
-              <QuickStat label="Personal activo" value={stats.personal || 0} icon={Briefcase} />
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+              {/* Alumnos */}
+              <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-lg bg-yellow-200 text-gray-900 grid place-items-center shadow">
+                    <UserCheck className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Alumnos</p>
+                    <p className="text-xl font-semibold text-gray-900">{alumnosDisplay}</p>
+                  </div>
+                </div>
+                <SegmentedDropdown
+                  options={alumnoOptions}
+                  selectedKey={alumnoFiltro}
+                  onSelect={setAlumnoFiltro}
+                  disabled={loadingStats}
+                  variant="gray"
+                />
+              </div>
+
+              {/* Instrumentos */}
+              <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-lg bg-yellow-200 text-gray-900 grid place-items-center shadow">
+                    <Wrench className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Instrumentos</p>
+                    <p className="text-xl font-semibold text-gray-900">{instrumentosDisplay}</p>
+                  </div>
+                </div>
+                <SegmentedDropdown
+                  options={instOptions}
+                  selectedKey={instFiltro}
+                  onSelect={setInstFiltro}
+                  disabled={loadingStats}
+                  variant="gray"
+                />
+              </div>
+
+              {/* Programas */}
+              <QuickStat label="Total Programas" value={stats.totalProgramas || 0} icon={ClipboardList} />
             </div>
+          </Card>
+
+          {/* Lista de próximos cumpleaños */}
+          <Card>
+            <p className="text-sm font-medium mb-3">Próximos cumpleaños (30 días)</p>
+            {(!cumples || cumples.length === 0) ? (
+              <p className="text-sm text-gray-500">No hay cumpleaños próximos</p>
+            ) : (
+              <div className="max-h-64 overflow-auto">
+                <table className="w-full text-sm border-collapse">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="px-3 py-2 border-b text-left">Alumno</th>
+                      <th className="px-3 py-2 border-b text-left">Fecha</th>
+                      <th className="px-3 py-2 border-b text-left">Edad</th>
+                      <th className="px-3 py-2 border-b text-left">En</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cumples.map((c) => (
+                      <tr key={c.id_alumno}>
+                        <td className="px-3 py-2 border-b">{c.nombre}</td>
+                        <td className="px-3 py-2 border-b">{c.proximo_cumple ? new Date(c.proximo_cumple).toLocaleDateString("es-ES") : ""}</td>
+                        <td className="px-3 py-2 border-b">{c.edad}</td>
+                        <td className="px-3 py-2 border-b">{c.dias_restantes} días</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </Card>
         </div>
 

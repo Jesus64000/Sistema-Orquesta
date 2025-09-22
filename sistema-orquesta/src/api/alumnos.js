@@ -33,6 +33,29 @@ export const asignarInstrumentoAlumno = (id, data) =>
 export const liberarInstrumentoAlumno = (id) =>
   axios.delete(`${API}/alumnos/${id}/instrumento`);
 
-// === Exportar alumnos CSV ===
-export const exportAlumnosCSV = () =>
-  axios.get(`${API}/alumnos/export/csv`, { responseType: "blob" });
+// === Exportación masiva (CSV/XLSX/PDF) ===
+export const exportAlumnos = ({ ids, format = "csv" }) =>
+  axios.post(
+    `${API}/alumnos/export-masivo`,
+    { ids, format },
+    { responseType: "blob" }
+  );
+
+// === Importación masiva (CSV/XLSX) ===
+export const importAlumnos = (file) => {
+  const form = new FormData();
+  form.append("file", file);
+  return axios.post(`${API}/alumnos/import-masivo`, form, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+};
+
+// === Acciones masivas ===
+export const estadoMasivo = ({ ids, estado, usuario = "sistema" }) =>
+  axios.put(`${API}/alumnos/estado-masivo`, { ids, estado, usuario });
+
+export const programaMasivo = ({ ids, id_programa, action }) =>
+  axios.post(`${API}/alumnos/programa-masivo`, { ids, id_programa, action });
+
+export const desactivarMasivo = ({ ids, usuario = 'sistema' }) =>
+  axios.post(`${API}/alumnos/desactivar-masivo`, { ids, usuario });

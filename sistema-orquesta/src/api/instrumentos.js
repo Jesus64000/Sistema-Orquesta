@@ -20,3 +20,10 @@ export const deleteInstrumento = (id) => axios.delete(`${API}/instrumentos/${id}
 // Obtener historial de un instrumento
 export const getInstrumentoHistorial = (id) => axios.get(`${API}/instrumentos/${id}/historial`);
 
+// Acciones masivas
+export const estadoMasivoInstrumentos = ({ ids, id_estado, estado_nombre, usuario = 'sistema' }) =>
+  axios.put(`${API}/instrumentos/estado-masivo`, { ids, id_estado, estado_nombre, usuario });
+
+export const eliminarMasivoInstrumentos = ({ ids }) =>
+  axios.post(`${API}/instrumentos/eliminar-masivo`, { ids });
+

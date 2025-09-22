@@ -10,6 +10,7 @@ export default function InstrumentosTable({
   instrumentosPage,
   selected,
   toggleSelect,
+  onToggleAllPage,
   sortBy,
   sortDir,
   toggleSort,
@@ -17,12 +18,20 @@ export default function InstrumentosTable({
   setConfirm,
   openDetail,
 }) {
+  const allPageSelected = instrumentosPage.length > 0 && instrumentosPage.every((i) => selected.includes(i.id_instrumento));
   return (
     <div className="overflow-x-auto bg-white border rounded-2xl shadow-sm">
       <table className="w-full text-sm text-left border-collapse">
         <thead className="bg-gray-100 text-gray-600">
           <tr>
-            <th className="px-3 py-2"></th>
+            <th className="px-3 py-2">
+              <input
+                type="checkbox"
+                checked={allPageSelected}
+                onChange={() => onToggleAllPage?.()}
+                title="Seleccionar todo (página)"
+              />
+            </th>
             <th className="px-3 py-2 border-b cursor-pointer" onClick={() => toggleSort("nombre")}> 
               <div className="flex items-center gap-1">
                 Nombre
