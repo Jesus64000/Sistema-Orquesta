@@ -6,7 +6,6 @@ import UsuariosAdmin from "../components/Administracion/UsuariosAdmin";
 import RolesAdmin from "../components/Administracion/RolesAdmin";
 import EstadosAdmin from "../components/Administracion/EstadosAdmin";
 import AyudaAdmin from "../components/Administracion/AyudaAdmin";
-import ImportacionAdmin from "../components/Administracion/ImportacionAdmin";
 
 const SECCIONES = [
   { key: "programas", label: "Programas" },
@@ -15,7 +14,6 @@ const SECCIONES = [
   { key: "roles", label: "Roles y permisos" },
   // { key: "instrumentos", label: "Instrumentos" },
   { key: "estados", label: "Estados de instrumentos" },
-  { key: "importacion", label: "Importación masiva" },
   // { key: "representantes", label: "Representantes" },
   // { key: "eventos", label: "Eventos" },
   { key: "ayuda", label: "Ayuda / Documentación" },
@@ -51,7 +49,6 @@ export default function Administracion() {
   {seccion === "roles" && <RolesAdmin />}
   {/* {seccion === "instrumentos" && <InstrumentosAdmin />} */}
   {seccion === "estados" && <EstadosAdmin />}
-  {seccion === "importacion" && <ImportacionAdmin />}
   {/* {seccion === "representantes" && <RepresentantesAdmin />} */}
   {/* {seccion === "eventos" && <EventosAdmin />} */}
   {seccion === "ayuda" && <AyudaAdmin />}

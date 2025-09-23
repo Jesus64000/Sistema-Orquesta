@@ -33,29 +33,32 @@ export const asignarInstrumentoAlumno = (id, data) =>
 export const liberarInstrumentoAlumno = (id) =>
   axios.delete(`${API}/alumnos/${id}/instrumento`);
 
-// === Exportación masiva (CSV/XLSX/PDF) ===
-export const exportAlumnos = ({ ids, format = "csv" }) =>
+// === Exportar alumnos CSV ===
+export const exportAlumnosCSV = () =>
+  axios.get(`${API}/alumnos/export/csv`, { responseType: "blob" });
+
+// === Exportar alumnos seleccionados (CSV masivo) ===
+export const exportAlumnosMasivoCSV = (ids = []) =>
   axios.post(
     `${API}/alumnos/export-masivo`,
-    { ids, format },
+    { ids, format: "csv" },
     { responseType: "blob" }
   );
 
-// === Importación masiva (CSV/XLSX) ===
-export const importAlumnos = (file) => {
-  const form = new FormData();
-  form.append("file", file);
-  return axios.post(`${API}/alumnos/import-masivo`, form, {
+// === Importar alumnos (CSV/Excel) ===
+// Espera un FormData con el archivo bajo la clave 'file' y opciones adicionales si aplica.
+// Nota: El backend debe exponer POST /alumnos/import para procesar el archivo.
+export const importAlumnos = (formData) =>
+  axios.post(`${API}/alumnos/import`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
-};
 
-// === Acciones masivas ===
-export const estadoMasivo = ({ ids, estado, usuario = "sistema" }) =>
-  axios.put(`${API}/alumnos/estado-masivo`, { ids, estado, usuario });
-
-export const programaMasivo = ({ ids, id_programa, action }) =>
-  axios.post(`${API}/alumnos/programa-masivo`, { ids, id_programa, action });
-
-export const desactivarMasivo = ({ ids, usuario = 'sistema' }) =>
-  axios.post(`${API}/alumnos/desactivar-masivo`, { ids, usuario });
+// === Exportar alumnos multi-formato ===
+// format: 'csv' | 'xlsx' | 'pdf' (admite alias 'excel', 'xls')
+// ids opcional: si se omite o vacío, exporta todos (hasta límite del backend)
+export const exportAlumnos = ({ ids = [], format = 'csv' } = {}) =>
+  axios.post(
+    `${API}/alumnos/export`,
+    { ids, format },
+    { responseType: 'blob' }
+  );

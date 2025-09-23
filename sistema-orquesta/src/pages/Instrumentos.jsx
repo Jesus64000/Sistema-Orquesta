@@ -8,8 +8,6 @@ import toast from "react-hot-toast";
 import {
   getInstrumentos,
   deleteInstrumento,
-  estadoMasivoInstrumentos,
-  eliminarMasivoInstrumentos,
 } from "../api/instrumentos";
 
 import InstrumentoForm from "../components/Instrumentos/InstrumentoForm";
@@ -52,12 +50,6 @@ export default function Instrumentos() {
 
   // Selección múltiple
   const [selected, setSelected] = useState([]);
-  const toggleSelectAllPage = () => {
-    const idsPage = instrumentosPage.map(i => i.id_instrumento);
-    const allSelected = idsPage.every(id => selected.includes(id));
-    if (allSelected) setSelected(prev => prev.filter(id => !idsPage.includes(id)));
-    else setSelected(prev => Array.from(new Set([...prev, ...idsPage])));
-  };
 
   // Form
   const [showForm, setShowForm] = useState(false);
@@ -159,63 +151,10 @@ export default function Instrumentos() {
     }
   };
 
-  // Export masivo
-  const bulkExport = async (format = 'csv') => {
-    if (!selected.length) return toast.error('Selecciona al menos un instrumento');
-    try {
-      const res = await fetch('http://localhost:4000/instrumentos/export-masivo', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids: selected, format })
-      });
-      if (!res.ok) throw new Error('Error exportando');
-      const blob = await res.blob();
-      const ext = format === 'pdf' ? 'pdf' : (format === 'xlsx' ? 'xlsx' : 'csv');
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `instrumentos_export_${Date.now()}.${ext}`;
-      a.click();
-    } catch (e) {
-      console.error(e);
-      toast.error('Error exportando instrumentos');
-    }
-  };
-
-  // Modal Acciones masivas
-  const [massActionOpen, setMassActionOpen] = useState(false);
-  const [massActionType, setMassActionType] = useState(null); // 'estado' | 'eliminar'
-  const [massEstadoNombre, setMassEstadoNombre] = useState('Disponible');
-
-  const handleMassActions = (type) => { setMassActionType(type); setMassActionOpen(true); };
-
-  const runMassAction = async () => {
-    try {
-      if (massActionType === 'estado') {
-        await estadoMasivoInstrumentos({ ids: selected, estado_nombre: massEstadoNombre });
-        toast.success('Estado actualizado');
-        await loadData();
-      } else if (massActionType === 'eliminar') {
-        await eliminarMasivoInstrumentos({ ids: selected });
-        toast.success('Instrumentos eliminados');
-        await loadData();
-      }
-      setMassActionOpen(false);
-    } catch (e) {
-      console.error(e);
-      toast.error('Acción masiva falló');
-    }
-  };
-
   return (
     <div className="space-y-6">
       {/* Encabezado */}
-      <InstrumentosHeader
-        onCreate={openCreate}
-        selected={selected}
-        onExportFormat={(fmt) => bulkExport(fmt)}
-        onMassActions={handleMassActions}
-      />
+      <InstrumentosHeader onCreate={openCreate} />
 
       {/* Filtros */}
       <InstrumentosFilters
@@ -232,7 +171,6 @@ export default function Instrumentos() {
         instrumentosPage={instrumentosPage}
         selected={selected}
         toggleSelect={toggleSelect}
-        onToggleAllPage={toggleSelectAllPage}
         sortBy={sortBy}
         sortDir={sortDir}
         toggleSort={toggleSort}
@@ -293,47 +231,6 @@ export default function Instrumentos() {
         onCancel={() => setConfirm({ open: false, id: null, name: "" })}
         onConfirm={confirmDelete}
       />
-
-      {/* Modal Acciones Masivas */}
-      {massActionOpen && (
-        <Modal title="Acciones masivas" onClose={() => setMassActionOpen(false)}>
-          <div className="space-y-4">
-            <div className="text-sm text-gray-600">Seleccionados: {selected.length}</div>
-            <div className="flex gap-2">
-              <button
-                className={`px-3 py-1.5 rounded border ${massActionType === 'estado' ? 'bg-gray-200' : 'bg-white'}`}
-                onClick={() => setMassActionType('estado')}
-              >Estado</button>
-              <button
-                className={`px-3 py-1.5 rounded border ${massActionType === 'eliminar' ? 'bg-gray-200' : 'bg-white'}`}
-                onClick={() => setMassActionType('eliminar')}
-              >Eliminar</button>
-            </div>
-
-            {massActionType === 'estado' && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Nuevo estado</label>
-                <div className="flex gap-2">
-                  {['Disponible','Asignado','Mantenimiento','Baja'].map((e) => (
-                    <button key={e} className={`px-3 py-1.5 rounded-full border text-xs ${massEstadoNombre === e ? 'bg-yellow-400 border-yellow-500 text-gray-900' : 'bg-white'}`} onClick={() => setMassEstadoNombre(e)}>{e}</button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {massActionType === 'eliminar' && (
-              <div className="p-3 bg-red-50 text-red-700 rounded border border-red-200 text-sm">
-                Esta acción eliminará permanentemente los instrumentos seleccionados.
-              </div>
-            )}
-
-            <div className="flex justify-end gap-2 pt-2">
-              <button className="px-3 py-2 rounded border" onClick={() => setMassActionOpen(false)}>Cancelar</button>
-              <button className="px-3 py-2 rounded bg-yellow-400 text-gray-900" onClick={runMassAction}>Aplicar</button>
-            </div>
-          </div>
-        </Modal>
-      )}
     </div>
   );
 }

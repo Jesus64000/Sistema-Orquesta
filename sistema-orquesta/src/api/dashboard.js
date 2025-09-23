@@ -17,8 +17,3 @@ export const getEventosMes = (year, month, programaId) =>
   axios.get(`${API}/dashboard/eventos-mes`, {
     params: { year, month, programa_id: programaId || null },
   });
-
-export const getCumpleaniosProximos = (days = 30, programaId) =>
-  axios.get(`${API}/dashboard/cumpleanios-proximos`, {
-    params: { days, programa_id: programaId || null },
-  });

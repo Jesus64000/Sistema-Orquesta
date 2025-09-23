@@ -2,7 +2,9 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import MultiSelect from "../MultiSelect";
-import { createAlumno, updateAlumno } from "../../api/alumnos";
+import InfoDialog from "../InfoDialog";
+import ConfirmDialog from "../ConfirmDialog";
+import { createAlumno, updateAlumno, getAlumnoInstrumento } from "../../api/alumnos";
 import { getRepresentantes } from "../../api/representantes";
 
 export default function AlumnoForm({ data, programas, onCancel, onSaved }) {
@@ -19,6 +21,9 @@ export default function AlumnoForm({ data, programas, onCancel, onSaved }) {
   const [loading, setLoading] = useState(false);
   const [representantes, setRepresentantes] = useState([]);
   const [loadingReps, setLoadingReps] = useState(false);
+  const [errorOpen, setErrorOpen] = useState(false);
+  const [errorConfig, setErrorConfig] = useState({ title: "", message: "" });
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   // precargar datos al editar
   useEffect(() => {
@@ -63,26 +68,70 @@ const handleSubmit = async (e) => {
   if (formData.programa_ids.length === 0)
     return toast.error("Selecciona al menos un programa");
 
+  // Si estoy editando y se intenta pasar a Inactivo, comportarse como el botón de desactivar de la tabla
+  if (data && formData.estado === 'Inactivo' && data.estado !== 'Inactivo') {
+    try {
+      setLoading(true);
+      const resInst = await getAlumnoInstrumento(data.id_alumno);
+      const instData = resInst?.data;
+      const tieneInstrumento = Array.isArray(instData) ? instData.length > 0 : !!instData;
+      if (tieneInstrumento) {
+        const lista = Array.isArray(instData) ? instData : [instData];
+        const detalle = lista
+          .map((it) => {
+            const nombre = it?.nombre || it?.instrumento || it?.tipo || "Instrumento";
+            const serial = it?.numero_serie || it?.serial || it?.codigo || "";
+            return serial ? `${nombre} (${serial})` : nombre;
+          })
+          .join(", ");
+        setErrorConfig({
+          title: "Acción no permitida",
+          message: `No se puede desactivar porque tiene asignado: ${detalle}. Debe devolverlo antes de desactivar.`,
+        });
+        setErrorOpen(true);
+        setLoading(false);
+        return;
+      }
+      // No tiene instrumentos: abrir ConfirmDialog consistente
+      setConfirmOpen(true);
+    } catch {
+      setErrorConfig({
+        title: "Error",
+        message: "No se pudo verificar si el alumno tiene instrumentos asignados. Intenta de nuevo.",
+      });
+      setErrorOpen(true);
+    } finally {
+      setLoading(false);
+    }
+    return; // esperar confirmación
+  }
+
+  // Si no requiere confirmación especial, guardar directamente
+  await doSave();
+};
+
+// Extraer guardado para reutilizar tras confirmar
+const doSave = async () => {
   try {
     setLoading(true);
-
-    // 👉 Preparo el payload sin edad
-    const payload = {
+    // 👉 Preparo el payload base sin edad
+    const payloadBase = {
       nombre: formData.nombre,
       fecha_nacimiento: formData.fecha_nacimiento,
       genero: formData.genero,
       telefono_contacto: formData.telefono_contacto,
-      estado: formData.estado,
       programa_ids: formData.programa_ids,
       id_representante: formData.id_representante || null, // opcional
     };
 
-    console.log("Payload enviado:", payload); // 👈 DEBUG
-
     if (data) {
+      // En edición sí permitimos cambiar estado
+      const payload = { ...payloadBase, estado: formData.estado };
       await updateAlumno(data.id_alumno, payload);
       toast.success("Alumno actualizado");
     } else {
+      // En creación omitimos 'estado' para que el backend use el default 'Activo'
+      const payload = { ...payloadBase };
       await createAlumno(payload);
       toast.success("Alumno creado");
     }
@@ -90,7 +139,15 @@ const handleSubmit = async (e) => {
     onSaved?.();
   } catch (err) {
     console.error("Error en submit Alumno:", err);
-    toast.error("No se pudo guardar el alumno");
+    const msg = err?.response?.data?.error;
+    const code = err?.response?.data?.code;
+    if (code === 'BLOQUEADO_INSTRUMENTO' || (msg && msg.toLowerCase().includes('inactivo') && msg.toLowerCase().includes('instrumento'))) {
+      toast.error('No se puede desactivar porque hay estudiantes con instrumentos asignados');
+    } else if (msg) {
+      toast.error(msg);
+    } else {
+      toast.error("No se pudo guardar el alumno");
+    }
   } finally {
     setLoading(false);
   }
@@ -98,6 +155,7 @@ const handleSubmit = async (e) => {
 
 
   return (
+    <>
     <form onSubmit={handleSubmit} className="space-y-3">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {/* Nombre */}
@@ -194,6 +252,7 @@ const handleSubmit = async (e) => {
               setFormData({ ...formData, estado: e.target.value })
             }
             className="w-full p-2 border rounded-lg"
+            disabled={!data}
           >
             <option>Activo</option>
             <option>Inactivo</option>
@@ -246,5 +305,27 @@ const handleSubmit = async (e) => {
         </button>
       </div>
     </form>
+    {/* Confirmación consistente para desactivar desde formulario */}
+    <ConfirmDialog
+      open={confirmOpen}
+      title="Confirmar desactivación"
+      message={`¿Seguro que deseas desactivar al alumno ${data?.nombre || formData.nombre}?`}
+      confirmLabel="Desactivar"
+      confirmColor="bg-red-600 hover:bg-red-700"
+      onCancel={() => setConfirmOpen(false)}
+      onConfirm={async () => {
+        setConfirmOpen(false);
+        await doSave();
+      }}
+    />
+    {errorOpen && (
+      <InfoDialog
+        open={errorOpen}
+        title={errorConfig.title}
+        message={errorConfig.message}
+        onClose={() => setErrorOpen(false)}
+      />
+    )}
+    </>
   );
 }

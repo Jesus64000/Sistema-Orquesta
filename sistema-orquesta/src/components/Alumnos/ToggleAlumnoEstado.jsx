@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import { getAlumnoInstrumento } from "../../api/alumnos";
 import ConfirmDialog from "../ConfirmDialog";
 
-export default function ToggleAlumnoEstado({ alumnoId, estadoActual, onSuccess }) {
+export default function ToggleAlumnoEstado({ alumnoId, estadoActual, onSuccess, alumnoNombre }) {
   const [loading, setLoading] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [accion, setAccion] = useState(null); // "activar" | "desactivar"
@@ -77,16 +77,14 @@ export default function ToggleAlumnoEstado({ alumnoId, estadoActual, onSuccess }
       {/* Modal de confirmación */}
       <ConfirmDialog
         open={showConfirm}
-        title={
-          accion === "desactivar" ? "Desactivar alumno" : "Activar alumno"
-        }
+        title={accion === "desactivar" ? "Confirmar desactivación" : "Confirmar activación"}
         message={
           accion === "desactivar"
-            ? "¿Seguro que deseas desactivar este alumno?"
-            : "¿Seguro que deseas activar este alumno?"
+            ? `¿Seguro que deseas desactivar al alumno ${alumnoNombre || ""}?`
+            : `¿Seguro que deseas activar al alumno ${alumnoNombre || ""}?`
         }
-        confirmText={accion === "desactivar" ? "Desactivar" : "Activar"}
-        confirmColor={accion === "desactivar" ? "red" : "green"}
+        confirmLabel={accion === "desactivar" ? "Desactivar" : "Activar"}
+        confirmColor={accion === "desactivar" ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}
         onCancel={() => setShowConfirm(false)}
         onConfirm={async () => {
           setShowConfirm(false);

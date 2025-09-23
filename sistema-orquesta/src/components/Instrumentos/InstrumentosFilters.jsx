@@ -2,7 +2,6 @@ import { Search, Filter } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getCategorias } from "../../api/administracion/categorias";
 import { getEstados } from "../../api/administracion/estados";
-import SegmentedDropdown from "../SegmentedDropdown";
 
 export default function InstrumentosFilters({ search, setSearch, fEstado, setFEstado, fCategoria, setFCategoria }) {
   const [categorias, setCategorias] = useState([]);
@@ -41,24 +40,21 @@ export default function InstrumentosFilters({ search, setSearch, fEstado, setFEs
           className="flex-1 outline-none text-sm"
         />
       </div>
-      <SegmentedDropdown
-        label="Estado"
-        options={[{ key: "", label: "Todos los estados" }, ...estados.map((e) => ({ key: String(e.id_estado), label: e.nombre }))]}
-        selectedKey={String(fEstado)}
-        onSelect={(k) => setFEstado(k)}
-        align="left"
-        matchTriggerWidth
-        variant="gray"
-      />
-      <SegmentedDropdown
-        label="Categoría"
-        options={[{ key: "", label: "Todas las categorías" }, ...categorias.map((c) => ({ key: String(c.id_categoria), label: c.nombre }))]}
-        selectedKey={String(fCategoria)}
-        onSelect={(k) => setFCategoria(k)}
-        align="left"
-        matchTriggerWidth
-        variant="gray"
-      />
+      <select value={fEstado} onChange={(e) => setFEstado(e.target.value)} className="px-3 py-2 border rounded-lg bg-white">
+        <option value="">Todos los estados</option>
+        {estados.map((est) => (
+          <option key={est.id_estado} value={est.id_estado}>{est.nombre}</option>
+        ))}
+      </select>
+      <div className="flex items-center gap-2 px-3 py-2 border rounded-lg bg-white">
+        <Filter className="h-4 w-4 text-gray-500" />
+        <select value={fCategoria} onChange={(e) => setFCategoria(e.target.value)} className="flex-1 outline-none text-sm bg-transparent">
+          <option value="">Todas las categorías</option>
+          {categorias.map((cat) => (
+            <option key={cat.id_categoria} value={cat.id_categoria}>{cat.nombre}</option>
+          ))}
+        </select>
+      </div>
     </div>
   );
 }
