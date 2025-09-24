@@ -17,6 +17,7 @@ import InstrumentosFilters from "../components/Instrumentos/InstrumentosFilters"
 import InstrumentosTable from "../components/Instrumentos/InstrumentosTable";
 import InstrumentosPagination from "../components/Instrumentos/InstrumentosPagination";
 import Modal from "../components/Modal";
+import ExportModal from "../components/ExportModal.jsx";
 import ConfirmDialog from "../components/ConfirmDialog";
 
 // === Helpers UI ===
@@ -50,6 +51,7 @@ export default function Instrumentos() {
 
   // Selección múltiple
   const [selected, setSelected] = useState([]);
+  const [exportOpen, setExportOpen] = useState(false);
 
   // Form
   const [showForm, setShowForm] = useState(false);
@@ -154,7 +156,7 @@ export default function Instrumentos() {
   return (
     <div className="space-y-6">
       {/* Encabezado */}
-      <InstrumentosHeader onCreate={openCreate} />
+  <InstrumentosHeader onCreate={openCreate} onExport={() => setExportOpen(true)} />
 
       {/* Filtros */}
       <InstrumentosFilters
@@ -203,6 +205,20 @@ export default function Instrumentos() {
 
       {/* Paginación */}
       <InstrumentosPagination page={page} totalPages={totalPages} setPage={setPage} />
+
+      {/* Exportar (formato) */}
+      <ExportModal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        title="Exportar instrumentos"
+        entityName="instrumentos"
+        fileBaseName="instrumentos"
+        selectedIds={selected}
+        exporter={async ({ ids, format }) => {
+          const { exportInstrumentos } = await import('../api/instrumentos');
+          return exportInstrumentos({ ids, format });
+        }}
+      />
 
       {/* Formulario */}
       {showForm && (

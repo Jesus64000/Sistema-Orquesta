@@ -20,3 +20,12 @@ export const deleteInstrumento = (id) => axios.delete(`${API}/instrumentos/${id}
 // Obtener historial de un instrumento
 export const getInstrumentoHistorial = (id) => axios.get(`${API}/instrumentos/${id}/historial`);
 
+// Exportar instrumentos multi-formato
+// format: 'csv' | 'xlsx' | 'pdf'; ids opcional para exportar seleccionados
+export const exportInstrumentos = ({ ids = [], format = 'csv' } = {}) =>
+  axios.post(
+    `${API}/instrumentos/export`,
+    { ids, format },
+    { responseType: 'blob' }
+  );
+

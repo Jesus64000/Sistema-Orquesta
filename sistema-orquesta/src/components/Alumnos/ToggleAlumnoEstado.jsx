@@ -42,19 +42,20 @@ export default function ToggleAlumnoEstado({ alumnoId, estadoActual, onSuccess, 
   };
 
   const toggleEstado = async () => {
+    const destino = estadoActual === "Activo" ? "Inactivo" : "Activo";
     try {
       setLoading(true);
-      const resToggle = await axios.put(
-        `http://localhost:4000/alumnos/${alumnoId}/estado`
+      await axios.put(
+        `http://localhost:4000/alumnos/${alumnoId}/estado`,
+        { estado: destino, usuario: "sistema" }
       );
-      const nuevoEstado = resToggle.data.estado;
-      toast.success(
-        `Alumno ${nuevoEstado === "Activo" ? "activado" : "desactivado"}`
-      );
-      onSuccess?.(nuevoEstado);
+      // El backend devuelve { message: "Estado actualizado" } actualmente, por lo que asumimos el destino
+      toast.success(`Alumno ${destino === "Activo" ? "activado" : "desactivado"}`);
+      onSuccess?.(destino);
     } catch (err) {
       console.error("Error cambiando estado:", err);
-      toast.error("Error cambiando estado del alumno");
+      const msg = err?.response?.data?.error || "Error cambiando estado del alumno";
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -80,7 +81,7 @@ export default function ToggleAlumnoEstado({ alumnoId, estadoActual, onSuccess, 
         title={accion === "desactivar" ? "Confirmar desactivación" : "Confirmar activación"}
         message={
           accion === "desactivar"
-            ? `¿Seguro que deseas desactivar al alumno ${alumnoNombre || ""}?`
+            ? `¿Seguro que deseas desactivar al alumno ${alumnoNombre || ""}?`+ (alumnoNombre?"":"")
             : `¿Seguro que deseas activar al alumno ${alumnoNombre || ""}?`
         }
         confirmLabel={accion === "desactivar" ? "Desactivar" : "Activar"}

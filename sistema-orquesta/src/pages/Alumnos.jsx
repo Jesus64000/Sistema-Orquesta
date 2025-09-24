@@ -22,6 +22,7 @@ import AlumnosHeader from "../components/Alumnos/AlumnosHeader";
 import AlumnosFilters from "../components/Alumnos/AlumnosFilters";
 import AlumnosTable from "../components/Alumnos/AlumnosTable";
 import AlumnosPagination from "../components/Alumnos/AlumnosPagination";
+import AlumnosBulkActionsModal from "../components/Alumnos/AlumnosBulkActionsModal.jsx";
 
 
 
@@ -128,6 +129,17 @@ export default function Alumnos() {
 
   const toggleSelect = (id) => {
     setSelected((s) => (s.includes(id) ? s.filter((i) => i !== id) : [...s, id]));
+  };
+
+  // Seleccionar todo del conjunto filtrado (o todo en general si no hay filtros aplicados)
+  const toggleSelectAllFiltered = (checked) => {
+    if (checked) {
+      // Todos los IDs del conjunto filtrado actual
+      const ids = alumnosFiltrados.map((a) => a.id_alumno);
+      setSelected(ids);
+    } else {
+      setSelected([]);
+    }
   };
 
   const openCreate = () => { setEditing(null); setShowForm(true); };
@@ -259,8 +271,10 @@ export default function Alumnos() {
       {/* Tabla */}
       <AlumnosTable
         alumnosPage={alumnosPage}
+        alumnosFiltrados={alumnosFiltrados}
         selected={selected}
         toggleSelect={toggleSelect}
+        toggleSelectAllFiltered={toggleSelectAllFiltered}
         sortBy={sortBy}
         sortDir={sortDir}
         toggleSort={toggleSort}
@@ -305,17 +319,17 @@ export default function Alumnos() {
 
       {/* Acciones (Alumnos) */}
       {actionsOpen && (
-        <Modal title="Acciones (Alumnos)" onClose={() => setActionsOpen(false)}>
-          <div className="min-w-[600px]">
-            <p className="text-sm text-gray-600">Selecciona una acción para {selected.length} alumno{selected.length !== 1 ? 's' : ''}.</p>
-            {/* Aquí irán las acciones (Estado, Programa, etc.) */}
-            <div className="flex justify-end mt-4">
-              <button onClick={() => setActionsOpen(false)} className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200">
-                Cerrar
-              </button>
-            </div>
-          </div>
-        </Modal>
+        <AlumnosBulkActionsModal
+          open={actionsOpen}
+          onClose={() => setActionsOpen(false)}
+          selectedIds={selected}
+          programas={programas}
+          onApplied={() => {
+            // Tras aplicar, refrescamos datos para ver los cambios
+            loadData();
+            setSelected([]);
+          }}
+        />
       )}
 
       {/* Exportar (formato) */}

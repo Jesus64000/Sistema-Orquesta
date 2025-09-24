@@ -62,3 +62,17 @@ export const exportAlumnos = ({ ids = [], format = 'csv' } = {}) =>
     { ids, format },
     { responseType: 'blob' }
   );
+
+// === Acciones masivas ===
+export const bulkEstadoAlumnos = ({ ids = [], estado, usuario = 'sistema' }) =>
+  axios.put(`${API}/alumnos/estado-masivo`, { ids, estado, usuario });
+
+export const bulkProgramaAlumnos = ({ ids = [], id_programa, action = 'add', usuario = 'sistema' }) =>
+  axios.post(`${API}/alumnos/programa-masivo`, { ids, id_programa, action, usuario });
+
+export const bulkDesactivarAlumnos = ({ ids = [], usuario = 'sistema' }) =>
+  axios.post(`${API}/alumnos/desactivar-masivo`, { ids, usuario });
+
+// Verificar antes de desactivar (retorna bloqueados)
+export const verifyDesactivarAlumnos = ({ ids = [] }) =>
+  axios.post(`${API}/alumnos/verificar-desactivacion`, { ids });

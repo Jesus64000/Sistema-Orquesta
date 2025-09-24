@@ -8,8 +8,10 @@ const Badge = ({ children }) => (
 
 export default function AlumnosTable({
   alumnosPage,
+  alumnosFiltrados,
   selected,
   toggleSelect,
+  toggleSelectAllFiltered,
   sortBy,
   sortDir,
   toggleSort,
@@ -18,12 +20,26 @@ export default function AlumnosTable({
   checkingId,
   openDetail,
 }) {
+  // Estado del checkbox de cabecera (seleccionar todo del filtrado)
+  const totalFiltered = alumnosFiltrados?.length || 0;
+  const selectedInFiltered = (alumnosFiltrados || []).filter(a => selected.includes(a.id_alumno)).length;
+  const allFilteredSelected = totalFiltered > 0 && selectedInFiltered === totalFiltered;
+  const isIndeterminate = selectedInFiltered > 0 && selectedInFiltered < totalFiltered;
+
   return (
     <div className="overflow-x-auto bg-white border rounded-2xl shadow-sm">
       <table className="w-full text-sm text-left border-collapse">
         <thead className="bg-gray-100 text-gray-600">
           <tr>
-            <th className="px-3 py-2"></th>
+            <th className="px-3 py-2">
+              <input
+                type="checkbox"
+                ref={el => { if (el) el.indeterminate = isIndeterminate; }}
+                checked={allFilteredSelected}
+                onChange={(e) => toggleSelectAllFiltered(e.target.checked)}
+                title={allFilteredSelected ? "Deseleccionar todos (filtrados)" : "Seleccionar todos (filtrados)"}
+              />
+            </th>
             <th
               className="px-3 py-2 border-b cursor-pointer"
               onClick={() => toggleSort("nombre")}
