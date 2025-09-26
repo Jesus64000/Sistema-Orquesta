@@ -1,5 +1,5 @@
 // sistema-orquesta/src/pages/Alumnos.jsx
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useDeferredValue } from "react";
 import toast from "react-hot-toast";
 
 import {
@@ -36,6 +36,7 @@ export default function Alumnos() {
   // UI State
   const [loading, setLoading] = useState(false);
   const [confirm, setConfirm] = useState({ open: false, id: null, name: "" });
+  const [loadError, setLoadError] = useState(false);
   const [viewDetail, setViewDetail] = useState(null);
 
   // Filtros
@@ -68,6 +69,7 @@ export default function Alumnos() {
   const [errorConfig, setErrorConfig] = useState({});
   const [selectedAlumno, setSelectedAlumno] = useState(null);
   const [checkingId, setCheckingId] = useState(null); // id del alumno mientras verifico instrumentos
+  const [updatingId, setUpdatingId] = useState(null); // id del alumno mientras se persiste cambio de estado
 
   // Load data
   const loadData = async () => {
@@ -76,9 +78,11 @@ export default function Alumnos() {
       const [resP, resA] = await Promise.all([getProgramas(), getAlumnos()]);
       setProgramas(resP.data || []);
       setAlumnos(resA.data || []);
+      setLoadError(false);
     } catch (e) {
       toast.error("Error cargando alumnos");
       console.error(e);
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -86,14 +90,17 @@ export default function Alumnos() {
   useEffect(() => { loadData(); }, []);
 
   // Filtros + orden + paginación
+  // Debounce simple de búsqueda usando deferred value (React 18+)
+  const deferredSearch = useDeferredValue(search);
+
   const alumnosFiltrados = useMemo(() => {
     let list = [...alumnos];
 
     // filtros
     list = list.filter((a) => {
       const byText =
-        a.nombre?.toLowerCase().includes(search.toLowerCase()) ||
-        a.telefono_contacto?.toLowerCase().includes(search.toLowerCase());
+  a.nombre?.toLowerCase().includes(deferredSearch.toLowerCase()) ||
+  a.telefono_contacto?.toLowerCase().includes(deferredSearch.toLowerCase());
       const byEstado = fEstado ? a.estado === fEstado : true;
       const byPrograma = fPrograma
         ? (a.programas || []).some((p) => String(p.id_programa) === String(fPrograma))
@@ -113,7 +120,7 @@ export default function Alumnos() {
     });
 
     return list;
-  }, [alumnos, search, fEstado, fPrograma, sortBy, sortDir]);
+  }, [alumnos, deferredSearch, fEstado, fPrograma, sortBy, sortDir]);
 
   const totalPages = Math.ceil(alumnosFiltrados.length / pageSize);
   const alumnosPage = alumnosFiltrados.slice((page - 1) * pageSize, page * pageSize);
@@ -248,7 +255,7 @@ export default function Alumnos() {
 };
 
   return (
-    <div className="space-y-6">
+  <div className="space-y-6">
       {/* Encabezado */}
       <AlumnosHeader
         selected={selected}
@@ -268,33 +275,82 @@ export default function Alumnos() {
         programas={programas}
       />
 
-      {/* Tabla */}
-      <AlumnosTable
-        alumnosPage={alumnosPage}
-        alumnosFiltrados={alumnosFiltrados}
-        selected={selected}
-        toggleSelect={toggleSelect}
-        toggleSelectAllFiltered={toggleSelectAllFiltered}
-        sortBy={sortBy}
-        sortDir={sortDir}
-        toggleSort={toggleSort}
-        openEdit={openEdit}
-        handleEstadoClick={handleEstadoClick}
-        checkingId={checkingId}
-        openDetail={openDetail}
-      />
-      {/* Loader amigable */}
-      {alumnosPage.length === 0 && (
-        <div className="text-center py-10 text-gray-500">
-          {loading ? (
-            <div className="flex flex-col items-center gap-2">
-              <span className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-yellow-500"></span>
-              <span>Cargando alumnos...</span>
+      {/* Tabla / Estados */}
+      {loading && (
+        <div className="bg-white border rounded-2xl shadow-sm p-6 space-y-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="grid grid-cols-6 gap-4 animate-pulse">
+              <div className="col-span-2 h-4 rounded bg-gray-200" />
+              <div className="h-4 rounded bg-gray-200" />
+              <div className="h-4 rounded bg-gray-200" />
+              <div className="h-4 rounded bg-gray-200" />
+              <div className="h-4 rounded bg-gray-200" />
             </div>
-          ) : (
-            "No se encontraron alumnos"
+          ))}
+          <div className="flex items-center gap-2 pt-2 text-xs text-gray-400">
+            <span className="h-3 w-3 animate-spin rounded-full border-t-2 border-b-2 border-yellow-400"></span>
+            Cargando alumnos...
+          </div>
+        </div>
+      )}
+
+      {!loading && loadError && (
+        <div className="bg-white border rounded-2xl shadow-sm p-10 flex flex-col items-center gap-4 text-center">
+          <div className="flex items-center justify-center h-14 w-14 rounded-full bg-red-50 border border-red-200 text-red-600 text-xl font-bold">!</div>
+          <div className="space-y-1">
+            <h3 className="font-semibold text-gray-800">No se pudieron cargar los datos</h3>
+            <p className="text-sm text-gray-500 max-w-sm">Ocurrió un problema al intentar obtener la lista de alumnos. Verifica tu conexión o reintenta.</p>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={loadData}
+              className="inline-flex items-center h-10 px-5 rounded-full text-sm font-medium bg-gradient-to-b from-yellow-300 to-yellow-400 text-gray-900 border border-yellow-400 shadow-sm hover:from-yellow-400 hover:to-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:ring-offset-1"
+            >Reintentar</button>
+            <button
+              onClick={() => setLoadError(false)}
+              className="inline-flex items-center h-10 px-5 rounded-full text-sm font-medium bg-gradient-to-b from-gray-50 to-gray-100 text-gray-700 border border-gray-200 shadow-sm hover:from-gray-100 hover:to-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-1"
+            >Ocultar</button>
+          </div>
+        </div>
+      )}
+
+      {!loading && !loadError && alumnosFiltrados.length === 0 && (
+        <div className="bg-white border rounded-2xl shadow-sm p-10 flex flex-col items-center gap-5 text-center">
+          <div className="relative">
+            <div className="h-16 w-16 rounded-2xl bg-gradient-to-b from-gray-50 to-gray-100 border border-gray-200 flex items-center justify-center text-gray-500">
+              <span className="text-2xl">👤</span>
+            </div>
+            <div className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-yellow-200 text-yellow-800 text-xs font-semibold flex items-center justify-center border border-yellow-300">0</div>
+          </div>
+          <div className="space-y-1">
+            <h3 className="font-semibold text-gray-800">Sin resultados</h3>
+            <p className="text-sm text-gray-500 max-w-xs">Ajusta los filtros arriba o limpia la búsqueda para ver más alumnos.</p>
+          </div>
+          {(search || fEstado || fPrograma) && (
+            <button
+              onClick={() => { setSearch(""); setFEstado("Activo"); setFPrograma(""); }}
+              className="inline-flex items-center h-9 px-4 rounded-full text-[13px] font-medium bg-gradient-to-b from-gray-800 to-gray-900 text-white border border-gray-800 shadow-sm hover:from-black hover:to-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-1"
+            >Limpiar filtros</button>
           )}
         </div>
+      )}
+
+      {!loading && !loadError && alumnosFiltrados.length > 0 && (
+        <AlumnosTable
+          alumnosPage={alumnosPage}
+          alumnosFiltrados={alumnosFiltrados}
+          selected={selected}
+          toggleSelect={toggleSelect}
+          toggleSelectAllFiltered={toggleSelectAllFiltered}
+          sortBy={sortBy}
+          sortDir={sortDir}
+          toggleSort={toggleSort}
+          openEdit={openEdit}
+          handleEstadoClick={handleEstadoClick}
+          checkingId={checkingId}
+          updatingId={updatingId}
+          openDetail={openDetail}
+        />
       )}
       
       {/* Paginación */}
@@ -340,6 +396,7 @@ export default function Alumnos() {
         defaultFormat="csv"
       />
 
+
       {/* Confirmación Activar/Desactivar */}
       <ConfirmDialog
         open={confirmOpen}
@@ -351,35 +408,30 @@ export default function Alumnos() {
         onConfirm={async () => {
           try {
             const nuevoEstado = selectedAlumno.estado === "Activo" ? "Inactivo" : "Activo";
+            const alumnoId = selectedAlumno.id_alumno;
+            setUpdatingId(alumnoId);
+            // Optimistic update
+            setAlumnos(prev => prev.map(al => al.id_alumno === alumnoId ? { ...al, estado: nuevoEstado } : al));
 
-            const res = await fetch(
-              `http://localhost:4000/alumnos/${selectedAlumno.id_alumno}/estado`,
-              {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ estado: nuevoEstado }),
-              }
-            );
+            let toastId;
+            try { toastId = toast.loading("Guardando cambio..."); } catch { /* noop */ }
+
+            const res = await fetch(`http://localhost:4000/alumnos/${alumnoId}/estado`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ estado: nuevoEstado }),
+            });
 
             if (!res.ok) throw new Error("Error actualizando estado");
 
-            setAlumnos((prev) =>
-              prev.map((al) =>
-                al.id_alumno === selectedAlumno.id_alumno
-                  ? { ...al, estado: nuevoEstado }
-                  : al
-              )
-            );
-
-            toast.success(
-              `Alumno ${selectedAlumno.nombre} ${
-                nuevoEstado === "Activo" ? "activado" : "desactivado"
-              } correctamente`
-            );
+            toast.success(`Alumno ${selectedAlumno.nombre} ${nuevoEstado === "Activo" ? "activado" : "desactivado"} correctamente`, { id: toastId });
           } catch (e) {
+            // Revertir si falló
+            setAlumnos(prev => prev.map(al => al.id_alumno === selectedAlumno.id_alumno ? { ...al, estado: selectedAlumno.estado } : al));
             toast.error("No se pudo actualizar el estado");
             console.error(e);
           } finally {
+            setUpdatingId(null);
             setConfirmOpen(false);
             setSelectedAlumno(null);
           }

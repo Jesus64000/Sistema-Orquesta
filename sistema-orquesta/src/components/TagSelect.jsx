@@ -75,7 +75,7 @@ const accents = {
   },
 };
 
-export default function TagSelect({ options = [], value, onChange, size = "sm", accent = "gray", placeholder = "Seleccionar", className = "", menuWidth = 160 }) {
+export default function TagSelect({ options = [], value, onChange, size = "sm", accent = "gray", placeholder = "Seleccionar", className = "", menuWidth = 160, ariaLabel }) {
   const S = sizes[size] || sizes.sm;
   const A = accents[accent] || accents.gray;
   const [open, setOpen] = useState(false);
@@ -118,9 +118,10 @@ export default function TagSelect({ options = [], value, onChange, size = "sm", 
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className={`inline-flex items-center gap-2 rounded-full border ${current ? A.active : A.filled} ${S.trigger} focus:outline-none focus:ring-2 ${A.ring} focus:ring-offset-1 focus:ring-offset-white transition-colors hover:shadow`}
+        className={`inline-flex items-center gap-2 rounded-full border ${current ? A.active : A.filled} ${S.trigger} focus:outline-none focus-visible:ring-2 ${A.ring} focus-visible:ring-offset-1 focus-visible:ring-offset-white transition-colors hover:shadow`}
         aria-haspopup="listbox"
         aria-expanded={open}
+        aria-label={ariaLabel || placeholder}
       >
         <span>{current ? current.label : placeholder}</span>
         <svg className="h-4 w-4 opacity-80" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -130,7 +131,7 @@ export default function TagSelect({ options = [], value, onChange, size = "sm", 
 
       {open && (
         <div
-          className={`absolute z-50 mt-2 bg-white border border-gray-200 shadow-xl rounded-xl p-2 ${align === "right" ? "right-0" : "left-0"}`}
+          className={`absolute z-40 mt-2 bg-white border border-gray-200 shadow-xl rounded-xl p-2 ${align === "right" ? "right-0" : "left-0"}`}
           style={{
             width: typeof menuWidth === "number" ? `${menuWidth}px` : menuWidth,
             maxWidth: "calc(100vw - 16px)",
@@ -150,6 +151,7 @@ export default function TagSelect({ options = [], value, onChange, size = "sm", 
                   className={`w-full text-left inline-flex items-center justify-start rounded-full border ${S.chip} transition-colors ${selected ? `${A.active} ${A.optionActiveExtra}` : `${A.filled} ${A.optionHover}`}`}
                   role="option"
                   aria-selected={selected}
+                  aria-label={opt.label}
                 >
                   {opt.label}
                 </button>

@@ -1,10 +1,174 @@
+import React, { memo, useMemo } from "react";
 import { Edit, ChevronUp, ChevronDown } from "lucide-react";
 
-const Badge = ({ children }) => (
-  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-700 border">
+// Badge para programas – estilo pill suave
+const ProgramBadge = ({ children }) => (
+  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-gradient-to-b from-gray-50 to-gray-100 text-gray-700 border border-gray-200 shadow-sm hover:from-gray-100 hover:to-gray-200 transition">
     {children}
   </span>
 );
+
+// Pill de estado con color dinámico y soporte loading
+const EstadoPill = ({ estado, loading = false }) => {
+  const map = {
+    Activo: { cls: "from-emerald-50 to-emerald-100 text-emerald-700 border-emerald-200", dot: "bg-emerald-500" },
+    Inactivo: { cls: "from-gray-50 to-gray-100 text-gray-600 border-gray-200", dot: "bg-gray-400" },
+    Retirado: { cls: "from-red-50 to-red-100 text-red-700 border-red-200", dot: "bg-red-500" },
+  };
+  const m = map[estado] || map.Inactivo;
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-gradient-to-b ${m.cls} border shadow-sm ${loading ? "opacity-70" : ""}`}
+      aria-live={loading ? "polite" : undefined}
+    >
+      {loading ? (
+        <span className="h-3 w-3 inline-block animate-spin rounded-full border-2 border-current border-t-transparent" aria-label="Actualizando" />
+      ) : (
+        <span className={`h-2 w-2 rounded-full ${m.dot}`} />
+      )}
+      {estado}
+    </span>
+  );
+};
+
+// Cabecera simple
+const HeadTH = ({ children, className = "" }) => (
+  <th scope="col" className={`px-3 py-2 font-semibold ${className}`}>{children}</th>
+);
+
+// Cabecera ordenable accesible
+const SortableTH = ({ label, col, sortBy, sortDir, onToggle }) => {
+  const ariaSort = sortBy === col ? (sortDir === "asc" ? "ascending" : "descending") : "none";
+  return (
+    <th
+      scope="col"
+      aria-sort={ariaSort}
+      className="px-3 py-2 font-semibold cursor-pointer select-none group"
+      onClick={() => onToggle(col)}
+      role="columnheader"
+    >
+      <div className="flex items-center gap-1">
+        <span className="group-hover:text-gray-900">{label}</span>
+        {sortBy === col && (sortDir === "asc" ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />)}
+      </div>
+    </th>
+  );
+};
+
+// Fila memoizada
+const AlumnoRow = memo(function AlumnoRow({ a, isSelected, toggleSelect, openDetail, handleEstadoClick, checkingId, openEdit, isUpdating }) {
+  return (
+    <tr
+      role="row"
+      className={`transition cursor-default ${isSelected ? "bg-yellow-50" : "hover:bg-gray-50"}`}
+      aria-busy={isUpdating ? "true" : undefined}
+    >
+      <td className="px-3 py-2 align-middle" role="cell">
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={() => toggleSelect(a.id_alumno)}
+          className="h-4 w-4 rounded border-gray-300 text-yellow-500 focus:ring-yellow-300"
+          aria-label={isSelected ? `Quitar selección de ${a.nombre}` : `Seleccionar ${a.nombre}`}
+        />
+      </td>
+      <td className="px-3 py-2 font-medium text-gray-800" role="cell">
+        <button
+          type="button"
+          onClick={() => openDetail(a)}
+          className="text-left hover:underline decoration-yellow-400 decoration-2 underline-offset-2 focus:outline-none focus:ring-2 focus:ring-yellow-300 rounded"
+          aria-label={`Ver detalle de ${a.nombre}`}
+        >
+          {a.nombre}
+        </button>
+      </td>
+      <td className="px-3 py-2 text-gray-600" role="cell">{a.edad} <span className="text-[10px] uppercase tracking-wide text-gray-400">años</span></td>
+      <td className="px-3 py-2 text-gray-600 whitespace-nowrap" role="cell">{a.fecha_nacimiento?.slice(0, 10)}</td>
+      <td className="px-3 py-2 text-gray-600" role="cell">{a.genero}</td>
+      <td className="px-3 py-2 text-gray-600" role="cell">{a.telefono_contacto}</td>
+      <td className="px-3 py-2" role="cell">
+        {a.representante_nombre ? (
+          <div className="flex flex-col leading-tight">
+            <span className="font-medium text-gray-800">{a.representante_nombre}</span>
+            <span className="text-[11px] text-gray-500">{a.representante_telefono}</span>
+            <span className="text-[11px] text-gray-400 truncate max-w-[160px]">{a.representante_email}</span>
+          </div>
+        ) : (
+          <span className="text-[11px] text-gray-400 italic">Sin representante</span>
+        )}
+      </td>
+      <td className="px-3 py-2" role="cell">
+        <button
+          type="button"
+          onClick={() => handleEstadoClick(a)}
+          disabled={checkingId === a.id_alumno || isUpdating}
+          className={`focus:outline-none focus:ring-2 focus:ring-offset-1 rounded-full ${checkingId === a.id_alumno || isUpdating ? "opacity-60 cursor-wait" : ""}`}
+          title="Cambiar estado"
+          aria-label={`Cambiar estado de ${a.nombre}`}
+        >
+          <EstadoPill estado={a.estado} loading={isUpdating} />
+        </button>
+      </td>
+      <td className="px-3 py-2" role="cell">
+        <div className="flex flex-wrap gap-1.5">
+          {(a.programas || []).map((p) => (
+            <ProgramBadge key={p.id_programa}>{p.nombre}</ProgramBadge>
+          ))}
+          {(!a.programas || a.programas.length === 0) && (
+            <span className="text-[11px] text-gray-400 italic">Sin programas</span>
+          )}
+        </div>
+      </td>
+      <td className="px-3 py-2" role="cell">
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => openEdit(a)}
+            disabled={isUpdating}
+            className={`p-1.5 rounded-lg border bg-blue-50 text-blue-600 hover:bg-blue-100 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1 ${isUpdating ? "opacity-50 cursor-not-allowed" : ""}`}
+            title="Editar"
+            aria-label={`Editar ${a.nombre}`}
+          >
+            <Edit className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => handleEstadoClick(a)}
+            disabled={checkingId === a.id_alumno || isUpdating}
+            className={`px-2 h-8 inline-flex items-center rounded-full text-[11px] font-medium border transition ${
+              a.estado === "Activo"
+                ? "bg-gradient-to-b from-red-50 to-red-100 text-red-700 border-red-200 hover:from-red-100 hover:to-red-200"
+                : "bg-gradient-to-b from-emerald-50 to-emerald-100 text-emerald-700 border-emerald-200 hover:from-emerald-100 hover:to-emerald-200"
+            } ${(checkingId === a.id_alumno || isUpdating) ? "opacity-60 cursor-wait" : ""}`}
+            title={a.estado === "Activo" ? "Desactivar" : "Activar"}
+            aria-label={`${a.estado === "Activo" ? "Desactivar" : "Activar"} ${a.nombre}`}
+          >
+            {(checkingId === a.id_alumno || isUpdating) ? "..." : a.estado === "Activo" ? "Desactivar" : "Activar"}
+          </button>
+          <button
+            onClick={() => openDetail(a)}
+            disabled={isUpdating}
+            className={`px-2 h-8 inline-flex items-center rounded-full text-[11px] font-medium border bg-gradient-to-b from-yellow-50 to-yellow-100 text-yellow-700 border-yellow-200 hover:from-yellow-100 hover:to-yellow-200 focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:ring-offset-1 ${isUpdating ? "opacity-50 cursor-not-allowed" : ""}`}
+            title="Ver detalle"
+            aria-label={`Ver detalle de ${a.nombre}`}
+          >
+            Ver
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+}, (prev, next) => {
+  return (
+    prev.isSelected === next.isSelected &&
+    prev.checkingId === next.checkingId &&
+    prev.isUpdating === next.isUpdating &&
+    prev.a.estado === next.a.estado &&
+    prev.a.nombre === next.a.nombre &&
+    prev.a.edad === next.a.edad &&
+    prev.a.fecha_nacimiento === next.a.fecha_nacimiento &&
+    prev.a.genero === next.a.genero &&
+    prev.a.telefono_contacto === next.a.telefono_contacto &&
+    (prev.a.programas?.length || 0) === (next.a.programas?.length || 0)
+  );
+});
 
 export default function AlumnosTable({
   alumnosPage,
@@ -18,122 +182,57 @@ export default function AlumnosTable({
   openEdit,
   handleEstadoClick,
   checkingId,
+  updatingId,
   openDetail,
 }) {
-  // Estado del checkbox de cabecera (seleccionar todo del filtrado)
   const totalFiltered = alumnosFiltrados?.length || 0;
-  const selectedInFiltered = (alumnosFiltrados || []).filter(a => selected.includes(a.id_alumno)).length;
+  const selectedInFiltered = useMemo(() => (alumnosFiltrados || []).filter(a => selected.includes(a.id_alumno)).length, [alumnosFiltrados, selected]);
   const allFilteredSelected = totalFiltered > 0 && selectedInFiltered === totalFiltered;
   const isIndeterminate = selectedInFiltered > 0 && selectedInFiltered < totalFiltered;
 
   return (
-    <div className="overflow-x-auto bg-white border rounded-2xl shadow-sm">
-      <table className="w-full text-sm text-left border-collapse">
-        <thead className="bg-gray-100 text-gray-600">
-          <tr>
-            <th className="px-3 py-2">
+    <div className="overflow-x-auto bg-white border rounded-2xl shadow-sm" role="region" aria-label="Tabla de alumnos">
+      <table className="w-full text-[13px] text-left border-collapse" role="table">
+        <thead className="bg-gradient-to-b from-gray-50 to-gray-100 text-gray-600 text-[11px] uppercase tracking-wide sticky top-0 z-10 shadow-sm" role="rowgroup">
+          <tr role="row">
+            <th scope="col" className="px-3 py-2 align-middle w-[36px]">
               <input
                 type="checkbox"
                 ref={el => { if (el) el.indeterminate = isIndeterminate; }}
                 checked={allFilteredSelected}
                 onChange={(e) => toggleSelectAllFiltered(e.target.checked)}
-                title={allFilteredSelected ? "Deseleccionar todos (filtrados)" : "Seleccionar todos (filtrados)"}
+                className="h-4 w-4 rounded border-gray-300 text-yellow-500 focus:ring-yellow-300"
+                aria-label={allFilteredSelected ? "Deseleccionar todos" : "Seleccionar todos"}
               />
             </th>
-            <th
-              className="px-3 py-2 border-b cursor-pointer"
-              onClick={() => toggleSort("nombre")}
-            >
-              <div className="flex items-center gap-1">
-                Nombre
-                {sortBy === "nombre" &&
-                  (sortDir === "asc" ? (
-                    <ChevronUp className="h-3 w-3" />
-                  ) : (
-                    <ChevronDown className="h-3 w-3" />
-                  ))}
-              </div>
-            </th>
-            <th className="px-3 py-2 border-b">Edad</th>
-            <th className="px-3 py-2 border-b">Fecha nacimiento</th>
-            <th className="px-3 py-2 border-b">Género</th>
-            <th className="px-3 py-2 border-b">Teléfono</th>
-            <th className="px-3 py-2 border-b">Representante</th>
-            <th className="px-3 py-2 border-b">Estado</th>
-            <th className="px-3 py-2 border-b">Programas</th>
-            <th className="px-3 py-2 border-b">Acciones</th>
+            <SortableTH label="Nombre" col="nombre" sortBy={sortBy} sortDir={sortDir} onToggle={toggleSort} />
+            <HeadTH>Edad</HeadTH>
+            <HeadTH className="whitespace-nowrap">Nacimiento</HeadTH>
+            <HeadTH>Género</HeadTH>
+            <HeadTH>Teléfono</HeadTH>
+            <HeadTH>Representante</HeadTH>
+            <HeadTH>Estado</HeadTH>
+            <HeadTH>Programas</HeadTH>
+            <HeadTH>Acciones</HeadTH>
           </tr>
         </thead>
-        <tbody>
-          {alumnosPage.map((a) => (
-            <tr key={a.id_alumno} className="hover:bg-gray-50">
-              <td className="px-3 py-2">
-                <input
-                  type="checkbox"
-                  checked={selected.includes(a.id_alumno)}
-                  onChange={() => toggleSelect(a.id_alumno)}
-                />
-              </td>
-              <td className="px-3 py-2">{a.nombre}</td>
-              <td className="px-3 py-2">{a.edad} años</td>
-              <td className="px-3 py-2">{a.fecha_nacimiento?.slice(0, 10)}</td>
-              <td className="px-3 py-2">{a.genero}</td>
-              <td className="px-3 py-2">{a.telefono_contacto}</td>
-              <td className="px-3 py-2">
-                {a.representante_nombre ? (
-                  <div className="flex flex-col">
-                    <span className="font-medium">{a.representante_nombre}</span>
-                    <span className="text-xs text-gray-500">
-                      {a.representante_telefono}
-                    </span>
-                    <span className="text-xs text-gray-400">
-                      {a.representante_email}
-                    </span>
-                  </div>
-                ) : (
-                  <span className="text-xs text-gray-400">Sin representante</span>
-                )}
-              </td>
-              <td className="px-3 py-2">{a.estado}</td>
-              <td className="px-3 py-2">
-                <div className="flex flex-wrap gap-1">
-                  {(a.programas || []).map((p) => (
-                    <Badge key={p.id_programa}>{p.nombre}</Badge>
-                  ))}
-                  {(!a.programas || a.programas.length === 0) && (
-                    <span className="text-xs text-gray-400">Sin programas</span>
-                  )}
-                </div>
-              </td>
-              <td className="px-3 py-2 flex gap-2">
-                <button
-                  onClick={() => openEdit(a)}
-                  className="p-1.5 bg-blue-50 text-blue-600 rounded-lg border hover:bg-blue-100"
-                >
-                  <Edit className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => handleEstadoClick(a)}
-                  disabled={checkingId === a.id_alumno}
-                  className={`p-1.5 rounded-lg border ${
-                    a.estado === "Activo"
-                      ? "bg-red-50 text-red-600 hover:bg-red-100"
-                      : "bg-green-50 text-green-600 hover:bg-green-100"
-                  } ${checkingId === a.id_alumno ? "opacity-60 cursor-not-allowed" : ""}`}
-                >
-                  {checkingId === a.id_alumno ? "..." : (a.estado === "Activo" ? "Desactivar" : "Activar")}
-                </button>
-                <button
-                  onClick={() => openDetail(a)}
-                  className="p-1.5 bg-yellow-50 text-yellow-600 rounded-lg border hover:bg-yellow-100"
-                >
-                  Ver
-                </button>
-              </td>
-            </tr>
+        <tbody role="rowgroup">
+          {alumnosPage.map(a => (
+            <AlumnoRow
+              key={a.id_alumno}
+              a={a}
+              isSelected={selected.includes(a.id_alumno)}
+              toggleSelect={toggleSelect}
+              openDetail={openDetail}
+              handleEstadoClick={handleEstadoClick}
+              checkingId={checkingId}
+              openEdit={openEdit}
+              isUpdating={updatingId === a.id_alumno}
+            />
           ))}
         </tbody>
       </table>
     </div>
   );
 }
+// EOF
