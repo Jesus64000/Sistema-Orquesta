@@ -28,8 +28,10 @@ export const deleteEvento = async (id) => {
 };
 
 // ✅ Eventos futuros y pasados con API base
-export const getEventosFuturos = async () => {
-  const res = await axios.get(`${API}/eventos/futuros`);
+export const getEventosFuturos = async (programaId) => {
+  const res = await axios.get(`${API}/eventos/futuros`, {
+    params: programaId ? { programa_id: programaId } : {},
+  });
   return res.data;
 };
 
