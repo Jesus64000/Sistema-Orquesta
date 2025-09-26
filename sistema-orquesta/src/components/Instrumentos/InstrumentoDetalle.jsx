@@ -1,100 +1,93 @@
 // src/components/AlumnoDetalle.jsx
 import { useState } from "react";
+import DialogShell from "../DialogShell";
 import InstrumentoAsignacion from "./InstrumentoAsignacion";
 import InstrumentoHistorial from "./InstrumentoHistorial";
 
 export default function InstrumentoDetalle({ instrumento, onClose }) {
   const [tab, setTab] = useState("perfil");
 
+  if (!instrumento) return null;
+
+  const tabs = [
+    { key: "perfil", label: "Perfil" },
+    { key: "asignacion", label: "Asignación" },
+    { key: "historial", label: "Historial" },
+  ];
+
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-3">
-      <div className="bg-white w-full max-w-3xl rounded-2xl shadow-xl border border-gray-200">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b">
-          <h3 className="text-lg font-semibold">
-            Detalle de {instrumento.nombre}
-          </h3>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg hover:bg-gray-100"
-          >
-            ✕
-          </button>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex border-b">
-          {["perfil", "asignacion", "historial"].map((t) => (
+    <DialogShell
+      open={!!instrumento}
+      onClose={onClose}
+      title={`Detalle de ${instrumento.nombre}`}
+      size="lg"
+    >
+      <div className="flex items-center gap-2 mb-5 border-b border-gray-200">
+        {tabs.map(t => {
+          const active = tab === t.key;
+          return (
             <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`px-4 py-2 text-sm font-medium ${
-                tab === t
-                  ? "border-b-2 border-yellow-400 text-yellow-600"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`relative px-4 h-10 text-sm font-medium rounded-t-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300 ${active ? "bg-white text-gray-900 -mb-px border border-gray-200 border-b-white" : "text-gray-500 hover:text-gray-700"}`}
+              aria-selected={active}
+              role="tab"
             >
-              {t === "perfil"
-                ? "Perfil"
-                : t === "asignacion"
-                ? "Asignación"
-                : "Historial"}
+              {t.label}
+              {active && <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-yellow-400 to-yellow-500" />}
             </button>
-          ))}
-        </div>
-
-        {/* Content */}
-        <div className="p-4">
-          {tab === "perfil" && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs text-gray-500">Nombre</p>
-                <p className="font-medium">{instrumento.nombre}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500">Categoría</p>
-                <p className="font-medium">{instrumento.categoria_nombre}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500">Número de serie</p>
-                <p className="font-medium">{instrumento.numero_serie}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500">Estado</p>
-                <p className="font-medium">{instrumento.estado_nombre}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500">Fecha adquisición</p>
-                <p className="font-medium">
-                  {instrumento.fecha_adquisicion?.slice(0, 10) || "—"}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500">Ubicación</p>
-                <p className="font-medium">{instrumento.ubicacion || "—"}</p>
-              </div>
-              <div className="md:col-span-2">
-                <p className="text-xs text-gray-500">Asignado a</p>
-                {instrumento.asignado && instrumento.asignado.nombre ? (
-                  <span className="inline-block font-semibold text-blue-700 text-sm bg-blue-50 rounded px-2 py-0.5">
-                    {instrumento.asignado.nombre}
-                  </span>
-                ) : (
-                  <span className="text-xs text-gray-400">—</span>
-                )}
-              </div>
-            </div>
-          )}
-
-          {tab === "asignacion" && (
-            <InstrumentoAsignacion instrumento={instrumento} />
-          )}
-
-          {tab === "historial" && (
-            <InstrumentoHistorial idInstrumento={instrumento.id_instrumento} />
-          )}
-        </div>
+          );
+        })}
       </div>
-    </div>
+
+      <div role="tabpanel" className="space-y-6 text-sm">
+        {tab === "perfil" && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <p className="text-[11px] uppercase tracking-wide text-gray-500">Nombre</p>
+              <p className="font-medium text-gray-900">{instrumento.nombre}</p>
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-wide text-gray-500">Categoría</p>
+              <p className="font-medium text-gray-900">{instrumento.categoria_nombre}</p>
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-wide text-gray-500">Número de serie</p>
+              <p className="font-medium text-gray-900">{instrumento.numero_serie}</p>
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-wide text-gray-500">Estado</p>
+              <p className="font-medium text-gray-900">{instrumento.estado_nombre}</p>
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-wide text-gray-500">Fecha adquisición</p>
+              <p className="font-medium text-gray-900">{instrumento.fecha_adquisicion?.slice(0, 10) || "—"}</p>
+            </div>
+            <div>
+              <p className="text-[11px] uppercase tracking-wide text-gray-500">Ubicación</p>
+              <p className="font-medium text-gray-900">{instrumento.ubicacion || "—"}</p>
+            </div>
+            <div className="md:col-span-2">
+              <p className="text-[11px] uppercase tracking-wide text-gray-500">Asignado a</p>
+              {instrumento.asignado && instrumento.asignado.nombre ? (
+                <span className="inline-block font-semibold text-blue-700 text-sm bg-blue-50 rounded-full px-2.5 py-1 border border-blue-200">
+                  {instrumento.asignado.nombre}
+                </span>
+              ) : (
+                <span className="text-xs text-gray-400">—</span>
+              )}
+            </div>
+          </div>
+        )}
+
+        {tab === "asignacion" && (
+          <InstrumentoAsignacion instrumento={instrumento} />
+        )}
+
+        {tab === "historial" && (
+          <InstrumentoHistorial idInstrumento={instrumento.id_instrumento} />
+        )}
+      </div>
+    </DialogShell>
   );
 }
