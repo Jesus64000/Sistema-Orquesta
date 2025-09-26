@@ -1,4 +1,4 @@
-import React, { memo, useMemo } from "react";
+import React, { memo, useMemo, useRef, useEffect } from "react";
 import { Edit, ChevronUp, ChevronDown } from "lucide-react";
 
 // Badge para programas – estilo pill suave
@@ -185,6 +185,27 @@ export default function AlumnosTable({
   updatingId,
   openDetail,
 }) {
+  // Live region para anunciar cambios de estado individuales
+  const estadoLiveRef = useRef(null);
+  const lastEstadoRef = useRef({});
+
+  useEffect(() => {
+    // Construir un mapa id->estado actual
+    const map = {};
+    (alumnosFiltrados || []).forEach(a => { map[a.id_alumno] = a.estado; });
+
+    // Comparar con lastEstadoRef y anunciar cambios (excepto durante animación de updatingId)
+    Object.entries(map).forEach(([id, estado]) => {
+      const prev = lastEstadoRef.current[id];
+      if (prev && prev !== estado) {
+        if (estadoLiveRef.current) {
+          estadoLiveRef.current.textContent = `Alumno ${id} ahora ${estado}`;
+        }
+      }
+    });
+    lastEstadoRef.current = map;
+  }, [alumnosFiltrados]);
+
   const totalFiltered = alumnosFiltrados?.length || 0;
   const selectedInFiltered = useMemo(() => (alumnosFiltrados || []).filter(a => selected.includes(a.id_alumno)).length, [alumnosFiltrados, selected]);
   const allFilteredSelected = totalFiltered > 0 && selectedInFiltered === totalFiltered;
@@ -192,6 +213,8 @@ export default function AlumnosTable({
 
   return (
     <div className="overflow-x-auto bg-white border rounded-2xl shadow-sm" role="region" aria-label="Tabla de alumnos">
+      {/* Región aria-live para cambios de estado */}
+      <div ref={estadoLiveRef} aria-live="polite" aria-atomic="true" className="sr-only" />
       <table className="w-full text-[13px] text-left border-collapse" role="table">
         <thead className="bg-gradient-to-b from-gray-50 to-gray-100 text-gray-600 text-[11px] uppercase tracking-wide sticky top-0 z-10 shadow-sm" role="rowgroup">
           <tr role="row">

@@ -11,6 +11,7 @@ export default function ConfirmDialog({
   confirmLabel = "Confirmar",
   confirmColor = "bg-gray-900 hover:bg-black",
 }) {
+  const descriptionId = title ? `confirm-desc-${title.replace(/\s+/g,'-').toLowerCase()}` : undefined;
   return (
     <DialogShell
       open={open}
@@ -19,10 +20,9 @@ export default function ConfirmDialog({
       size="sm"
       ariaLabel={title}
       className=""
+      ariaDescribedBy={descriptionId}
     >
-      <div className="text-sm text-gray-600 leading-relaxed">
-        {message}
-      </div>
+      <div id={descriptionId} className="text-sm text-gray-600 leading-relaxed">{message}</div>
       <div className="flex justify-end gap-2 mt-6">
         <button
           onClick={onCancel}

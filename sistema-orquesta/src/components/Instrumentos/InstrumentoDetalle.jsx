@@ -22,16 +22,21 @@ export default function InstrumentoDetalle({ instrumento, onClose }) {
       title={`Detalle de ${instrumento.nombre}`}
       size="lg"
     >
-      <div className="flex items-center gap-2 mb-5 border-b border-gray-200">
+      <div className="flex items-center gap-2 mb-5 border-b border-gray-200" role="tablist" aria-label="Secciones del instrumento">
         {tabs.map(t => {
           const active = tab === t.key;
+          const tabId = `instrumento-tab-${t.key}`;
+          const panelId = `instrumento-panel-${t.key}`;
           return (
             <button
               key={t.key}
+              id={tabId}
               onClick={() => setTab(t.key)}
               className={`relative px-4 h-10 text-sm font-medium rounded-t-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300 ${active ? "bg-white text-gray-900 -mb-px border border-gray-200 border-b-white" : "text-gray-500 hover:text-gray-700"}`}
               aria-selected={active}
+              aria-controls={panelId}
               role="tab"
+              tabIndex={active ? 0 : -1}
             >
               {t.label}
               {active && <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-yellow-400 to-yellow-500" />}
@@ -40,7 +45,7 @@ export default function InstrumentoDetalle({ instrumento, onClose }) {
         })}
       </div>
 
-      <div role="tabpanel" className="space-y-6 text-sm">
+      <div role="tabpanel" id={`instrumento-panel-${tab}`} aria-labelledby={`instrumento-tab-${tab}`} className="space-y-6 text-sm">
         {tab === "perfil" && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>

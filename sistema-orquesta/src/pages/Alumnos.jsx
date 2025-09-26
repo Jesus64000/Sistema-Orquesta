@@ -1,5 +1,5 @@
 // sistema-orquesta/src/pages/Alumnos.jsx
-import { useEffect, useMemo, useState, useDeferredValue } from "react";
+import { useEffect, useMemo, useState, useDeferredValue, useRef } from "react";
 import toast from "react-hot-toast";
 
 import {
@@ -124,6 +124,15 @@ export default function Alumnos() {
 
   const totalPages = Math.ceil(alumnosFiltrados.length / pageSize);
   const alumnosPage = alumnosFiltrados.slice((page - 1) * pageSize, page * pageSize);
+
+  // Live region conteo resultados (announces after cambios de filtros/búsqueda)
+  const resultsLiveRef = useRef(null);
+  useEffect(() => {
+    if (resultsLiveRef.current) {
+      // Mensaje conciso, no spam: announce length
+      resultsLiveRef.current.textContent = `${alumnosFiltrados.length} resultado${alumnosFiltrados.length === 1 ? '' : 's'}`;
+    }
+  }, [alumnosFiltrados.length]);
 
   // Handlers
   const toggleSort = (col) => {
@@ -256,6 +265,13 @@ export default function Alumnos() {
 
   return (
   <div className="space-y-6">
+      {/* Región aria-live para anunciar conteo filtrado (invisible) */}
+      <div
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+        ref={resultsLiveRef}
+      />
       {/* Encabezado */}
       <AlumnosHeader
         selected={selected}

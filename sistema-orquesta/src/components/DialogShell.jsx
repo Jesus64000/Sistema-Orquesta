@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
 /*
@@ -20,6 +21,7 @@ import { X } from "lucide-react";
 */
 
 let openCount = 0; // contador global simple
+let lastActiveElement = null; // elemento que tenía foco antes de abrir el primer dialog
 
 const sizeMap = {
   sm: "max-w-sm",
@@ -39,14 +41,24 @@ export default function DialogShell({
   className = "",
   initialFocus,
   ariaLabel,
+  ariaDescribedBy,
 }) {
   const localRef = useRef(null);
   const panelRef = initialFocus || localRef;
 
+  // Manejo de apertura/cierre: scroll lock + foco inicial + restaurar foco + aria-hidden fondo
   useEffect(() => {
     if (open) {
+      if (openCount === 0) {
+        lastActiveElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      }
       openCount += 1;
       document.body.classList.add("overflow-hidden");
+      // Marcar root como aria-hidden (el dialog va via portal fuera de root)
+      if (openCount === 1) {
+        const root = document.getElementById("root");
+        if (root) root.setAttribute("aria-hidden", "true");
+      }
       setTimeout(() => {
         try { panelRef.current?.focus?.(); } catch { /* noop */ }
       }, 0);
@@ -54,26 +66,59 @@ export default function DialogShell({
     return () => {
       if (open) {
         openCount = Math.max(0, openCount - 1);
-        if (openCount === 0) document.body.classList.remove("overflow-hidden");
+        if (openCount === 0) {
+          document.body.classList.remove("overflow-hidden");
+          const root = document.getElementById("root");
+          if (root) root.removeAttribute("aria-hidden");
+          // Restaurar foco al último elemento activo si sigue en el documento
+            if (lastActiveElement && document.contains(lastActiveElement)) {
+              try { lastActiveElement.focus(); } catch { /* noop */ }
+            }
+            lastActiveElement = null;
+        }
       }
     };
   }, [open, panelRef]);
 
+  // Escape + focus trap (Tab y Shift+Tab) dentro del panel
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key === "Escape" && open) {
+      if (!open) return;
+      if (e.key === "Escape") {
         onClose?.();
+        return;
+      }
+      if (e.key === "Tab") {
+        const root = panelRef.current;
+        if (!root) return;
+        const focusables = root.querySelectorAll(
+          'a[href], button:not([disabled]), textarea, input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusables.length === 0) {
+          e.preventDefault();
+          return;
+        }
+        const list = Array.from(focusables);
+        const first = list[0];
+        const last = list[list.length - 1];
+        if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        } else if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
       }
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  }, [open, onClose, panelRef]);
 
   if (!open) return null;
 
   const labelId = title ? `dialog-${title.replace(/\s+/g, '-').toLowerCase()}` : undefined;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" aria-hidden="true" onClick={() => onClose?.()} />
       <div
@@ -83,6 +128,7 @@ export default function DialogShell({
         aria-modal="true"
         aria-labelledby={labelId}
         aria-label={!title ? ariaLabel : undefined}
+        aria-describedby={ariaDescribedBy}
         className={`relative w-full ${sizeMap[size] || sizeMap.md} bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden outline-none ${className}`}
       >
         {!hideHeader && (
@@ -103,6 +149,7 @@ export default function DialogShell({
         )}
         <div className="p-5">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
