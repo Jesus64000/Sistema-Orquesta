@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   PlusCircle, Wrench, ClipboardList, MapPin, Clock,
-  ChevronLeft, ChevronRight, UserCheck, UserPlus, Hourglass, Briefcase, Filter
+  ChevronLeft, ChevronRight, UserCheck, UserPlus, Hourglass, Briefcase, Filter, Calendar as CalendarIcon
 } from "lucide-react";
 
 import { getDashboardStats, getProximoEvento, getCumpleaniosProximos } from "../api/dashboard";
@@ -90,6 +90,17 @@ const Tooltip = ({ eventos, align = "center" }) => (
           <p className="flex items-center gap-1">
             <MapPin className="h-3 w-3" /> {evento.lugar}
           </p>
+          <div className="mt-1 flex flex-wrap gap-1">
+            {evento.categoria && (
+              <span className="px-1.5 py-0.5 rounded-md bg-yellow-100 text-yellow-800 border border-yellow-200 text-[10px] font-medium">{evento.categoria}</span>
+            )}
+            {evento.programa_nombre && (
+              <span className="px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-700 border border-gray-200 text-[10px]">{evento.programa_nombre}</span>
+            )}
+            {evento.estado && (
+              <span className="px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] capitalize">{evento.estado}</span>
+            )}
+          </div>
         </div>
       );
     })}
@@ -100,6 +111,7 @@ const Tooltip = ({ eventos, align = "center" }) => (
 const MonthCalendar = ({ year, monthIndex, eventos = [] }) => {
   const [cursor, setCursor] = useState({ y: year, m: monthIndex });
   const [hovered, setHovered] = useState(null);
+  const today = new Date();
 
   const matrix = useMemo(() => {
     const first = new Date(cursor.y, cursor.m, 1);
@@ -131,13 +143,28 @@ const MonthCalendar = ({ year, monthIndex, eventos = [] }) => {
     new Date(cursor.y, cursor.m, 1)
   );
 
+  const eventosMesActual = Object.entries(eventosPorDia).filter(([key]) => {
+    const d = new Date(key);
+    return d.getFullYear() === cursor.y && d.getMonth() === cursor.m;
+  }).length;
+
+  const isDifferentMonth = cursor.y !== today.getFullYear() || cursor.m !== today.getMonth();
+
   return (
     <Card>
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold capitalize text-gray-900">
           {monthName} {cursor.y}
         </h3>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          {isDifferentMonth && (
+            <button
+              className="px-2.5 py-1.5 rounded-lg border border-yellow-300 bg-yellow-100 text-[11px] font-medium hover:bg-yellow-200 transition"
+              onClick={() => setCursor({ y: today.getFullYear(), m: today.getMonth() })}
+            >
+              Hoy
+            </button>
+          )}
           <button
             className="p-2 rounded-lg bg-yellow-400 text-gray-900 hover:bg-yellow-500 shadow-sm"
             onClick={() => setCursor(({ y, m }) => (m === 0 ? { y: y - 1, m: 11 } : { y, m: m - 1 }))}
@@ -168,6 +195,7 @@ const MonthCalendar = ({ year, monthIndex, eventos = [] }) => {
           const keyDate = d.toDateString();
           const eventosDia = eventosPorDia[keyDate] || [];
           const isHovered = hovered?.date.toDateString() === keyDate;
+          const isToday = d.toDateString() === today.toDateString();
 
           const colIndex = i % 7;
           let align = "center";
@@ -181,7 +209,8 @@ const MonthCalendar = ({ year, monthIndex, eventos = [] }) => {
               onMouseLeave={() => setHovered(null)}
               className={`relative aspect-square rounded-xl text-sm grid place-items-center border shadow-sm
                 ${inMonth ? "bg-white text-gray-900 border-gray-200" : "bg-gray-50 text-gray-400 border-transparent"}
-                ${eventosDia.length ? "bg-yellow-200 font-bold cursor-pointer" : ""}`}
+                ${eventosDia.length ? "bg-yellow-200 font-bold cursor-pointer" : ""}
+                ${isToday ? "ring-2 ring-yellow-400 ring-offset-2 ring-offset-white font-semibold" : ""}`}
             >
               {day}
               {isHovered && eventosDia.length > 0 && <Tooltip eventos={eventosDia} align={align} />}
@@ -189,6 +218,13 @@ const MonthCalendar = ({ year, monthIndex, eventos = [] }) => {
           );
         })}
       </div>
+      {eventosMesActual === 0 && (
+        <div className="mt-4 flex flex-col items-center gap-2 text-gray-500 text-xs">
+          <CalendarIcon className="h-6 w-6 text-gray-300" />
+          <p className="font-medium text-gray-600">No hay eventos en este mes</p>
+          <p className="text-[11px] text-gray-400">Crea uno desde "Acciones Rápidas"</p>
+        </div>
+      )}
     </Card>
   );
 };
@@ -226,7 +262,8 @@ export default function Dashboard() {
       setProximoEvento(resEvento.data || null);
       setLoadingEvento(false);
 
-  const eventos = await getEventosFuturos(programFilter || undefined);
+  // Eventos siempre globales (no filtrados por programa)
+  const eventos = await getEventosFuturos();
       setEventosFuturos(Array.isArray(eventos) ? eventos : []);
 
       setCumples((prev) => ({ ...prev, loading: true }));
