@@ -1,32 +1,31 @@
 import React, { memo, useMemo, useRef, useEffect } from "react";
 import { Edit, ChevronUp, ChevronDown } from "lucide-react";
+import Pill from "../ui/Pill";
 
-// Badge para programas – estilo pill suave
+// Program badge reutiliza Pill tono neutral
 const ProgramBadge = ({ children }) => (
-  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-gradient-to-b from-gray-50 to-gray-100 text-gray-700 border border-gray-200 shadow-sm hover:from-gray-100 hover:to-gray-200 transition">
-    {children}
-  </span>
+  <Pill tone="neutral" size="xs" className="hover:from-gray-100 hover:to-gray-200 transition">{children}</Pill>
 );
 
-// Pill de estado con color dinámico y soporte loading
+// EstadoPill delega al Pill base
 const EstadoPill = ({ estado, loading = false }) => {
   const map = {
-    Activo: { cls: "from-emerald-50 to-emerald-100 text-emerald-700 border-emerald-200", dot: "bg-emerald-500" },
-    Inactivo: { cls: "from-gray-50 to-gray-100 text-gray-600 border-gray-200", dot: "bg-gray-400" },
-    Retirado: { cls: "from-red-50 to-red-100 text-red-700 border-red-200", dot: "bg-red-500" },
+    Activo: { tone: "green", dot: "bg-emerald-500" },
+    Inactivo: { tone: "gray", dot: "bg-gray-400" },
+    Retirado: { tone: "red", dot: "bg-red-500" },
   };
   const m = map[estado] || map.Inactivo;
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-gradient-to-b ${m.cls} border shadow-sm ${loading ? "opacity-70" : ""}`}
+    <Pill
+      tone={m.tone}
+      size="xs"
+      leadingDot={!loading ? m.dot : undefined}
+      loading={loading}
       aria-live={loading ? "polite" : undefined}
+      className={loading ? "opacity-70" : ""}
     >
-      {loading ? (
-        <span className="h-3 w-3 inline-block animate-spin rounded-full border-2 border-current border-t-transparent" aria-label="Actualizando" />
-      ) : (
-        <span className={`h-2 w-2 rounded-full ${m.dot}`} />
-      )}
       {estado}
-    </span>
+    </Pill>
   );
 };
 

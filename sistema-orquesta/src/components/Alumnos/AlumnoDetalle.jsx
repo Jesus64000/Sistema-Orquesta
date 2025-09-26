@@ -1,6 +1,7 @@
 // src/components/Alumno/AlumnoDetalle.jsx
 import { useState } from "react";
 import DialogShell from "../DialogShell";
+import Pill from "../ui/Pill";
 import AlumnoInstrumento from "./AlumnoInstrumento";
 import AlumnoHistorial from "./AlumnoHistorial";
 
@@ -76,9 +77,7 @@ export default function AlumnoDetalle({ alumno, onClose }) {
               <p className="text-[11px] uppercase tracking-wide text-gray-500">Programas</p>
               <div className="flex flex-wrap gap-2 mt-1">
                 {(alumno.programas || []).map(p => (
-                  <span key={p.id_programa} className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-gradient-to-b from-gray-50 to-gray-100 text-gray-700 border border-gray-200 shadow-sm">
-                    {p.nombre}
-                  </span>
+                  <Pill key={p.id_programa} tone="neutral" size="xs">{p.nombre}</Pill>
                 ))}
                 {(!alumno.programas || alumno.programas.length === 0) && (
                   <span className="text-xs text-gray-400 italic">Sin programas</span>

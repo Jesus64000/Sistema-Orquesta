@@ -1,6 +1,7 @@
 // src/components/AlumnoDetalle.jsx
 import { useState } from "react";
 import DialogShell from "../DialogShell";
+import Pill from "../ui/Pill";
 import InstrumentoAsignacion from "./InstrumentoAsignacion";
 import InstrumentoHistorial from "./InstrumentoHistorial";
 
@@ -75,9 +76,7 @@ export default function InstrumentoDetalle({ instrumento, onClose }) {
             <div className="md:col-span-2">
               <p className="text-[11px] uppercase tracking-wide text-gray-500">Asignado a</p>
               {instrumento.asignado && instrumento.asignado.nombre ? (
-                <span className="inline-block font-semibold text-blue-700 text-sm bg-blue-50 rounded-full px-2.5 py-1 border border-blue-200">
-                  {instrumento.asignado.nombre}
-                </span>
+                <Pill tone="blue" size="xs" className="font-semibold">{instrumento.asignado.nombre}</Pill>
               ) : (
                 <span className="text-xs text-gray-400">—</span>
               )}

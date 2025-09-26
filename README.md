@@ -259,6 +259,46 @@ npm install react axios
 
 ---
 
+## ♿ Accesibilidad (A11y)
+
+El frontend incorpora mejoras progresivas para ofrecer una mejor experiencia a usuarios que utilizan tecnologías de asistencia:
+
+### Diálogos y Modales
+- Implementación de un `DialogShell` unificado con:
+   - `role="dialog"` + `aria-modal="true"` y aislamiento visual.
+   - Bloqueo de scroll y restauración de foco al elemento disparador.
+   - Focus trap (Tab / Shift+Tab) para navegación contenida.
+   - `aria-hidden` dinámico sobre el fondo mientras el diálogo está abierto.
+   - Soporte de `aria-describedby` para mensajes contextuales (Confirm / Info).
+
+### Tabla de Alumnos
+- Estados de carga, vacío y error claramente diferenciados y semánticos.
+- Anuncios en vivo (live regions) para:
+   - Conteo de resultados filtrados.
+   - Cambios de estado (activado / desactivado) de alumnos.
+- Uso de `aria-sort` en columnas ordenables.
+- Indicadores visuales + texto (no solo color) para estados y chips.
+
+### Navegación por Pestañas (Detalle Alumno / Instrumento)
+- `role="tablist"`, `role="tab"`, `aria-controls`, `aria-selected` y panel asociado con `aria-labelledby`.
+- Gestión de foco accesible al cambiar pestañas (sin forzar navegación con teclas mientras no se requiera).
+
+### Componentes Reutilizables
+- `Pill` base para chips / badges con variantes de color y soporte de punto indicador o spinner.
+- `EstadoPill` mantiene lógica de estado + compatibilidad con `aria-live` cuando hay cambios.
+
+### Principios Adoptados
+- No depender únicamente del color para transmitir significado.
+- Anuncios concisos y no intrusivos (live regions polite y atómicos).
+- Estructura consistente de modales evita divergencias de comportamiento.
+- Refactor preparado para futuras mejoras (ej: navegación por teclado más avanzada si se solicita).
+
+### Próximos Pasos Potenciales
+- Tests automatizados (axe / jest-dom) para validación estática de accesibilidad.
+- Preferencias de usuario (modo alto contraste / reducción de animaciones) si surge la necesidad.
+
+---
+
 ## 📜 Recursos y documentación adicional
 
 - [Documentación de la API](docs/api.md)
