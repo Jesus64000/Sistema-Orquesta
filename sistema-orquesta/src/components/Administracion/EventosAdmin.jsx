@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { getEventos, createEvento, updateEvento, deleteEvento } from "../../api/administracion/eventos";
 import { getInstrumentos } from "../../api/administracion/instrumentos";
 import { getProgramas } from "../../api/administracion/programas";
+import Button from "../ui/Button";
 
 export default function EventosAdmin() {
   const [eventos, setEventos] = useState([]);
@@ -136,12 +137,16 @@ export default function EventosAdmin() {
             ))}
           </select>
         </div>
-        <button type="submit" className="bg-yellow-400 text-gray-900 font-bold px-4 py-2 rounded shadow hover:bg-yellow-300 transition flex items-center gap-2" disabled={loading}>
-          {loading && <span className="loader border-2 border-t-2 border-yellow-600 rounded-full w-4 h-4 animate-spin"></span>}
+        <Button type="submit" variant="primary" loading={loading}>
           {editId ? "Actualizar" : "Agregar"}
-        </button>
+        </Button>
         {editId && (
-          <button type="button" onClick={() => { setEditId(null); setForm({ nombre: "", fecha: "", programa: "", instrumento: "" }); setError(""); setSuccess(""); }} className="ml-2 text-xs text-gray-500 underline">Cancelar</button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => { setEditId(null); setForm({ nombre: "", fecha: "", programa: "", instrumento: "" }); setError(""); setSuccess(""); }}
+          >Cancelar</Button>
         )}
       </form>
       {error && <div className="text-red-500 mb-2">{error}</div>}
@@ -170,8 +175,8 @@ export default function EventosAdmin() {
                   <td className="px-4 py-2 border-b">{e.programa}</td>
                   <td className="px-4 py-2 border-b">{e.instrumento}</td>
                   <td className="px-4 py-2 border-b">
-                    <button onClick={() => handleEdit(e)} className="text-yellow-500 font-bold mr-2">Editar</button>
-                    <button onClick={() => handleDelete(e.id_evento)} className="text-red-500 font-bold">Eliminar</button>
+                    <button onClick={() => handleEdit(e)} className="text-yellow-600 font-semibold hover:underline mr-2">Editar</button>
+                    <button onClick={() => handleDelete(e.id_evento)} className="text-red-600 font-semibold hover:underline">Eliminar</button>
                   </td>
                 </tr>
               ))

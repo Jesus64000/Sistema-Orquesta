@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import ConfirmDialog from "../ConfirmDialog";
 import { getEstados, createEstado, updateEstado, deleteEstado } from "../../api/administracion/estados";
+import Button from "../ui/Button";
 
 export default function EstadosAdmin() {
   const [estados, setEstados] = useState([]);
@@ -107,12 +108,16 @@ export default function EstadosAdmin() {
           <label className="block text-xs text-yellow-500 font-semibold mb-1">Nombre</label>
           <input name="nombre" value={form.nombre} onChange={handleChange} required className="border rounded px-3 py-1 w-48" />
         </div>
-        <button type="submit" className="bg-yellow-400 text-gray-900 font-bold px-4 py-2 rounded shadow hover:bg-yellow-300 transition flex items-center gap-2" disabled={loading}>
-          {loading && <span className="loader border-2 border-t-2 border-yellow-600 rounded-full w-4 h-4 animate-spin"></span>}
+        <Button type="submit" variant="primary" loading={loading}>
           {editId ? "Actualizar" : "Agregar"}
-        </button>
+        </Button>
         {editId && (
-          <button type="button" onClick={() => { setEditId(null); setForm({ nombre: "" }); setError(""); setSuccess(""); }} className="ml-2 text-xs text-gray-500 underline">Cancelar</button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => { setEditId(null); setForm({ nombre: "" }); setError(""); setSuccess(""); }}
+          >Cancelar</Button>
         )}
       </form>
       {error && <div className="text-red-500 mb-2">{error}</div>}
@@ -135,8 +140,8 @@ export default function EstadosAdmin() {
                 <tr key={e.id_estado}>
                   <td className="px-4 py-2 border-b">{e.nombre}</td>
                   <td className="px-4 py-2 border-b">
-                    <button onClick={() => handleEdit(e)} className="text-yellow-500 font-bold mr-2">Editar</button>
-                    <button onClick={() => handleDelete(e.id_estado)} className="text-red-500 font-bold">Eliminar</button>
+                    <button onClick={() => handleEdit(e)} className="text-yellow-600 font-semibold hover:underline mr-2">Editar</button>
+                    <button onClick={() => handleDelete(e.id_estado)} className="text-red-600 font-semibold hover:underline">Eliminar</button>
       {/* ConfirmDialog para eliminar */}
       <ConfirmDialog
         open={confirm.open}

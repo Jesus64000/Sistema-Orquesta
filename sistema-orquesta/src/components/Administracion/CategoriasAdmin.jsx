@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import ConfirmDialog from "../ConfirmDialog";
 import { getCategorias, createCategoria, updateCategoria, deleteCategoria } from "../../api/administracion/categorias";
+import Button from "../ui/Button";
 
 // Validación de nombre
 function validarNombre(nombre) {
@@ -139,21 +140,16 @@ export default function CategoriasAdmin() {
             className="border rounded px-3 py-1 w-64"
           />
         </div>
-        <button
-          type="submit"
-          className={`bg-yellow-400 text-gray-900 font-bold px-4 py-2 rounded shadow flex items-center gap-2 transition ${loading ? 'opacity-60 cursor-not-allowed' : 'hover:bg-yellow-300'}`}
-          disabled={loading}
-          aria-busy={loading}
-        >
-          {loading && <span className="loader border-2 border-t-2 border-yellow-600 rounded-full w-4 h-4 animate-spin" aria-label="Cargando"></span>}
+        <Button type="submit" variant="primary" loading={loading} aria-busy={loading}>
           {editId ? "Actualizar" : "Agregar"}
-        </button>
+        </Button>
         {editId && (
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => { setEditId(null); setForm({ nombre: "", descripcion: "" }); setError(""); setSuccess(""); }}
-            className="ml-2 text-xs text-gray-500 underline"
-          >Cancelar</button>
+          >Cancelar</Button>
         )}
       </form>
       {error && (
@@ -191,8 +187,8 @@ export default function CategoriasAdmin() {
                   <td className="px-4 py-2 border-b">{c.nombre}</td>
                   <td className="px-4 py-2 border-b">{c.descripcion}</td>
                   <td className="px-4 py-2 border-b">
-                    <button onClick={() => handleEdit(c)} className="text-yellow-500 font-bold mr-2" aria-label={`Editar categoría ${c.nombre}`}>Editar</button>
-                    <button onClick={() => handleDelete(c.id_categoria)} className="text-red-500 font-bold" aria-label={`Eliminar categoría ${c.nombre}`}>Eliminar</button>
+                    <button onClick={() => handleEdit(c)} className="text-yellow-600 font-semibold hover:underline mr-2" aria-label={`Editar categoría ${c.nombre}`}>Editar</button>
+                    <button onClick={() => handleDelete(c.id_categoria)} className="text-red-600 font-semibold hover:underline" aria-label={`Eliminar categoría ${c.nombre}`}>Eliminar</button>
                   </td>
                 </tr>
               ))

@@ -7,6 +7,7 @@ import {
   deleteUsuario,
 } from "../api/configuraciones";
 import { Settings, Search, Edit, Trash2, PlusCircle } from "lucide-react";
+import Button from "../components/ui/Button";
 import toast from "react-hot-toast";
 
 export default function Configuraciones() {
@@ -29,7 +30,7 @@ export default function Configuraciones() {
     try {
       const res = await getUsuarios();
       setUsuarios(res.data);
-    } catch (err) {
+    } catch {
       toast.error("Error cargando usuarios");
     }
   };
@@ -48,7 +49,7 @@ export default function Configuraciones() {
       setEditing(null);
       setShowForm(false);
       loadUsuarios();
-    } catch (err) {
+    } catch {
       toast.error("Error guardando usuario");
     }
   };
@@ -65,7 +66,7 @@ export default function Configuraciones() {
       await deleteUsuario(id);
       toast.success("Usuario eliminado correctamente");
       loadUsuarios();
-    } catch (err) {
+    } catch {
       toast.error("Error eliminando usuario");
     }
   };
@@ -84,16 +85,14 @@ export default function Configuraciones() {
           <Settings className="h-6 w-6" />
           Configuraciones
         </h1>
-        <button
-          onClick={() => {
-            setShowForm(true);
-            setEditing(null);
-          }}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-yellow-400 text-gray-900 hover:bg-yellow-500 shadow-sm"
+        <Button
+          type="button"
+          variant="primary"
+          onClick={() => { setShowForm(true); setEditing(null); }}
         >
           <PlusCircle className="h-4 w-4" />
           Crear Usuario
-        </button>
+        </Button>
       </div>
 
       {/* Buscador */}
@@ -129,12 +128,14 @@ export default function Configuraciones() {
                   <button
                     onClick={() => handleEdit(u)}
                     className="p-1 rounded bg-blue-100 text-blue-600 hover:bg-blue-200"
+                    aria-label={`Editar usuario ${u.nombre}`}
                   >
                     <Edit className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => handleDelete(u.id_usuario)}
                     className="p-1 rounded bg-red-100 text-red-600 hover:bg-red-200"
+                    aria-label={`Eliminar usuario ${u.nombre}`}
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -203,19 +204,21 @@ export default function Configuraciones() {
                 />
               )}
               <div className="flex justify-end gap-2 mt-4">
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setShowForm(false)}
-                  className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300"
                 >
                   Cancelar
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-yellow-400 text-gray-900 hover:bg-yellow-500"
+                  variant="primary"
+                  size="sm"
                 >
                   Guardar
-                </button>
+                </Button>
               </div>
             </form>
           </div>

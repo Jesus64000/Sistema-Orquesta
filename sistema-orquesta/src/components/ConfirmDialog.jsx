@@ -1,6 +1,7 @@
 // src/components/ConfirmDialog.jsx
 import React from "react";
 import DialogShell from "./DialogShell";
+import Button from "./ui/Button";
 
 export default function ConfirmDialog({
   open,
@@ -9,7 +10,7 @@ export default function ConfirmDialog({
   onCancel,
   onConfirm,
   confirmLabel = "Confirmar",
-  confirmColor = "bg-gray-900 hover:bg-black",
+  confirmVariant = "danger", // danger, primary, dark
 }) {
   const descriptionId = title ? `confirm-desc-${title.replace(/\s+/g,'-').toLowerCase()}` : undefined;
   return (
@@ -24,18 +25,22 @@ export default function ConfirmDialog({
     >
       <div id={descriptionId} className="text-sm text-gray-600 leading-relaxed">{message}</div>
       <div className="flex justify-end gap-2 mt-6">
-        <button
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
           onClick={onCancel}
-          className="h-10 px-5 rounded-full text-sm font-medium bg-gradient-to-b from-gray-50 to-gray-100 text-gray-700 border border-gray-300 hover:from-gray-100 hover:to-gray-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300"
         >
           Cancelar
-        </button>
-        <button
+        </Button>
+        <Button
+          type="button"
+          variant={confirmVariant}
+          size="sm"
           onClick={onConfirm}
-          className={`h-10 px-5 rounded-full text-sm font-medium text-white shadow-sm ${confirmColor} focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300`}
         >
           {confirmLabel}
-        </button>
+        </Button>
       </div>
     </DialogShell>
   );

@@ -1,5 +1,6 @@
 // src/components/Alumno/AlumnoHistorial.jsx
 import { useEffect, useState } from "react";
+import Button from "../ui/Button";
 import toast from "react-hot-toast";
 import { getAlumnoHistorial, addAlumnoHistorial } from "../../api/alumnos";
 
@@ -64,12 +65,13 @@ export default function AlumnoHistorial({ idAlumno }) {
           placeholder="Descripción"
           className="flex-1 border rounded-lg px-2 py-1 text-sm"
         />
-        <button
+        <Button
           type="submit"
-          className="px-3 py-1 bg-yellow-400 text-gray-900 rounded-lg text-sm"
+          size="sm"
+          variant="primary"
         >
           Agregar
-        </button>
+        </Button>
       </form>
       <div className="max-h-60 overflow-auto border rounded-lg">
         <table className="w-full text-sm">

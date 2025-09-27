@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Modal from '../Modal';
 import toast from 'react-hot-toast';
 import ConfirmDialog from '../ConfirmDialog';
+import Button from '../ui/Button';
 
 export default function AlumnosBulkActionsModal({ open, onClose, selectedIds = [], programas = [], onApplied }) {
   const [section, setSection] = useState('estado'); // 'estado' | 'programa'
@@ -84,7 +85,7 @@ export default function AlumnosBulkActionsModal({ open, onClose, selectedIds = [
     <Modal title={`Acciones masivas (${total} seleccionado${total !== 1 ? 's' : ''})`} onClose={onClose}>
       <div className="flex flex-col md:flex-row gap-6 md:pr-2 max-h-[70vh] overflow-y-auto custom-scrollbar min-w-[300px] md:min-w-[760px]">
         {/* Navegación lateral (colapsa arriba en mobile) */}
-        <aside className="md:w-60 flex flex-row md:flex-col gap-2 md:pr-2 md:border-r sticky top-0 bg-white/90 md:bg-transparent z-10">
+  <aside className="md:w-60 flex flex-row md:flex-col gap-2 md:pr-2 md:border-r sticky top-0 bg-white/90 md:bg-transparent z-10">
           {[
             { key: 'estado', label: 'Cambiar estado', desc: 'Estado global' },
             { key: 'programa', label: 'Programas', desc: 'Agregar / quitar' },
@@ -94,7 +95,7 @@ export default function AlumnosBulkActionsModal({ open, onClose, selectedIds = [
               <button
                 key={item.key}
                 onClick={() => setSection(item.key)}
-                className={`text-left group rounded-xl p-3 border transition shadow-sm ${active ? 'bg-yellow-50 border-yellow-400 ring-2 ring-yellow-200' : 'bg-white border-gray-200 hover:border-yellow-300 hover:bg-yellow-50'}`}
+                className={`text-left group rounded-2xl p-3 border transition shadow-sm ${active ? 'bg-gradient-to-b from-yellow-50 to-yellow-100 border-yellow-400 ring-2 ring-yellow-200' : 'bg-white border-gray-200 hover:border-yellow-300 hover:bg-yellow-50'}`}
               >
                 <div className="flex items-center justify-between">
                   <span className={`font-medium text-sm ${active ? 'text-gray-900' : 'text-gray-700 group-hover:text-gray-900'}`}>{item.label}</span>
@@ -130,7 +131,7 @@ export default function AlumnosBulkActionsModal({ open, onClose, selectedIds = [
                       type="button"
                       key={est}
                       onClick={() => setNuevoEstado(est)}
-                      className={`text-left rounded-lg border p-3 transition shadow-sm hover:shadow ${active ? 'border-yellow-500 ring-2 ring-yellow-200 bg-yellow-50' : 'border-gray-200 bg-white'}`}
+                      className={`text-left rounded-xl border p-3 transition shadow-sm hover:shadow ${active ? 'border-yellow-500 ring-2 ring-yellow-200 bg-gradient-to-b from-yellow-50 to-yellow-100' : 'border-gray-200 bg-white'}`}
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-medium text-sm">{est}</span>
@@ -161,7 +162,7 @@ export default function AlumnosBulkActionsModal({ open, onClose, selectedIds = [
                   <select
                     value={idPrograma}
                     onChange={(e) => setIdPrograma(e.target.value)}
-                    className="px-3 py-2 border rounded-lg bg-white"
+                    className="px-3 py-2 border rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-yellow-300/60"
                   >
                     <option value="">Selecciona programa…</option>
                     {programas.map(p => (
@@ -182,7 +183,7 @@ export default function AlumnosBulkActionsModal({ open, onClose, selectedIds = [
                           type="button"
                           key={opt.key}
                           onClick={() => setAccionPrograma(opt.key)}
-                          className={`rounded-md border p-2 text-left transition hover:shadow-sm ${active ? 'border-yellow-500 bg-yellow-50 ring-2 ring-yellow-200' : 'border-gray-200 bg-white'}`}
+                          className={`rounded-lg border p-2 text-left transition hover:shadow-sm ${active ? 'border-yellow-500 bg-gradient-to-b from-yellow-50 to-yellow-100 ring-2 ring-yellow-200' : 'border-gray-200 bg-white'}`}
                         >
                           <span className="block text-xs font-medium">{opt.label}</span>
                           <span className="block text-[10px] text-gray-500">{opt.desc}</span>
@@ -201,15 +202,16 @@ export default function AlumnosBulkActionsModal({ open, onClose, selectedIds = [
           )}
 
           {/* Footer */}
-          <div className="flex justify-end gap-2 border-t pt-4 mt-auto sticky bottom-0 bg-white backdrop-blur supports-[backdrop-filter]:bg-white/90">
-            <button onClick={onClose} className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-sm">Cancelar</button>
-            <button
+          <div className="flex justify-end gap-3 border-t pt-4 mt-auto sticky bottom-0 bg-white backdrop-blur supports-[backdrop-filter]:bg-white/90">
+            <Button variant="neutral" onClick={onClose}>Cancelar</Button>
+            <Button
               onClick={apply}
               disabled={loading || !canApply}
-              className={`px-5 py-2 rounded-lg text-sm font-medium text-white ${loading || !canApply ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'}`}
+              loading={loading}
+              variant={section === 'estado' ? 'primary' : 'success'}
             >
-              {loading ? 'Aplicando…' : (nuevoEstado === 'Inactivo' && section === 'estado' && !confirmarDesactivar ? 'Verificar' : 'Aplicar')}
-            </button>
+              {(nuevoEstado === 'Inactivo' && section === 'estado' && !confirmarDesactivar) ? 'Verificar' : 'Aplicar'}
+            </Button>
           </div>
         </section>
       </div>

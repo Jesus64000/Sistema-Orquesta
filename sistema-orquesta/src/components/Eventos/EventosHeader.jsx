@@ -1,4 +1,5 @@
 import { PlusCircle } from "lucide-react";
+import Button from '../ui/Button';
 
 export default function EventosHeader({ onCreate }) {
   return (
@@ -8,13 +9,10 @@ export default function EventosHeader({ onCreate }) {
         <p className="text-sm text-gray-500">Administra todos los eventos de la orquesta.</p>
       </div>
       <div className="flex items-center gap-2">
-        <button
-          onClick={onCreate}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-yellow-400 text-gray-900 hover:bg-yellow-500 shadow-sm"
-        >
+        <Button onClick={onCreate} variant="primary" size="md" className="gap-2">
           <PlusCircle className="h-4 w-4" />
           Agregar Evento
-        </button>
+        </Button>
       </div>
     </div>
   );

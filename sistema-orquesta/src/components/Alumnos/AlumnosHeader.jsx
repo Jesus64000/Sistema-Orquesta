@@ -1,5 +1,6 @@
 import { UserPlus, Layers, Download } from "lucide-react";
 import React from "react";
+import Button from "../ui/Button";
 
 // Encabezado modernizado: gradientes suaves, botones redondeados full, chip de selección.
 // Mantiene la semántica de colores (crear = amarillo, exportar = verde, acciones = neutro oscuro)
@@ -25,35 +26,41 @@ export default function AlumnosHeader({ selected = [], onExport, onCreate, onOpe
         <div className="flex items-center gap-2 flex-wrap">
           {count > 0 && (
             <>
-              <button
+              <Button
                 type="button"
                 onClick={onExport}
-                className="group inline-flex items-center gap-2 h-10 px-4 rounded-full text-sm font-medium bg-gradient-to-b from-emerald-500 to-emerald-600 text-white border border-emerald-600 shadow-sm hover:from-emerald-600 hover:to-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 focus-visible:ring-offset-1 focus-visible:ring-offset-white transition"
+                variant="success"
+                size="md"
                 aria-label="Exportar alumnos seleccionados"
+                className="gap-2"
               >
-                <Download className="h-4 w-4 opacity-90 group-hover:opacity-100" />
-                <span>Exportar</span>
-              </button>
-              <button
+                <Download className="h-4 w-4" />
+                Exportar
+              </Button>
+              <Button
                 type="button"
                 onClick={onOpenActions}
-                className="group inline-flex items-center gap-2 h-10 px-5 rounded-full text-sm font-medium bg-gradient-to-b from-gray-800 to-gray-900 text-white border border-gray-800 shadow-sm hover:from-black hover:to-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-300 focus-visible:ring-offset-1 focus-visible:ring-offset-white transition"
+                variant="dark"
+                size="md"
                 aria-label="Abrir acciones masivas"
+                className="gap-2"
               >
-                <Layers className="h-4 w-4 opacity-90 group-hover:opacity-100" />
-                <span>Acciones</span>
-              </button>
+                <Layers className="h-4 w-4" />
+                Acciones
+              </Button>
             </>
           )}
-          <button
+          <Button
             type="button"
             onClick={onCreate}
-            className="group inline-flex items-center gap-2 h-10 px-5 rounded-full text-sm font-medium bg-gradient-to-b from-yellow-300 to-yellow-400 text-gray-900 border border-yellow-400 shadow-sm hover:from-yellow-400 hover:to-yellow-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300 focus-visible:ring-offset-1 focus-visible:ring-offset-white transition"
+            variant="primary"
+            size="md"
             aria-label="Agregar nuevo alumno"
+            className="gap-2"
           >
-            <UserPlus className="h-4 w-4 opacity-90 group-hover:opacity-100" />
-            <span>Agregar Alumno</span>
-          </button>
+            <UserPlus className="h-4 w-4" />
+            Agregar Alumno
+          </Button>
         </div>
       </div>
     </div>

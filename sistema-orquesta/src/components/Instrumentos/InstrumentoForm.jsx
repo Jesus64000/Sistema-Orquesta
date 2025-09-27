@@ -1,6 +1,7 @@
 // src/components/InstrumentoForm.jsx
 
 import { useState, useEffect } from "react";
+import Button from '../ui/Button';
 import { createInstrumento, updateInstrumento } from "../../api/instrumentos";
 import { getCategorias } from "../../api/administracion/categorias";
 import { getEstados } from "../../api/administracion/estados";
@@ -161,21 +162,9 @@ export default function InstrumentoForm({ data, onCancel, onSaved }) {
         className="w-full p-2 border rounded-lg"
       />
 
-      <div className="flex justify-end gap-2 mt-4">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300"
-        >
-          Cancelar
-        </button>
-        <button
-          type="submit"
-          disabled={loading}
-          className="px-4 py-2 rounded-lg bg-yellow-400 text-gray-900 hover:bg-yellow-500 disabled:opacity-50"
-        >
-          {loading ? "Guardando..." : "Guardar"}
-        </button>
+      <div className="flex justify-end gap-3 mt-6">
+        <Button type="button" variant="neutral" onClick={onCancel}>Cancelar</Button>
+        <Button type="submit" variant="primary" loading={loading} disabled={loading}>{data ? 'Actualizar' : 'Crear'}</Button>
       </div>
     </form>
   );

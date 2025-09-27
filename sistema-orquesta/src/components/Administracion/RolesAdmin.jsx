@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import Button from "../ui/Button";
 import { getRoles, createRol, updateRol, deleteRol } from "../../api/administracion/roles";
 
 export default function RolesAdmin() {
@@ -75,11 +76,9 @@ export default function RolesAdmin() {
           <label className="block text-xs text-yellow-500 font-semibold mb-1">Permisos</label>
           <input name="permisos" value={form.permisos} onChange={handleChange} className="border rounded px-3 py-1 w-64" placeholder="Ej: crear,editar,eliminar" />
         </div>
-        <button type="submit" className="bg-yellow-400 text-gray-900 font-bold px-4 py-2 rounded shadow hover:bg-yellow-300 transition">
-          {editId ? "Actualizar" : "Agregar"}
-        </button>
+        <Button type="submit" variant="primary" loading={loading} disabled={loading}>{editId ? "Actualizar" : "Agregar"}</Button>
         {editId && (
-          <button type="button" onClick={() => { setEditId(null); setForm({ nombre: "", permisos: "" }); }} className="ml-2 text-xs text-gray-500 underline">Cancelar</button>
+          <Button type="button" variant="ghost" size="sm" onClick={() => { setEditId(null); setForm({ nombre: "", permisos: "" }); }}>Cancelar</Button>
         )}
       </form>
       {error && <div className="text-red-500 mb-2">{error}</div>}
@@ -103,8 +102,8 @@ export default function RolesAdmin() {
                   <td className="px-4 py-2 border-b">{r.nombre}</td>
                   <td className="px-4 py-2 border-b">{r.permisos}</td>
                   <td className="px-4 py-2 border-b">
-                    <button onClick={() => handleEdit(r)} className="text-yellow-500 font-bold mr-2">Editar</button>
-                    <button onClick={() => handleDelete(r.id_rol)} className="text-red-500 font-bold">Eliminar</button>
+                    <button onClick={() => handleEdit(r)} className="text-yellow-600 font-semibold mr-2 hover:underline">Editar</button>
+                    <button onClick={() => handleDelete(r.id_rol)} className="text-red-600 font-semibold hover:underline">Eliminar</button>
                   </td>
                 </tr>
               ))

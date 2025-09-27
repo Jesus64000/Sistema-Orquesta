@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState } from "react";
 import ConfirmDialog from "../ConfirmDialog";
+import Button from "../ui/Button";
 import { getUsuarios, createUsuario, updateUsuario, deleteUsuario } from "../../api/administracion/usuarios";
 import { getRoles } from "../../api/administracion/roles";
 
@@ -149,11 +150,11 @@ export default function UsuariosAdmin() {
             ))}
           </select>
         </div>
-        <button type="submit" className="bg-yellow-400 text-gray-900 font-bold px-4 py-2 rounded shadow hover:bg-yellow-300 transition">
+        <Button type="submit" variant="primary" loading={loading} disabled={loading}>
           {editId ? "Actualizar" : "Agregar"}
-        </button>
+        </Button>
         {editId && (
-          <button type="button" onClick={() => { setEditId(null); setForm({ nombre: "", email: "", id_rol: "" }); setError(""); setSuccess(""); }} className="ml-2 text-xs text-gray-500 underline">Cancelar</button>
+          <Button type="button" variant="ghost" size="sm" onClick={() => { setEditId(null); setForm({ nombre: "", email: "", id_rol: "" }); setError(""); setSuccess(""); }}>Cancelar</Button>
         )}
       </form>
       {error && <div className="text-red-500 mb-2">{error}</div>}
@@ -189,8 +190,8 @@ export default function UsuariosAdmin() {
                   <td className="px-4 py-2 border-b">{u.email}</td>
                   <td className="px-4 py-2 border-b">{u.rol_nombre}</td>
                   <td className="px-4 py-2 border-b">
-                    <button onClick={() => handleEdit(u)} className="text-yellow-500 font-bold mr-2">Editar</button>
-                    <button onClick={() => handleDelete(u.id_usuario)} className="text-red-500 font-bold">Eliminar</button>
+                    <button onClick={() => handleEdit(u)} className="text-yellow-600 font-semibold mr-2 hover:underline">Editar</button>
+                    <button onClick={() => handleDelete(u.id_usuario)} className="text-red-600 font-semibold hover:underline">Eliminar</button>
                   </td>
                 </tr>
               ))
