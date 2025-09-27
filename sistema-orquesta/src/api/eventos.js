@@ -39,3 +39,15 @@ export const getEventosPasados = async () => {
   const res = await axios.get(`${API}/eventos/pasados`);
   return res.data;
 };
+
+// Exportar eventos (ids opcionales, formato 'csv' default)
+export const exportEventos = async ({ ids = [], format = 'csv', search = '' } = {}) => {
+  const res = await axios.post(
+    `${API}/eventos/export`,
+    { ids, format, search },
+    { responseType: format === 'csv' ? 'blob' : 'json' }
+  );
+  // Para csv devolvemos el blob directamente
+  if (format === 'csv') return res.data;
+  return res.data; // para otros formatos cuando se implementen
+};

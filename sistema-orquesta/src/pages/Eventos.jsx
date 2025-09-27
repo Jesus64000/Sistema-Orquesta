@@ -5,7 +5,8 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 
-import { getEventos, deleteEvento } from "../api/eventos";
+import { getEventos, deleteEvento, exportEventos } from "../api/eventos";
+import ExportModal from "../components/ExportModal";
 import EventoForm from "../components/Eventos/EventoForm";
 import EventoDetalle from "../components/Eventos/EventoDetalle";
 import EventosHeader from "../components/Eventos/EventosHeader";
@@ -32,6 +33,7 @@ export default function Eventos() {
   const [editing, setEditing] = useState(null);
   const [viewDetail, setViewDetail] = useState(null);
   const [confirm, setConfirm] = useState({ open: false, id: null, name: "" });
+  const [openExport, setOpenExport] = useState(false);
 
   // Filtros
   const [search, setSearch] = useState("");
@@ -67,11 +69,16 @@ export default function Eventos() {
   const eventosFiltrados = useMemo(() => {
     let list = [...eventos];
 
-    // filtros
-    list = list.filter(ev =>
-      ev.titulo?.toLowerCase().includes(search.toLowerCase()) ||
-      ev.descripcion?.toLowerCase().includes(search.toLowerCase())
-    );
+    // filtros: texto (título, descripción, lugar)
+    list = list.filter(ev => {
+      const term = search.toLowerCase();
+      const matchesText = (
+        ev.titulo?.toLowerCase().includes(term) ||
+        ev.descripcion?.toLowerCase().includes(term) ||
+        ev.lugar?.toLowerCase().includes(term)
+      );
+      return matchesText;
+    });
 
     // ordenar
     list.sort((a, b) => {
@@ -102,8 +109,13 @@ export default function Eventos() {
   const toggleSelect = (id) => {
     setSelected(s => s.includes(id) ? s.filter(i => i !== id) : [...s, id]);
   };
+  // Seleccionar todos los filtrados (no sólo página)
   const toggleSelectAll = (checked) => {
-    setSelected(checked ? eventosPage.map(ev => ev.id_evento) : []);
+    if (checked) {
+      setSelected(eventosFiltrados.map(ev => ev.id_evento));
+    } else {
+      setSelected([]);
+    }
   };
 
   const openCreate = () => { setEditing(null); setShowForm(true); };
@@ -124,10 +136,18 @@ export default function Eventos() {
   return (
     <div className="space-y-6">
       {/* Encabezado */}
-      <EventosHeader onCreate={openCreate} />
+      <EventosHeader
+        onCreate={openCreate}
+        selected={selected}
+        onExport={() => setOpenExport(true)}
+        onOpenActions={() => {/* placeholder acciones masivas futura */}}
+      />
 
       {/* Filtros */}
-      <EventosFilters search={search} setSearch={setSearch} />
+      <EventosFilters
+        search={search}
+        setSearch={setSearch}
+      />
 
       {/* Tabla */}
 
@@ -175,6 +195,18 @@ export default function Eventos() {
         message={`¿Eliminar "${confirm.name}"?`}
         onCancel={() => setConfirm({ open: false, id: null, name: "" })}
         onConfirm={confirmDelete}
+      />
+
+      {/* Export */}
+      <ExportModal
+        open={openExport}
+        onClose={() => setOpenExport(false)}
+        title="Exportar eventos"
+        entityName="eventos"
+        selectedIds={selected}
+        fileBaseName="eventos"
+        disabledFormats={["xlsx","pdf"]}
+        exporter={({ ids, format }) => exportEventos({ ids, format, search })}
       />
     </div>
   );

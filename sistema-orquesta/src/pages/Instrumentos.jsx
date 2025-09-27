@@ -15,7 +15,9 @@ import InstrumentoDetalle from "../components/Instrumentos/InstrumentoDetalle";
 import InstrumentosHeader from "../components/Instrumentos/InstrumentosHeader";
 import InstrumentosFilters from "../components/Instrumentos/InstrumentosFilters";
 import InstrumentosTable from "../components/Instrumentos/InstrumentosTable";
+import InfoDialog from "../components/InfoDialog";
 import InstrumentosPagination from "../components/Instrumentos/InstrumentosPagination";
+import InstrumentosBulkActionsModal from "../components/Instrumentos/InstrumentosBulkActionsModal";
 import Modal from "../components/Modal";
 import ExportModal from "../components/ExportModal.jsx";
 import ConfirmDialog from "../components/ConfirmDialog";
@@ -34,6 +36,7 @@ export default function Instrumentos() {
   // UI State
   const [loading, setLoading] = useState(false);
   const [confirm, setConfirm] = useState({ open: false, id: null, name: "" });
+  const [infoDialog, setInfoDialog] = useState({ open: false, title: '', message: '' });
   const [viewDetail, setViewDetail] = useState(null);
 
   // Filtros
@@ -51,32 +54,23 @@ export default function Instrumentos() {
 
   // Selección múltiple
   const [selected, setSelected] = useState([]);
+  // No se usa invitación estilo Gmail; master checkbox actúa sobre todo el conjunto filtrado (paridad con Alumnos)
   const [exportOpen, setExportOpen] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
 
   // Form
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
 
   // Load data
-  // Cargar instrumentos y su asignación
+  // Cargar instrumentos (sin n+1) - actualmente backend no devuelve asignación consolidada.
+  // TODO: Crear endpoint /instrumentos?include=asignacion para eliminar second fetch al abrir detalle.
   const loadData = async () => {
     setLoading(true);
     try {
       const res = await getInstrumentos();
       const baseList = res.data || [];
-      // Para cada instrumento, obtener asignado (si está asignado)
-      const withAsignado = await Promise.all(
-        baseList.map(async (inst) => {
-          try {
-            const detailRes = await fetch(`http://localhost:4000/instrumentos/${inst.id_instrumento}`);
-            const detail = await detailRes.json();
-            return { ...inst, asignado: detail.asignado || null };
-          } catch {
-            return { ...inst, asignado: null };
-          }
-        })
-      );
-      setInstrumentos(withAsignado);
+      setInstrumentos(baseList);
     } catch (e) {
       toast.error("Error cargando instrumentos");
       console.error(e);
@@ -123,6 +117,9 @@ export default function Instrumentos() {
   const totalPages = Math.ceil(instrumentosFiltrados.length / pageSize);
   const instrumentosPage = instrumentosFiltrados.slice((page - 1) * pageSize, page * pageSize);
 
+  // Cuando cambian filtros o página, recalcular bandera de página completa
+  // Sin barra intermedia — nada que hacer aquí.
+
   // Handlers
   const toggleSort = (col) => {
     if (sortBy === col) setSortDir(sortDir === "asc" ? "desc" : "asc");
@@ -132,8 +129,23 @@ export default function Instrumentos() {
     }
   };
 
-  const toggleSelect = (id) => {
+  const toggleSelect = (idOrObj) => {
+    // Soporte bulkReplace desde la tabla
+    if (typeof idOrObj === 'object' && idOrObj.bulkReplace) {
+      setSelected(idOrObj.bulkReplace);
+      return;
+    }
+    const id = idOrObj;
     setSelected((s) => (s.includes(id) ? s.filter((i) => i !== id) : [...s, id]));
+  };
+  // Seleccionar/deseleccionar todos los filtrados (paridad con Alumnos)
+  const toggleSelectAllFiltered = (checked) => {
+    if (checked) {
+      const ids = instrumentosFiltrados.map(i => i.id_instrumento);
+      setSelected(ids);
+    } else {
+      setSelected([]);
+    }
   };
 
   const openCreate = () => { setEditing(null); setShowForm(true); };
@@ -153,10 +165,27 @@ export default function Instrumentos() {
     }
   };
 
+  const attemptDelete = (i) => {
+    if (i.asignado && i.asignado.nombre) {
+      setInfoDialog({
+        open: true,
+        title: 'Instrumento asignado',
+        message: `No puedes eliminar "${i.nombre}" porque está asignado a ${i.asignado.nombre}. Desasigna primero para continuar.`,
+      });
+      return;
+    }
+    setConfirm({ open: true, id: i.id_instrumento, name: i.nombre });
+  };
+
   return (
     <div className="space-y-6">
       {/* Encabezado */}
-  <InstrumentosHeader onCreate={openCreate} onExport={() => setExportOpen(true)} />
+  <InstrumentosHeader
+        onCreate={openCreate}
+        onExport={() => setExportOpen(true)}
+        selectedCount={selected.length}
+        onBulk={() => setBulkOpen(true)}
+      />
 
       {/* Filtros */}
       <InstrumentosFilters
@@ -168,27 +197,49 @@ export default function Instrumentos() {
         setFCategoria={setFCategoria}
       />
 
-      {/* Tabla */}
-      <InstrumentosTable
-        instrumentosPage={instrumentosPage}
-        selected={selected}
-        toggleSelect={toggleSelect}
-        sortBy={sortBy}
-        sortDir={sortDir}
-        toggleSort={toggleSort}
-        openEdit={openEdit}
-        setConfirm={setConfirm}
-        openDetail={async (id) => {
-          try {
-            const res = await fetch(`http://localhost:4000/instrumentos/${id}`);
-            const data = await res.json();
-            setViewDetail({ ...data, asignado: data.asignado || null });
-          } catch (err) {
-            console.error(err);
-            toast.error("Error cargando detalle del instrumento");
-          }
-        }}
-      />
+      {/* Sin barra intermedia - selección total directa */}
+
+      {/* Tabla o skeleton */}
+      {loading && instrumentos.length === 0 ? (
+        <div className="bg-white border rounded-2xl shadow-sm p-4 space-y-3 animate-pulse" aria-label="Cargando tabla instrumentos">
+          <div className="h-5 w-40 bg-gradient-to-r from-gray-200 to-gray-300 rounded" />
+          <div className="space-y-2">
+            {Array.from({ length: 6 }).map((_, idx) => (
+              <div key={idx} className="h-10 w-full bg-gradient-to-r from-gray-200 to-gray-300 rounded" />
+            ))}
+          </div>
+        </div>
+      ) : (
+        <InstrumentosTable
+          instrumentosPage={instrumentosPage}
+          selected={selected}
+          toggleSelect={toggleSelect}
+          sortBy={sortBy}
+          sortDir={sortDir}
+          toggleSort={toggleSort}
+          openEdit={openEdit}
+          setConfirm={({ open, id, name }) => {
+            const inst = instrumentos.find(x => x.id_instrumento === id);
+            if (open && inst) {
+              attemptDelete(inst);
+            } else {
+              setConfirm({ open, id, name });
+            }
+          }}
+          openDetail={async (id) => {
+            try {
+              const res = await fetch(`http://localhost:4000/instrumentos/${id}`);
+              const data = await res.json();
+              setViewDetail({ ...data, asignado: data.asignado || null });
+            } catch (err) {
+              console.error(err);
+              toast.error("Error cargando detalle del instrumento");
+            }
+          }}
+          toggleSelectAllFiltered={toggleSelectAllFiltered}
+          totalFiltered={instrumentosFiltrados.length}
+        />
+      )}
       {/* Loader amigable */}
       {instrumentosPage.length === 0 && (
         <div className="text-center py-10 text-gray-500">
@@ -219,6 +270,23 @@ export default function Instrumentos() {
           return exportInstrumentos({ ids, format });
         }}
       />
+      <InstrumentosBulkActionsModal
+        open={bulkOpen}
+        onClose={() => setBulkOpen(false)}
+        selectedIds={selected}
+        reload={loadData}
+        optimisticUpdate={({ mode, value }) => {
+          setInstrumentos(prev => prev.map(inst => {
+            if (!selected.includes(inst.id_instrumento)) return inst;
+            if (mode === 'estado') {
+              // No tenemos el catálogo acá; mantenemos nombre existente para UX inmediata
+              return { ...inst, id_estado: value };
+            }
+            if (mode === 'categoria') return { ...inst, id_categoria: value };
+            return inst;
+          }));
+        }}
+      />
 
       {/* Formulario */}
       {showForm && (
@@ -246,6 +314,12 @@ export default function Instrumentos() {
         message={`¿Eliminar a "${confirm.name}"?`}
         onCancel={() => setConfirm({ open: false, id: null, name: "" })}
         onConfirm={confirmDelete}
+      />
+      <InfoDialog
+        open={infoDialog.open}
+        title={infoDialog.title}
+        message={infoDialog.message}
+        onClose={() => setInfoDialog({ open: false, title: '', message: '' })}
       />
     </div>
   );
