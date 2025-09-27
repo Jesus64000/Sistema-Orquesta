@@ -16,12 +16,13 @@ import Configuraciones from "./pages/Configuraciones";
 import Administracion from "./pages/Administracion";
 
 // Sidebar item
-const SidebarItem = ({ icon: Icon, label, to }) => (
+// eslint-disable-next-line no-unused-vars
+const SidebarItem = ({ icon: IconComp, label, to }) => (
   <Link
     to={to}
     className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors hover:bg-gray-100"
   >
-    <Icon className="h-5 w-5" />
+  <IconComp className="h-5 w-5" />
     <span>{label}</span>
   </Link>
 );

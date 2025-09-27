@@ -9,19 +9,16 @@ import { getEventos, deleteEvento, exportEventos } from "../api/eventos";
 import ExportModal from "../components/ExportModal";
 import EventoForm from "../components/Eventos/EventoForm";
 import EventoDetalle from "../components/Eventos/EventoDetalle";
+import EventoHistorialModal from "../components/Eventos/EventoHistorialModal";
 import EventosHeader from "../components/Eventos/EventosHeader";
 import EventosFilters from "../components/Eventos/EventosFilters";
 import EventosTable from "../components/Eventos/EventosTable";
 import EventosPagination from "../components/Eventos/EventosPagination";
+import EventosBulkActionsModal from "../components/Eventos/EventosBulkActionsModal";
+import EventosCalendar from "../components/Eventos/EventosCalendar";
+import NextEventCard from "../components/Eventos/NextEventCard";
 import Modal from "../components/Modal";
 import ConfirmDialog from "../components/ConfirmDialog";
-
-// === Helpers UI ===
-const Badge = ({ children }) => (
-  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-700 border">
-    {children}
-  </span>
-);
 
 export default function Eventos() {
   // Data
@@ -32,8 +29,10 @@ export default function Eventos() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [viewDetail, setViewDetail] = useState(null);
+  const [openHistorial, setOpenHistorial] = useState({ open: false, id: null });
   const [confirm, setConfirm] = useState({ open: false, id: null, name: "" });
   const [openExport, setOpenExport] = useState(false);
+  const [openBulk, setOpenBulk] = useState(false);
 
   // Filtros
   const [search, setSearch] = useState("");
@@ -133,44 +132,53 @@ export default function Eventos() {
     }
   };
 
+  const handleSelectSuggestion = (evento) => {
+    setViewDetail(evento);
+  };
+  const openHistorialModal = (ev) => {
+    if (!ev?.id_evento) return;
+    setOpenHistorial({ open: true, id: ev.id_evento });
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Encabezado */}
-      <EventosHeader
-        onCreate={openCreate}
-        selected={selected}
-        onExport={() => setOpenExport(true)}
-        onOpenActions={() => {/* placeholder acciones masivas futura */}}
-      />
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      {/* Columna principal gestión */}
+      <div className="lg:col-span-8 space-y-6">
+        <EventosHeader
+          onCreate={openCreate}
+          selected={selected}
+          onExport={() => setOpenExport(true)}
+          onOpenActions={() => setOpenBulk(true)}
+        />
+        <EventosFilters search={search} setSearch={setSearch} onSelectSuggestion={handleSelectSuggestion} />
+        <EventosTable
+          eventosPage={eventosPage}
+          selected={selected}
+          toggleSelect={toggleSelect}
+          toggleSelectAll={toggleSelectAll}
+          sortBy={sortBy}
+          sortDir={sortDir}
+          toggleSort={toggleSort}
+          openEdit={openEdit}
+          setViewDetail={setViewDetail}
+          setConfirm={setConfirm}
+        />
+        {eventosPage.length === 0 && (
+          <div className="text-center py-10 text-gray-500">
+            {loading ? "Cargando eventos..." : "No se encontraron eventos"}
+          </div>
+        )}
+        <EventosPagination page={page} totalPages={totalPages} setPage={setPage} />
+      </div>
 
-      {/* Filtros */}
-      <EventosFilters
-        search={search}
-        setSearch={setSearch}
-      />
-
-      {/* Tabla */}
-
-      <EventosTable
-        eventosPage={eventosPage}
-        selected={selected}
-        toggleSelect={toggleSelect}
-        toggleSelectAll={toggleSelectAll}
-        sortBy={sortBy}
-        sortDir={sortDir}
-        toggleSort={toggleSort}
-        openEdit={openEdit}
-        setViewDetail={setViewDetail}
-        setConfirm={setConfirm}
-      />
-      {eventosPage.length === 0 && (
-        <div className="text-center py-10 text-gray-500">
-          {loading ? "Cargando eventos..." : "No se encontraron eventos"}
-        </div>
-      )}
-
-      {/* Paginación */}
-      <EventosPagination page={page} totalPages={totalPages} setPage={setPage} />
+      {/* Sidebar: Próximo evento + Calendario */}
+      <div className="lg:col-span-4 space-y-6">
+        <NextEventCard eventos={eventos} loading={loading} />
+        <EventosCalendar
+          eventos={eventos}
+          onCreate={(fecha) => { setEditing({ fecha_evento: fecha }); setShowForm(true); }}
+        />
+      </div>
 
       {/* Formulario */}
       {showForm && (
@@ -185,7 +193,12 @@ export default function Eventos() {
 
       {/* Detalle */}
       {viewDetail && (
-        <EventoDetalle evento={viewDetail} onClose={() => setViewDetail(null)} />
+        <EventoDetalle evento={viewDetail} onClose={() => setViewDetail(null)} onOpenHistorial={openHistorialModal} />
+      )}
+
+      {/* Historial */}
+      {openHistorial.open && (
+        <EventoHistorialModal idEvento={openHistorial.id} open={openHistorial.open} onClose={() => setOpenHistorial({ open: false, id: null })} />
       )}
 
       {/* Confirmar eliminar */}
@@ -205,8 +218,15 @@ export default function Eventos() {
         entityName="eventos"
         selectedIds={selected}
         fileBaseName="eventos"
-        disabledFormats={["xlsx","pdf"]}
         exporter={({ ids, format }) => exportEventos({ ids, format, search })}
+      />
+
+      {/* Bulk actions */}
+      <EventosBulkActionsModal
+        open={openBulk}
+        onClose={() => setOpenBulk(false)}
+        selectedIds={selected}
+        reload={loadData}
       />
     </div>
   );

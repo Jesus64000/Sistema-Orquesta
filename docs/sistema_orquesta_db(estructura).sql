@@ -458,3 +458,15 @@ CREATE TABLE `estados` (
   `nombre` varchar(100) NOT NULL,
   PRIMARY KEY (`id_estado`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+CREATE TABLE IF NOT EXISTS evento_historial (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  id_evento INT NOT NULL,
+  campo VARCHAR(50) NOT NULL,
+  valor_anterior TEXT,
+  valor_nuevo TEXT,
+  usuario VARCHAR(100) DEFAULT NULL,
+  creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (id_evento) REFERENCES Evento(id_evento) ON DELETE CASCADE
+);

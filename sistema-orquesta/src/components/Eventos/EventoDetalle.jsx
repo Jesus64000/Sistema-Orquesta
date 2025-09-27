@@ -1,7 +1,8 @@
 // sistema-orquesta/src/components/Eventos/EventoDetalle.jsx
 import Modal from "../Modal";
+import { History } from 'lucide-react';
 
-export default function EventoDetalle({ evento, onClose }) {
+export default function EventoDetalle({ evento, onClose, onOpenHistorial }) {
   if (!evento) return null;
 
   // Fecha
@@ -48,6 +49,20 @@ export default function EventoDetalle({ evento, onClose }) {
           <span className="font-semibold">Descripción:</span>{" "}
           {evento.descripcion || "Sin descripción"}
         </p>
+        {evento.estado && (
+          <p>
+            <span className="font-semibold">Estado:</span> {evento.estado}
+          </p>
+        )}
+        <div className="pt-2 flex justify-end">
+          <button
+            type="button"
+            onClick={() => onOpenHistorial?.(evento)}
+            className="inline-flex items-center gap-2 text-xs font-medium text-emerald-700 hover:text-emerald-900 hover:underline decoration-dotted focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 rounded-full px-3 py-1 bg-emerald-50 border border-emerald-200 shadow-sm"
+          >
+            <History className="h-3.5 w-3.5" /> Historial de cambios
+          </button>
+        </div>
       </div>
     </Modal>
   );

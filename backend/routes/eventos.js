@@ -1,14 +1,37 @@
 // backend/routes/eventos.js
 import { Router } from 'express';
 import pool from '../db.js';
+import XLSX from 'xlsx';
+import PDFDocument from 'pdfkit';
+
+// Helper para calcular diffs (también exportado para tests)
+export function computeEventoDiffs(before, after) {
+  const campos = ['titulo','descripcion','fecha_evento','hora_evento','lugar','id_programa','estado'];
+  const diffs = [];
+  for (const campo of campos) {
+    const b = before ? (before[campo]) : undefined;
+    const a = after ? (after[campo]) : undefined;
+    const normB = b == null ? '' : String(b);
+    const normA = a == null ? '' : String(a);
+    if (normB !== normA) {
+      diffs.push({ campo, valor_anterior: normB, valor_nuevo: normA });
+    }
+  }
+  return diffs;
+}
 
 const router = Router();
 
 
+// Estados válidos de un evento
+export const EVENTO_ESTADOS = ['PROGRAMADO','EN_CURSO','FINALIZADO','CANCELADO'];
+// Nota: Asegúrate de haber ejecutado en la base de datos (una sola vez):
+// ALTER TABLE evento ADD COLUMN estado ENUM('PROGRAMADO','EN_CURSO','FINALIZADO','CANCELADO') NOT NULL DEFAULT 'PROGRAMADO' AFTER id_programa;
+
 // POST /eventos
 router.post('/', async (req, res) => {
   try {
-    const { titulo, descripcion, fecha_evento, hora_evento, lugar, id_programa = null } = req.body;
+    const { titulo, descripcion, fecha_evento, hora_evento, lugar, id_programa = null, estado = 'PROGRAMADO' } = req.body;
 
     if (!titulo || !fecha_evento || !hora_evento || !lugar) {
       return res.status(400).json({ error: 'Título, fecha, hora y lugar son obligatorios' });
@@ -20,9 +43,15 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'La fecha no puede estar en el pasado' });
     }
 
+    // Validar estado
+    const estadoUpper = String(estado).toUpperCase();
+    if (!EVENTO_ESTADOS.includes(estadoUpper)) {
+      return res.status(400).json({ error: 'Estado inválido' });
+    }
+
     const [result] = await pool.query(
-      'INSERT INTO Evento (titulo, descripcion, fecha_evento, hora_evento, lugar, id_programa) VALUES (?, ?, ?, ?, ?, ?)',
-      [titulo, descripcion, fecha_evento, hora_evento, lugar, id_programa]
+      'INSERT INTO Evento (titulo, descripcion, fecha_evento, hora_evento, lugar, id_programa, estado) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [titulo, descripcion, fecha_evento, hora_evento, lugar, id_programa, estadoUpper]
     );
 
     res.status(201).json({
@@ -33,6 +62,7 @@ router.post('/', async (req, res) => {
       hora_evento,
       lugar,
       id_programa,
+      estado: estadoUpper,
     });
   } catch (err) {
     console.error('Error creando evento:', err);
@@ -41,11 +71,23 @@ router.post('/', async (req, res) => {
 });
 
 
-// PUT /eventos/:id
+// PUT /eventos/:id (registra historial de cambios)
+// Requiere tabla (ejecutar una sola vez):
+// CREATE TABLE IF NOT EXISTS evento_historial (
+//   id INT AUTO_INCREMENT PRIMARY KEY,
+//   id_evento INT NOT NULL,
+//   campo VARCHAR(50) NOT NULL,
+//   valor_anterior TEXT,
+//   valor_nuevo TEXT,
+//   usuario VARCHAR(100) DEFAULT NULL,
+//   creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+//   FOREIGN KEY (id_evento) REFERENCES Evento(id_evento) ON DELETE CASCADE
+// );
 router.put('/:id', async (req, res) => {
+  const connLabel = 'PUT /eventos/:id';
   try {
     const { id } = req.params;
-    const { titulo, descripcion, fecha_evento, hora_evento, lugar, id_programa = null } = req.body;
+    const { titulo, descripcion, fecha_evento, hora_evento, lugar, id_programa = null, estado } = req.body;
 
     if (!titulo || !fecha_evento || !hora_evento || !lugar) {
       return res.status(400).json({ error: 'Título, fecha, hora y lugar son obligatorios' });
@@ -56,16 +98,62 @@ router.put('/:id', async (req, res) => {
       return res.status(400).json({ error: 'La fecha no puede estar en el pasado' });
     }
 
+    let estadoUpper = undefined;
+    if (estado != null) {
+      estadoUpper = String(estado).toUpperCase();
+      if (!EVENTO_ESTADOS.includes(estadoUpper)) {
+        return res.status(400).json({ error: 'Estado inválido' });
+      }
+    }
+
+    // Obtener registro existente para calcular diffs
+    const [existingRows] = await pool.query(
+      'SELECT titulo, descripcion, fecha_evento, hora_evento, lugar, id_programa, estado FROM Evento WHERE id_evento=?',
+      [id]
+    );
+    if (existingRows.length === 0) {
+      return res.status(404).json({ error: 'Evento no encontrado' });
+    }
+    const existing = existingRows[0];
+
     const [result] = await pool.query(
-      'UPDATE Evento SET titulo=?, descripcion=?, fecha_evento=?, hora_evento=?, lugar=?, id_programa=? WHERE id_evento=?',
-      [titulo, descripcion, fecha_evento, hora_evento, lugar, id_programa, id]
+      'UPDATE Evento SET titulo=?, descripcion=?, fecha_evento=?, hora_evento=?, lugar=?, id_programa=?, estado=COALESCE(?, estado) WHERE id_evento=?',
+      [titulo, descripcion, fecha_evento, hora_evento, lugar, id_programa, estadoUpper, id]
     );
 
     if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'Evento no encontrado' });
+      return res.status(404).json({ error: 'Evento no encontrado tras update' });
     }
 
-    res.json({ id_evento: Number(id), titulo, descripcion, fecha_evento, hora_evento, lugar, id_programa });
+    // Calcular cambios campo a campo
+    const nuevoEstadoFinal = estadoUpper || existing.estado; // estado final después del update
+    const afterSnapshot = {
+      titulo,
+      descripcion,
+      fecha_evento,
+      hora_evento,
+      lugar,
+      id_programa,
+      estado: nuevoEstadoFinal
+    };
+    const diffs = computeEventoDiffs(existing, afterSnapshot);
+
+    // Insertar diffs (mejor en una transacción; aquí secuencial por simplicidad)
+    if (diffs.length) {
+      const usuario = (req.user && (req.user.username || req.user.email)) || null; // Placeholder, depende de tu auth
+      for (const d of diffs) {
+        try {
+          await pool.query(
+            'INSERT INTO evento_historial (id_evento, campo, valor_anterior, valor_nuevo, usuario) VALUES (?,?,?,?,?)',
+            [id, d.campo, d.valor_anterior, d.valor_nuevo, usuario]
+          );
+        } catch (e) {
+          console.warn(`${connLabel} - Error insertando historial`, e.message);
+        }
+      }
+    }
+
+    res.json({ id_evento: Number(id), ...afterSnapshot });
   } catch (err) {
     console.error('Error actualizando evento:', err);
     res.status(500).json({ error: err.message });
@@ -101,7 +189,8 @@ router.get('/futuros', async (req, res) => {
         DATE_FORMAT(fecha_evento, '%Y-%m-%d') AS fecha_evento,
         DATE_FORMAT(hora_evento, '%H:%i') AS hora_evento,
         lugar, 
-        id_programa
+        id_programa,
+        estado
       FROM Evento
       WHERE fecha_evento >= CURDATE()
     `;
@@ -134,7 +223,8 @@ router.get('/pasados', async (req, res) => {
         DATE_FORMAT(fecha_evento, '%Y-%m-%d') AS fecha_evento,
         DATE_FORMAT(hora_evento, '%H:%i') AS hora_evento,
         lugar, 
-        id_programa
+        id_programa,
+        estado
       FROM Evento
       WHERE fecha_evento < CURDATE()
     `;
@@ -165,7 +255,8 @@ router.get('/futuros2', async (_req, res) => {
         DATE_FORMAT(fecha_evento, '%Y-%m-%d') AS fecha_evento,
         DATE_FORMAT(hora_evento, '%H:%i') AS hora_evento,
         lugar, 
-        id_programa
+        id_programa,
+        estado
       FROM Evento
       WHERE fecha_evento >= CURDATE()
       ORDER BY fecha_evento ASC`
@@ -177,6 +268,59 @@ router.get('/futuros2', async (_req, res) => {
   }
 });
 
+
+// GET /eventos/suggest?q=term&limit=8  (búsqueda predictiva)
+router.get('/suggest', async (req, res) => {
+  try {
+    const { q = '', limit = 8 } = req.query;
+    const term = String(q).trim();
+    if (term.length < 2) return res.json([]); // mínimo 2 chars
+    const lim = Math.min(Math.max(parseInt(limit) || 8, 1), 25); // acotar 1-25
+    const like = `%${term}%`;
+    const [rows] = await pool.query(
+      `SELECT 
+        id_evento,
+        titulo,
+        DATE_FORMAT(fecha_evento, '%Y-%m-%d') AS fecha_evento,
+        DATE_FORMAT(hora_evento, '%H:%i') AS hora_evento,
+        lugar,
+        estado
+      FROM Evento
+      WHERE (titulo LIKE ? OR lugar LIKE ? OR descripcion LIKE ?)
+      ORDER BY fecha_evento ASC, hora_evento ASC
+      LIMIT ?`,
+      [like, like, like, lim]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error('Error en /eventos/suggest:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /eventos/:id/historial  (lista de cambios)
+router.get('/:id/historial', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [rows] = await pool.query(
+      `SELECT 
+        id,
+        campo,
+        valor_anterior,
+        valor_nuevo,
+        usuario,
+        DATE_FORMAT(creado_en, '%Y-%m-%d %H:%i:%s') AS creado_en
+      FROM evento_historial
+      WHERE id_evento=?
+      ORDER BY creado_en DESC, id DESC`,
+      [id]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error('Error obteniendo historial de evento:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // GET /eventos/:id
 router.get('/:id', async (req, res) => {
@@ -191,7 +335,8 @@ router.get('/:id', async (req, res) => {
         DATE_FORMAT(hora_evento, '%H:%i') AS hora_evento,
         lugar, 
         id_programa, 
-        creado_en
+        creado_en,
+        estado
       FROM Evento 
       WHERE id_evento = ?`,
       [id]
@@ -222,7 +367,8 @@ router.get('/', async (req, res) => {
         DATE_FORMAT(hora_evento, '%H:%i') AS hora_evento,
         lugar, 
         id_programa, 
-        creado_en
+        creado_en,
+        estado
       FROM Evento
       WHERE 1=1
     `;
@@ -268,7 +414,8 @@ router.post('/export', async (req, res) => {
         DATE_FORMAT(hora_evento, '%H:%i') AS hora_evento,
         lugar,
         id_programa,
-        creado_en
+        creado_en,
+        estado
       FROM Evento
       WHERE 1=1`;
     const params = [];
@@ -294,8 +441,9 @@ router.post('/export', async (req, res) => {
       descripcion: r.descripcion || '',
       fecha_evento: r.fecha_evento || '',
       hora_evento: r.hora_evento || '',
-      lugar: r.lugar || '',
-      id_programa: r.id_programa ?? '',
+  lugar: r.lugar || '',
+  id_programa: r.id_programa ?? '',
+  estado: r.estado || '',
       creado_en: (() => {
         const v = r.creado_en;
         try {
@@ -318,6 +466,7 @@ router.post('/export', async (req, res) => {
         { key: 'lugar', title: 'Lugar' },
         { key: 'id_programa', title: 'Id Programa' },
         { key: 'creado_en', title: 'Creado En' },
+        { key: 'estado', title: 'Estado' },
       ];
       const lines = [cols.map(c => c.title).join(',')];
       if (data.length === 0) {
@@ -334,12 +483,55 @@ router.post('/export', async (req, res) => {
       return res.send(csv);
     }
 
-    // Hooks para futuras implementaciones
     if (format === 'xlsx' || format === 'excel') {
-      return res.status(501).json({ error: 'Export XLSX no implementado aún' });
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(data);
+      XLSX.utils.book_append_sheet(wb, ws, 'Eventos');
+      const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename="eventos_export_${Date.now()}.xlsx"`);
+      return res.send(buf);
     }
     if (format === 'pdf') {
-      return res.status(501).json({ error: 'Export PDF no implementado aún' });
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="eventos_export_${Date.now()}.pdf"`);
+      const doc = new PDFDocument({ margin: 30, size: 'A4' });
+      doc.pipe(res);
+      doc.fontSize(14).text('Exportación de Eventos', { align: 'center' });
+      doc.moveDown();
+      const colTitles = ['ID','Título','Fecha','Hora','Lugar','Programa','Estado'];
+      const colWidths = [40,140,60,50,110,60,60];
+      const startX = doc.x;
+      let y = doc.y;
+      const rowHeight = 16;
+      const drawRow = (vals, header=false) => {
+        let x = startX;
+        doc.font(header ? 'Helvetica-Bold' : 'Helvetica').fontSize(8);
+        vals.forEach((v,i)=>{
+          const w = colWidths[i];
+            doc.text(String(v||''), x, y, { width: w, ellipsis: true });
+          x += w + 4;
+        });
+        y += rowHeight;
+        if (y > doc.page.height - 50) {
+          doc.addPage();
+          y = doc.y;
+        }
+      };
+      drawRow(colTitles, true);
+      for (const ev of data) {
+        drawRow([
+          ev.id_evento,
+          ev.titulo,
+          ev.fecha_evento,
+          ev.hora_evento,
+          ev.lugar,
+          ev.id_programa,
+          ev.estado
+        ]);
+      }
+      doc.end();
+      return; // stream
     }
 
     return res.status(400).json({ error: 'Formato no soportado' });

@@ -66,6 +66,9 @@ async function start() {
   try {
     await pool.query("SELECT 1"); // prueba de conexión
     console.log("Conexión a DB OK");
+
+    // Migraciones ligeras en caliente (idempotentes)
+    await ensureMigrations();
     app.listen(PORT, () =>
       console.log(`API escuchando en http://localhost:${PORT}`)
     );
@@ -76,3 +79,35 @@ async function start() {
 }
 
 start();
+
+// --------------------
+// Migraciones simples
+// --------------------
+async function ensureMigrations() {
+  try {
+    // 1. Verificar columna estado en Evento
+    const [cols] = await pool.query("SHOW COLUMNS FROM Evento LIKE 'estado'");
+    if (cols.length === 0) {
+      console.log('[migracion] Añadiendo columna estado a Evento');
+      await pool.query("ALTER TABLE Evento ADD COLUMN estado ENUM('PROGRAMADO','EN_CURSO','FINALIZADO','CANCELADO') NOT NULL DEFAULT 'PROGRAMADO' AFTER id_programa");
+    }
+
+    // 2. Verificar tabla evento_historial
+    const [tbl] = await pool.query("SHOW TABLES LIKE 'evento_historial'");
+    if (tbl.length === 0) {
+      console.log('[migracion] Creando tabla evento_historial');
+      await pool.query(`CREATE TABLE evento_historial (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        id_evento INT NOT NULL,
+        campo VARCHAR(50) NOT NULL,
+        valor_anterior TEXT,
+        valor_nuevo TEXT,
+        usuario VARCHAR(100) DEFAULT NULL,
+        creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (id_evento) REFERENCES Evento(id_evento) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`);
+    }
+  } catch (err) {
+    console.error('Error en migraciones automáticas:', err.message);
+  }
+}

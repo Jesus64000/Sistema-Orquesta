@@ -116,7 +116,8 @@ export default function DialogShell({
 
   if (!open) return null;
 
-  const labelId = title ? `dialog-${title.replace(/\s+/g, '-').toLowerCase()}` : undefined;
+  const isStringTitle = typeof title === 'string';
+  const labelId = isStringTitle ? `dialog-${title.replace(/\s+/g, '-').toLowerCase()}` : undefined;
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3">
@@ -126,15 +127,15 @@ export default function DialogShell({
         tabIndex={-1}
         role="dialog"
         aria-modal="true"
-        aria-labelledby={labelId}
-        aria-label={!title ? ariaLabel : undefined}
+  aria-labelledby={labelId}
+  aria-label={!isStringTitle ? (ariaLabel || 'Diálogo') : undefined}
         aria-describedby={ariaDescribedBy}
-        className={`relative w-full ${sizeMap[size] || sizeMap.md} bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden outline-none ${className}`}
+  className={`relative w-full ${sizeMap[size] || sizeMap.md} bg-white rounded-2xl shadow-xl border border-gray-200 outline-none min-h-[200px] ${className}`}
       >
         {!hideHeader && (
           <div className="flex items-center justify-between px-5 py-4 border-b bg-gradient-to-b from-gray-50 to-white">
             <h3 id={labelId} className="text-base font-semibold text-gray-800">
-              {title}
+              {isStringTitle ? title : title}
             </h3>
             {showClose && (
               <button

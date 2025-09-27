@@ -153,27 +153,33 @@ const MonthCalendar = ({ year, monthIndex, eventos = [] }) => {
   return (
     <Card>
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold capitalize text-gray-900">
+        <h3 className="text-lg font-semibold capitalize text-gray-900 tracking-wide">
           {monthName} {cursor.y}
         </h3>
-        <div className="flex gap-2 items-center">
-          {isDifferentMonth && (
-            <button
-              className="px-2.5 py-1.5 rounded-lg border border-yellow-300 bg-yellow-100 text-[11px] font-medium hover:bg-yellow-200 transition"
-              onClick={() => setCursor({ y: today.getFullYear(), m: today.getMonth() })}
-            >
-              Hoy
-            </button>
-          )}
+        <div className="flex items-center gap-2">
           <button
-            className="p-2 rounded-lg bg-yellow-400 text-gray-900 hover:bg-yellow-500 shadow-sm"
+            type="button"
+            aria-label="Mes anterior"
             onClick={() => setCursor(({ y, m }) => (m === 0 ? { y: y - 1, m: 11 } : { y, m: m - 1 }))}
+            className="inline-flex items-center justify-center h-9 w-9 rounded-full border border-yellow-200 bg-yellow-100 text-gray-700 hover:bg-yellow-200 hover:text-gray-900 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300 transition"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
           <button
-            className="p-2 rounded-lg bg-yellow-400 text-gray-900 hover:bg-yellow-500 shadow-sm"
+            type="button"
+            disabled={!isDifferentMonth}
+            onClick={() => setCursor({ y: today.getFullYear(), m: today.getMonth() })}
+            className={`px-3 h-9 inline-flex items-center justify-center rounded-full text-[11px] font-medium border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300
+              ${isDifferentMonth ? 'bg-yellow-100 border-yellow-200 text-gray-700 hover:bg-yellow-200 hover:text-gray-900 shadow-sm' : 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'}`}
+            aria-label="Volver al mes actual"
+          >
+            Hoy
+          </button>
+          <button
+            type="button"
+            aria-label="Mes siguiente"
             onClick={() => setCursor(({ y, m }) => (m === 11 ? { y: y + 1, m: 0 } : { y, m: m + 1 }))}
+            className="inline-flex items-center justify-center h-9 w-9 rounded-full border border-yellow-200 bg-yellow-100 text-gray-700 hover:bg-yellow-200 hover:text-gray-900 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300 transition"
           >
             <ChevronRight className="h-4 w-4" />
           </button>

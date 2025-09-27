@@ -1,13 +1,14 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "",
+  "description": "API del sistema orquesta",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+  "test": "node --test \"tests/**/*.test.js\"",
+  "test:watch": "node --test --watch \"tests/**/*.test.js\"",
     "start": "node index.js"
   },
-  "keywords": [],
+  "keywords": ["orquesta","eventos","api"],
   "author": "",
   "license": "ISC",
   "type": "module",
