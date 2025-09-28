@@ -470,3 +470,25 @@ CREATE TABLE IF NOT EXISTS evento_historial (
   creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (id_evento) REFERENCES Evento(id_evento) ON DELETE CASCADE
 );
+
+-- Crear tabla Parentesco si no existe
+CREATE TABLE IF NOT EXISTS Parentesco (
+id_parentesco INT AUTO_INCREMENT PRIMARY KEY,
+nombre VARCHAR(100) NOT NULL,
+activo TINYINT(1) NOT NULL DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Semillas solo si está vacía
+INSERT INTO Parentesco (nombre)
+SELECT * FROM (
+SELECT 'Padre' UNION SELECT 'Madre' UNION SELECT 'Tutor'
+UNION SELECT 'Hermano' UNION SELECT 'Abuelo' UNION SELECT 'Otro'
+) AS seed
+WHERE NOT EXISTS (SELECT 1 FROM Parentesco);
+
+ALTER TABLE Representante
+  ADD COLUMN id_parentesco INT NULL AFTER email;
+
+ALTER TABLE Representante
+  ADD CONSTRAINT fk_representante_parentesco
+    FOREIGN KEY (id_parentesco) REFERENCES Parentesco(id_parentesco) ON DELETE SET NULL;

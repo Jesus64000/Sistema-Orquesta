@@ -4,14 +4,19 @@ import DialogShell from "./DialogShell";
 
 /*
   Modal genérico ahora delegado a DialogShell.
-  Props compatibles previas: title, children, onClose, className.
-  Nuevo: size (opcional) para permitir distintos anchos si se requiere.
+  Props: open, title, children, onClose, className, size.
 */
 
-export default function Modal({ title, children, onClose, className = "", size = "lg" }) {
+export default function Modal({ open, title, children, onClose, className = "", size = "lg" }) {
+  // Backwards compatibility: muchos llamados existentes hacen
+  // {state && <Modal ...>} sin pasar 'open'. Antes de la refactor el modal
+  // no verificaba 'open' y se renderizaba; el cambio a open=false por defecto
+  // rompió esos casos. Si 'open' es undefined/null asumimos que debe mostrarse.
+  const isOpen = open === undefined || open === null ? true : open;
+  if (!isOpen) return null;
   return (
     <DialogShell
-      open={true}
+      open={isOpen}
       title={title}
       onClose={onClose}
       size={size}

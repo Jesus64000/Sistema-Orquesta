@@ -55,10 +55,16 @@ router.get('/', async (req, res) => {
     const sql = `
       SELECT DISTINCT a.*,
              TIMESTAMPDIFF(YEAR, a.fecha_nacimiento, CURDATE()) AS edad,
-             r.id_representante, r.nombre AS representante_nombre,
-             r.telefono AS representante_telefono, r.email AS representante_email
+             ar.id_representante,
+             r.nombre AS representante_nombre,
+             r.telefono AS representante_telefono,
+        r.telefono_movil AS representante_telefono_movil,
+             r.email AS representante_email,
+             par.nombre AS parentesco_nombre
       FROM Alumno a
-      LEFT JOIN Representante r ON a.id_representante = r.id_representante
+      LEFT JOIN alumno_representante ar ON a.id_alumno = ar.id_alumno AND ar.principal = 1
+      LEFT JOIN Representante r ON ar.id_representante = r.id_representante
+      LEFT JOIN Parentesco par ON ar.id_parentesco = par.id_parentesco
       ${joinProgramFilter}
       ${where.length ? "WHERE " + where.join(" AND ") : ""}
       ORDER BY a.nombre ASC
@@ -95,16 +101,39 @@ router.get('/:id', async (req, res) => {
 
     const [[alumnoRow]] = await pool.query(
       `SELECT a.*,
-              TIMESTAMPDIFF(YEAR, a.fecha_nacimiento, CURDATE()) AS edad,
-              r.id_representante, r.nombre AS representante_nombre,
-              r.telefono AS representante_telefono, r.email AS representante_email
+              TIMESTAMPDIFF(YEAR, a.fecha_nacimiento, CURDATE()) AS edad
        FROM Alumno a
-       LEFT JOIN Representante r ON a.id_representante = r.id_representante
        WHERE a.id_alumno = ?`,
       [id]
     );
 
     if (!alumnoRow) return res.status(404).json({ error: "Alumno no encontrado" });
+
+    // Obtener representantes (principal primero)
+    const [repsRows] = await pool.query(`
+      SELECT ar.id_representante,
+             ar.principal,
+             ar.id_parentesco,
+             r.nombre,
+             r.telefono_movil,
+             r.email,
+             p.nombre AS parentesco_nombre
+      FROM alumno_representante ar
+      JOIN Representante r ON ar.id_representante = r.id_representante
+      LEFT JOIN Parentesco p ON ar.id_parentesco = p.id_parentesco
+      WHERE ar.id_alumno = ?
+      ORDER BY ar.principal DESC, r.nombre ASC`, [id]);
+
+    // Derivar campos 'representante_nombre', etc. para compatibilidad anterior tomando el principal si existe
+    const principal = repsRows.find(r => r.principal);
+    if (principal) {
+      alumnoRow.id_representante = principal.id_representante;
+      alumnoRow.representante_nombre = principal.nombre;
+      alumnoRow.representante_telefono_movil = principal.telefono_movil;
+      alumnoRow.representante_email = principal.email;
+      alumnoRow.parentesco_nombre = principal.parentesco_nombre;
+      alumnoRow.id_parentesco = principal.id_parentesco;
+    }
 
     const [programasRows] = await pool.query(
       `SELECT p.id_programa, p.nombre
@@ -114,7 +143,7 @@ router.get('/:id', async (req, res) => {
       [id]
     );
 
-    res.json({ ...alumnoRow, programas: programasRows || [] });
+    res.json({ ...alumnoRow, programas: programasRows || [], representantes: repsRows });
   } catch (err) {
     console.error("Error en GET /alumnos/:id:", err);
     res.status(500).json({ error: err.message });
@@ -134,14 +163,40 @@ router.post('/', async (req, res) => {
       programas = [],
       usuario = "sistema",
       id_representante = null,
+      id_parentesco = null,
+      representantes = [], // nuevo array opcional [{id_representante,id_parentesco,principal}]
     } = req.body;
 
+    // Validaciones básicas
+    if (!nombre) return res.status(400).json({ error: 'Nombre requerido' });
+    if (!fecha_nacimiento) return res.status(400).json({ error: 'fecha_nacimiento requerida' });
+    const fechaNac = new Date(fecha_nacimiento + 'T00:00:00');
+    if (isNaN(fechaNac.getTime())) return res.status(400).json({ error: 'fecha_nacimiento inválida' });
+    const hoy = new Date();
+    let edad = hoy.getFullYear() - fechaNac.getFullYear();
+    const m = hoy.getMonth() - fechaNac.getMonth();
+    if (m < 0 || (m === 0 && hoy.getDate() < fechaNac.getDate())) edad--;
+
+    // Normalizar representantes (preferir array nuevo sobre campos legacy)
+    let reps = Array.isArray(representantes) ? representantes.filter(r => r && r.id_representante) : [];
+    if (id_representante && !reps.length) {
+      reps = [{ id_representante, id_parentesco, principal: 1 }];
+    }
+    const principalCount = reps.filter(r => r.principal).length;
+    if (principalCount > 1) return res.status(400).json({ error: 'Sólo un representante principal permitido' });
+    if (edad < 18 && principalCount === 0) return res.status(400).json({ error: 'Menor de edad requiere representante principal' });
+
     const [result] = await pool.query(
-      `INSERT INTO Alumno (nombre, fecha_nacimiento, genero, telefono_contacto, estado, id_representante)
-      VALUES (?, ?, ?, ?, ?, ?)`,
-      [nombre, fecha_nacimiento, genero, telefono_contacto, estado, id_representante]  // <<--- INCLUIDO
+      `INSERT INTO Alumno (nombre, fecha_nacimiento, genero, telefono_contacto, estado)
+      VALUES (?, ?, ?, ?, ?)`,
+      [nombre, fecha_nacimiento, genero, telefono_contacto, estado]
     );
     const id_alumno = result.insertId;
+
+    // Insertar vínculos (si alguno marcado principal, se respeta; si no y edad>=18 se ignora principal)
+    for (const r of reps) {
+      await pool.query(`INSERT INTO alumno_representante (id_alumno, id_representante, id_parentesco, principal) VALUES (?,?,?,?)`, [id_alumno, r.id_representante, r.id_parentesco || null, r.principal ? 1 : 0]);
+    }
 
     // decidir programas: preferir programa_ids, sino programas (ids)
     const progIds = Array.isArray(programa_ids) && programa_ids.length ? programa_ids
@@ -167,7 +222,7 @@ router.post('/', async (req, res) => {
       [id_alumno]
     );
 
-    res.json({ id_alumno, nombre, fecha_nacimiento, genero, telefono_contacto, estado, programas: programasRows || [] });
+  res.json({ id_alumno, nombre, fecha_nacimiento, genero, telefono_contacto, estado, programas: programasRows || [], id_representante, id_parentesco });
   } catch (err) {
     console.error("Error en POST /alumnos:", err);
     res.status(500).json({ error: err.message });
@@ -189,15 +244,40 @@ router.put('/:id', async (req, res) => {
       programa_ids = [],
       programas = [],
       usuario = "sistema",
-      id_representante = null, 
+      id_representante = null,
+      id_parentesco = null,
+      representantes = [],
     } = req.body;
 
+    // Validaciones básicas
+    if (!nombre) return res.status(400).json({ error: 'Nombre requerido' });
+    if (!fecha_nacimiento) return res.status(400).json({ error: 'fecha_nacimiento requerida' });
+    const fechaNac = new Date(fecha_nacimiento + 'T00:00:00');
+    if (isNaN(fechaNac.getTime())) return res.status(400).json({ error: 'fecha_nacimiento inválida' });
+    const hoy = new Date();
+    let edad = hoy.getFullYear() - fechaNac.getFullYear();
+    const m = hoy.getMonth() - fechaNac.getMonth();
+    if (m < 0 || (m === 0 && hoy.getDate() < fechaNac.getDate())) edad--;
+
+    // Normalizar representantes entrantes
+    let reps = Array.isArray(representantes) ? representantes.filter(r => r && r.id_representante) : [];
+    if (id_representante && !reps.length) {
+      reps = [{ id_representante, id_parentesco, principal: 1 }];
+    }
+    const principalCount = reps.filter(r => r.principal).length;
+    if (principalCount > 1) return res.status(400).json({ error: 'Sólo un representante principal permitido' });
+    if (edad < 18 && principalCount === 0) return res.status(400).json({ error: 'Menor de edad requiere representante principal' });
+
     await pool.query(
-      `UPDATE Alumno
-      SET nombre=?, fecha_nacimiento=?, genero=?, telefono_contacto=?, estado=?, id_representante=?
-      WHERE id_alumno=?`,
-      [nombre, fecha_nacimiento, genero, telefono_contacto, estado, id_representante, id]
+      `UPDATE Alumno SET nombre=?, fecha_nacimiento=?, genero=?, telefono_contacto=?, estado=? WHERE id_alumno=?`,
+      [nombre, fecha_nacimiento, genero, telefono_contacto, estado, id]
     );
+
+    // Reemplazar vínculos recibidos (estrategia simple: borrar todos y recrear)
+    await pool.query(`DELETE FROM alumno_representante WHERE id_alumno = ?`, [id]);
+    for (const r of reps) {
+      await pool.query(`INSERT INTO alumno_representante (id_alumno, id_representante, id_parentesco, principal) VALUES (?,?,?,?)`, [id, r.id_representante, r.id_parentesco || null, r.principal ? 1 : 0]);
+    }
 
     // reemplazar programas
     const progIds = Array.isArray(programa_ids) && programa_ids.length ? programa_ids
@@ -214,7 +294,7 @@ router.put('/:id', async (req, res) => {
 
     await registrarHistorial(id, "ACTUALIZACION", `Alumno actualizado. Programas ahora: ${progIds.join(", ")}`, usuario);
 
-    const [[alumnoRow]] = await pool.query(`SELECT * FROM Alumno WHERE id_alumno = ?`, [id]);
+  const [[alumnoRow]] = await pool.query(`SELECT a.*, ar.id_representante, ar.id_parentesco FROM Alumno a LEFT JOIN alumno_representante ar ON a.id_alumno=ar.id_alumno AND ar.principal=1 WHERE a.id_alumno = ?`, [id]);
     const [programasRows] = await pool.query(
       `SELECT p.id_programa, p.nombre
        FROM alumno_programa ap
@@ -359,6 +439,7 @@ router.post('/export-masivo', async (req, res) => {
           estado: a.estado || "",
           programas: (a.programas || []).map((p) => p.nombre).join(" | "),
           nota: a.nota || "",
+          id_representante: a.id_representante || null,
         };
       });
 
@@ -1048,6 +1129,125 @@ router.post('/:id/asistencia', async (req, res) => {
     res.json({ message: "Asistencia registrada" });
   } catch (err) {
     console.error("Error en POST /alumnos/:id/asistencia", err);
+// ================= REPRESENTANTES MULTIPLES (PIVOT) =================
+// GET /alumnos/:id/representantes  -> lista todos los vínculos
+router.get('/:id/representantes', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [rows] = await pool.query(`
+      SELECT ar.id, ar.id_representante, ar.id_parentesco, ar.principal,
+             r.nombre AS representante_nombre, r.telefono, r.email,
+             p.nombre AS parentesco_nombre
+      FROM alumno_representante ar
+      JOIN Representante r ON ar.id_representante = r.id_representante
+      LEFT JOIN Parentesco p ON ar.id_parentesco = p.id_parentesco
+      WHERE ar.id_alumno = ?
+      ORDER BY ar.principal DESC, r.nombre ASC
+    `, [id]);
+    res.json(rows);
+  } catch (err) {
+    console.error('Error en GET /alumnos/:id/representantes', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /alumnos/:id/representantes { id_representante, id_parentesco, principal }
+router.post('/:id/representantes', async (req, res) => {
+  try {
+    const { id } = req.params; // alumno
+    const { id_representante, id_parentesco = null, principal = 0, usuario = 'sistema' } = req.body;
+    if (!id_representante) return res.status(400).json({ error: 'id_representante requerido' });
+
+    // si principal=1 quitar anterior principal
+    if (principal) {
+      await pool.query(`UPDATE alumno_representante SET principal = 0 WHERE id_alumno = ? AND principal = 1`, [id]);
+    }
+
+    // evitar duplicado exacto
+    const [[existe]] = await pool.query(`SELECT id FROM alumno_representante WHERE id_alumno=? AND id_representante=?`, [id, id_representante]);
+    if (existe) {
+      // actualizar parentesco / principal si ya existía
+      await pool.query(`UPDATE alumno_representante SET id_parentesco = ?, principal = ? WHERE id = ?`, [id_parentesco, principal ? 1 : 0, existe.id]);
+      await registrarHistorial(id, 'REPRESENTANTE', `Actualizado vínculo representante ${id_representante}`, usuario);
+      const [[row]] = await pool.query(`
+        SELECT ar.id, ar.id_representante, ar.id_parentesco, ar.principal,
+               r.nombre AS representante_nombre, r.telefono, r.email,
+               p.nombre AS parentesco_nombre
+        FROM alumno_representante ar
+        JOIN Representante r ON ar.id_representante = r.id_representante
+        LEFT JOIN Parentesco p ON ar.id_parentesco = p.id_parentesco
+        WHERE ar.id = ?
+      `, [existe.id]);
+      return res.json(row);
+    }
+
+    const [ins] = await pool.query(`INSERT INTO alumno_representante (id_alumno, id_representante, id_parentesco, principal) VALUES (?,?,?,?)`, [id, id_representante, id_parentesco, principal ? 1 : 0]);
+    await registrarHistorial(id, 'REPRESENTANTE', `Añadido representante ${id_representante}${principal ? ' (principal)' : ''}`, usuario);
+    const insertId = ins.insertId;
+    const [[row]] = await pool.query(`
+      SELECT ar.id, ar.id_representante, ar.id_parentesco, ar.principal,
+             r.nombre AS representante_nombre, r.telefono, r.email,
+             p.nombre AS parentesco_nombre
+      FROM alumno_representante ar
+      JOIN Representante r ON ar.id_representante = r.id_representante
+      LEFT JOIN Parentesco p ON ar.id_parentesco = p.id_parentesco
+      WHERE ar.id = ?
+    `, [insertId]);
+    res.status(201).json(row);
+  } catch (err) {
+    console.error('Error en POST /alumnos/:id/representantes', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /alumnos/:id/representantes/:relId  { id_parentesco?, principal? }
+router.put('/:id/representantes/:relId', async (req, res) => {
+  try {
+    const { id, relId } = req.params; // alumno id y relación pivot id
+    const { id_parentesco = null, principal = null, usuario = 'sistema' } = req.body;
+
+    const [[rel]] = await pool.query(`SELECT * FROM alumno_representante WHERE id = ? AND id_alumno = ?`, [relId, id]);
+    if (!rel) return res.status(404).json({ error: 'Vínculo no encontrado' });
+
+    if (principal === 1) {
+      await pool.query(`UPDATE alumno_representante SET principal = 0 WHERE id_alumno = ? AND principal = 1`, [id]);
+    }
+
+    await pool.query(`UPDATE alumno_representante SET id_parentesco = COALESCE(?, id_parentesco), principal = COALESCE(?, principal) WHERE id = ?`, [id_parentesco, principal !== null ? (principal ? 1 : 0) : null, relId]);
+    await registrarHistorial(id, 'REPRESENTANTE', `Actualizado vínculo ${relId}`, usuario);
+
+    const [[row]] = await pool.query(`
+      SELECT ar.id, ar.id_representante, ar.id_parentesco, ar.principal,
+             r.nombre AS representante_nombre, r.telefono, r.email,
+             p.nombre AS parentesco_nombre
+      FROM alumno_representante ar
+      JOIN Representante r ON ar.id_representante = r.id_representante
+      LEFT JOIN Parentesco p ON ar.id_parentesco = p.id_parentesco
+      WHERE ar.id = ?
+    `, [relId]);
+    res.json(row);
+  } catch (err) {
+    console.error('Error en PUT /alumnos/:id/representantes/:relId', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /alumnos/:id/representantes/:relId  -> elimina vínculo
+router.delete('/:id/representantes/:relId', async (req, res) => {
+  try {
+    const { id, relId } = req.params;
+    const { usuario = 'sistema' } = req.body || {};
+    const [[rel]] = await pool.query(`SELECT * FROM alumno_representante WHERE id = ? AND id_alumno = ?`, [relId, id]);
+    if (!rel) return res.status(404).json({ error: 'Vínculo no encontrado' });
+    await pool.query(`DELETE FROM alumno_representante WHERE id = ?`, [relId]);
+    await registrarHistorial(id, 'REPRESENTANTE', `Eliminado vínculo representante ${rel.id_representante}`, usuario);
+    res.json({ message: 'Vínculo eliminado' });
+  } catch (err) {
+    console.error('Error en DELETE /alumnos/:id/representantes/:relId', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
     res.status(500).json({ error: err.message });
   }
 });

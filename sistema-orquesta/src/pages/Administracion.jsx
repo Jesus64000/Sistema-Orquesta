@@ -6,6 +6,7 @@ import UsuariosAdmin from "../components/Administracion/UsuariosAdmin";
 import RolesAdmin from "../components/Administracion/RolesAdmin";
 import EstadosAdmin from "../components/Administracion/EstadosAdmin";
 import AyudaAdmin from "../components/Administracion/AyudaAdmin";
+import ParentescosAdmin from "../components/Administracion/ParentescosAdmin";
 
 const SECCIONES = [
   { key: "programas", label: "Programas" },
@@ -16,6 +17,7 @@ const SECCIONES = [
   { key: "estados", label: "Estados de instrumentos" },
   // { key: "representantes", label: "Representantes" },
   // { key: "eventos", label: "Eventos" },
+  { key: "parentescos", label: "Parentescos" },
   { key: "ayuda", label: "Ayuda / Documentación" },
 ];
 
@@ -51,6 +53,7 @@ export default function Administracion() {
   {seccion === "estados" && <EstadosAdmin />}
   {/* {seccion === "representantes" && <RepresentantesAdmin />} */}
   {/* {seccion === "eventos" && <EventosAdmin />} */}
+  {seccion === "parentescos" && <ParentescosAdmin />}
   {seccion === "ayuda" && <AyudaAdmin />}
       </main>
     </div>

@@ -299,6 +299,29 @@ El frontend incorpora mejoras progresivas para ofrecer una mejor experiencia a u
 
 ---
 
+## 🧩 UX de Formularios (Validación Diferida)
+
+Para reducir fricción cognitiva y evitar ruido visual, los formularios clave siguen un patrón de validación diferida:
+
+- No se muestran errores inmediatamente al enfocar o salir (blur) de un campo vacío la primera vez.
+- Los mensajes de error aparecen tras el primer intento de guardado fallido (submit) y solo en los campos con problemas.
+- Una vez mostrado un error, si el usuario corrige el campo, el mensaje desaparece dinámicamente.
+- Los atributos `aria-invalid` y `aria-describedby` sólo se activan cuando el error es visible, mejorando la experiencia de lectores de pantalla.
+- Eliminado el banner global genérico de "Revisa los campos" en favor de feedback contextual preciso.
+
+### Formularios que ya aplican este patrón
+- Representante (`RepresentanteForm.jsx`)
+
+### Beneficios
+- Menos distracciones iniciales al crear/editar.
+- Enfoque guiado solo cuando realmente hay intención de enviar datos.
+- Accesibilidad mejorada: menos anuncios redundantes para tecnologías de asistencia.
+
+### Próximas alineaciones previstas
+- Aplicar el mismo patrón de validación diferida a `AlumnoForm` y futuros formularios (Instrumentos, Eventos) manteniendo consistencia.
+
+---
+
 ## 📜 Recursos y documentación adicional
 
 - [Documentación de la API](docs/api.md)

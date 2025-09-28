@@ -84,13 +84,45 @@ export default function AlumnoDetalle({ alumno, onClose }) {
                 )}
               </div>
             </div>
-            {alumno.representante_nombre && (
+            {(alumno.representantes && alumno.representantes.length > 0) && (
               <div className="md:col-span-2 border-t pt-4">
-                <p className="text-[11px] uppercase tracking-wide text-gray-500">Representante</p>
-                <p className="font-medium text-gray-900">{alumno.representante_nombre}</p>
-                <p className="text-sm text-gray-600">
-                  {alumno.representante_telefono} • {alumno.representante_email}
-                </p>
+                <p className="text-[11px] uppercase tracking-wide text-gray-500 mb-2">Representantes</p>
+                <ul className="space-y-2">
+                  {alumno.representantes.map(r => (
+                    <li key={r.id_representante} className="flex flex-col md:flex-row md:items-center md:gap-3 p-2 rounded border border-gray-100 bg-gray-50">
+                      <div className="flex-1">
+                        <span className="font-medium text-gray-900">{r.nombre}</span>
+                        {r.parentesco_nombre && (
+                          <span className="text-gray-500 text-sm ml-2">({r.parentesco_nombre}{r.principal ? ' - Principal' : ''})</span>
+                        )}
+                        {!r.parentesco_nombre && r.principal && (
+                          <span className="text-gray-500 text-sm ml-2">(Principal)</span>
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-600 flex flex-wrap gap-x-3 gap-y-1 mt-1 md:mt-0">
+                        {r.telefono_movil && <span>Móvil: <span className="font-medium">{r.telefono_movil}</span></span>}
+                        {r.email && <span className="text-gray-500">{r.email}</span>}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {(!alumno.representantes || alumno.representantes.length === 0) && alumno.representante_nombre && (
+              <div className="md:col-span-2 border-t pt-4">
+                <p className="text-[11px] uppercase tracking-wide text-gray-500 mb-2">Representante</p>
+                <div className="p-2 rounded border border-gray-100 bg-gray-50 flex flex-col md:flex-row md:items-center md:gap-3">
+                  <div className="flex-1">
+                    <span className="font-medium text-gray-900">{alumno.representante_nombre}</span>
+                    {alumno.parentesco_nombre && (
+                      <span className="text-gray-500 text-sm ml-2">({alumno.parentesco_nombre})</span>
+                    )}
+                  </div>
+                  <div className="text-xs text-gray-600 flex flex-wrap gap-x-3 gap-y-1 mt-1 md:mt-0">
+                    {alumno.representante_telefono_movil && <span>Móvil: <span className="font-medium">{alumno.representante_telefono_movil}</span></span>}
+                    {alumno.representante_email && <span className="text-gray-500">{alumno.representante_email}</span>}
+                  </div>
+                </div>
               </div>
             )}
           </div>

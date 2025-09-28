@@ -1,10 +1,9 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import { 
-  Gauge, Users, Music2, Calendar, BarChart3, Settings, LogOut, Wrench
+  Gauge, Users, Music2, Calendar, BarChart3, Settings, LogOut, Wrench, UserCircle2
 } from "lucide-react";
 import { Toaster } from "react-hot-toast";
-
 
 // Páginas
 import Dashboard from "./pages/Dashboard";
@@ -14,6 +13,7 @@ import Eventos from "./pages/Eventos";
 import Reportes from "./pages/Reportes";
 import Configuraciones from "./pages/Configuraciones";
 import Administracion from "./pages/Administracion";
+import Representantes from "./pages/Representantes"; // nuevo
 
 // Sidebar item
 // eslint-disable-next-line no-unused-vars
@@ -47,6 +47,7 @@ export default function App() {
             <div className="mt-6 space-y-2">
               <SidebarItem icon={Gauge} label="Panel de control" to="/" />
               <SidebarItem icon={Users} label="Alumnos" to="/alumnos" />
+              <SidebarItem icon={UserCircle2} label="Representantes" to="/representantes" />
               <SidebarItem icon={Music2} label="Instrumentos" to="/instrumentos" />
               <SidebarItem icon={Calendar} label="Eventos" to="/eventos" />
               <SidebarItem icon={BarChart3} label="Reportes" to="/reportes" />
@@ -67,6 +68,7 @@ export default function App() {
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/alumnos" element={<Alumnos />} />
+              <Route path="/representantes" element={<Representantes />} />
               <Route path="/instrumentos" element={<Instrumentos />} />
               <Route path="/eventos" element={<Eventos />} />
               <Route path="/reportes" element={<Reportes />} />

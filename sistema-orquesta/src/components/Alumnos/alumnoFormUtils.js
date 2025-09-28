@@ -11,16 +11,28 @@ export function normalizaTelefono(raw) {
 
 export function validateAlumnoForm(fd) {
   const e = {};
+  let fechaNacimientoDate = null;
   if (!fd.nombre || fd.nombre.trim().length < 2) e.nombre = "Nombre mínimo 2 caracteres";
   if (!fd.fecha_nacimiento) e.fecha_nacimiento = "Fecha requerida"; else {
     const d = new Date(fd.fecha_nacimiento + 'T00:00:00');
-    if (isNaN(d.getTime())) e.fecha_nacimiento = "Fecha inválida"; else if (d > new Date()) e.fecha_nacimiento = "No puede ser futura";
+    if (isNaN(d.getTime())) e.fecha_nacimiento = "Fecha inválida"; else if (d > new Date()) e.fecha_nacimiento = "No puede ser futura"; else fechaNacimientoDate = d;
   }
   if (!Array.isArray(fd.programa_ids) || fd.programa_ids.length === 0) e.programa_ids = "Selecciona al menos un programa";
   if (fd.programa_ids && fd.programa_ids.length > 2) e.programa_ids = "Máximo 2 programas";
   if (fd.telefono_contacto) {
     const cleaned = fd.telefono_contacto.replace(/[^+\d]/g, '');
     if (cleaned.replace(/\D/g, '').length < 7) e.telefono_contacto = "Teléfono demasiado corto";
+  }
+  // Regla de negocio: menores de 18 años requieren al menos un representante principal
+  if (fechaNacimientoDate) {
+    const hoy = new Date();
+    let edad = hoy.getFullYear() - fechaNacimientoDate.getFullYear();
+    const m = hoy.getMonth() - fechaNacimientoDate.getMonth();
+    if (m < 0 || (m === 0 && hoy.getDate() < fechaNacimientoDate.getDate())) edad--;
+    if (edad < 18) {
+      const tienePrincipal = Array.isArray(fd.representantes_links) && fd.representantes_links.some(r => r.principal);
+      if (!tienePrincipal) e.id_representante = "Requerido representante principal (menor de edad)";
+    }
   }
   return e;
 }

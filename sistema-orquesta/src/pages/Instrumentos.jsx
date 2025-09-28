@@ -21,6 +21,7 @@ import InstrumentosBulkActionsModal from "../components/Instrumentos/Instrumento
 import Modal from "../components/Modal";
 import ExportModal from "../components/ExportModal.jsx";
 import ConfirmDialog from "../components/ConfirmDialog";
+import DataStates from "../components/ui/DataStates";
 
 // === Helpers UI ===
 const Badge = ({ children }) => (
@@ -65,15 +66,18 @@ export default function Instrumentos() {
   // Load data
   // Cargar instrumentos (sin n+1) - actualmente backend no devuelve asignación consolidada.
   // TODO: Crear endpoint /instrumentos?include=asignacion para eliminar second fetch al abrir detalle.
+  const [loadError, setLoadError] = useState(false);
   const loadData = async () => {
     setLoading(true);
     try {
       const res = await getInstrumentos();
       const baseList = res.data || [];
       setInstrumentos(baseList);
+      setLoadError(false);
     } catch (e) {
       toast.error("Error cargando instrumentos");
       console.error(e);
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -200,16 +204,24 @@ export default function Instrumentos() {
       {/* Sin barra intermedia - selección total directa */}
 
       {/* Tabla o skeleton */}
-      {loading && instrumentos.length === 0 ? (
-        <div className="bg-white border rounded-2xl shadow-sm p-4 space-y-3 animate-pulse" aria-label="Cargando tabla instrumentos">
-          <div className="h-5 w-40 bg-gradient-to-r from-gray-200 to-gray-300 rounded" />
-          <div className="space-y-2">
-            {Array.from({ length: 6 }).map((_, idx) => (
-              <div key={idx} className="h-10 w-full bg-gradient-to-r from-gray-200 to-gray-300 rounded" />
-            ))}
-          </div>
-        </div>
-      ) : (
+      <DataStates
+        loading={loading}
+        error={loadError}
+        hasData={instrumentos.length>0}
+        filteredCount={instrumentosFiltrados.length}
+        onRetry={loadData}
+        onHideError={()=>setLoadError(false)}
+        filtersActive={!!(search || fEstado || fCategoria)}
+        onClearFilters={()=>{ setSearch(''); setFEstado(''); setFCategoria(''); }}
+        entitySingular="instrumento"
+        entityPlural="instrumentos"
+        entityIcon="🎺"
+        emptyCtaLabel="Nuevo instrumento"
+        onEmptyCta={openCreate}
+        emptyInitialTitle="Aún no hay instrumentos"
+        emptyInitialMessage="Registra el primer instrumento para empezar a gestionarlos." />
+
+      {!loading && !loadError && instrumentosFiltrados.length > 0 && (
         <InstrumentosTable
           instrumentosPage={instrumentosPage}
           selected={selected}

@@ -19,6 +19,7 @@ import EventosCalendar from "../components/Eventos/EventosCalendar";
 import NextEventCard from "../components/Eventos/NextEventCard";
 import Modal from "../components/Modal";
 import ConfirmDialog from "../components/ConfirmDialog";
+import DataStates from "../components/ui/DataStates";
 
 export default function Eventos() {
   // Data
@@ -33,6 +34,7 @@ export default function Eventos() {
   const [confirm, setConfirm] = useState({ open: false, id: null, name: "" });
   const [openExport, setOpenExport] = useState(false);
   const [openBulk, setOpenBulk] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   // Filtros
   const [search, setSearch] = useState("");
@@ -54,9 +56,11 @@ export default function Eventos() {
     try {
       const res = await getEventos();
       setEventos(res.data || res || []);
+      setLoadError(false);
     } catch (err) {
       console.error(err);
       toast.error("Error cargando eventos");
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -163,11 +167,22 @@ export default function Eventos() {
           setViewDetail={setViewDetail}
           setConfirm={setConfirm}
         />
-        {eventosPage.length === 0 && (
-          <div className="text-center py-10 text-gray-500">
-            {loading ? "Cargando eventos..." : "No se encontraron eventos"}
-          </div>
-        )}
+        <DataStates
+          loading={loading}
+          error={loadError}
+          hasData={eventos.length>0}
+          filteredCount={eventosFiltrados.length}
+          onRetry={loadData}
+          onHideError={()=>setLoadError(false)}
+          filtersActive={!!search.trim()}
+          onClearFilters={()=>setSearch('')}
+          entitySingular="evento"
+          entityPlural="eventos"
+          entityIcon="🎼"
+          emptyCtaLabel="Nuevo evento"
+          onEmptyCta={openCreate}
+          emptyInitialTitle="Aún no hay eventos"
+          emptyInitialMessage="Crea el primer evento para comenzar a planificar." />
         <EventosPagination page={page} totalPages={totalPages} setPage={setPage} />
       </div>
 
