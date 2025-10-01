@@ -17,7 +17,13 @@ export default function RepresentanteForm({ data, onSaved, onCancel }) {
     if (!model.email.trim()) errs.email = 'Requerido';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(model.email.trim())) errs.email = 'Formato inválido';
     if (model.telefono_movil && model.telefono_movil.replace(/\D/g,'').length < 10) errs.telefono_movil = 'Mínimo 10 dígitos';
-    if (model.ci && !/^[VEJG]-?\d{5,}$/.test(model.ci.trim())) errs.ci = 'Formato sugerido V-12345678';
+    if (model.ci) {
+      const raw = model.ci.trim().toUpperCase();
+      // Aceptar: solo dígitos (>=6), o prefijo V/E/J/G (con o sin guion) seguido de >=6 dígitos
+      if (!/^([VEJG]-?\d{6,}|\d{6,})$/.test(raw)) {
+        errs.ci = 'Mínimo 6 dígitos (se prefija V-)';
+      }
+    }
     return errs;
   }, [form]);
 
@@ -49,10 +55,17 @@ export default function RepresentanteForm({ data, onSaved, onCancel }) {
     }
     try {
       setLoading(true);
+      // Normalizar CI: si son solo dígitos -> prefijar V-; si ya trae prefijo, uniformar con guion.
+      let ciNorm = form.ci.trim().toUpperCase();
+      if (ciNorm) {
+        if (/^\d{6,}$/.test(ciNorm)) ciNorm = 'V-' + ciNorm; // sólo dígitos -> prefijo V-
+        else if (/^[VEJG]\d{6,}$/.test(ciNorm)) ciNorm = ciNorm[0] + '-' + ciNorm.slice(1); // V12345678 -> V-12345678
+        else if (/^[VEJG]-?\d{6,}$/.test(ciNorm)) ciNorm = ciNorm.replace('-', '-'); // asegurar guion único
+      }
       const payload = {
         nombre: normalizeNombre(form.nombre.trim()),
         apellido: form.apellido.trim() ? normalizeApellido(form.apellido.trim()) : null,
-        ci: form.ci.trim() || null,
+        ci: ciNorm || null,
         telefono: null, // eliminado del UI
         telefono_movil: form.telefono_movil.trim() || null,
         email: form.email.trim(),
@@ -105,13 +118,35 @@ export default function RepresentanteForm({ data, onSaved, onCancel }) {
           <input
             placeholder="V-12345678"
             className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 ${showError('ci') ? 'border-red-400 ring-red-300 focus:ring-red-400' : 'border-gray-300'}`}
-            value={form.ci}
-            onChange={e=>setForm({...form,ci:e.target.value.toUpperCase()})}
+            value={(() => {
+              if (!form.ci) return '';
+              const raw = form.ci.toUpperCase();
+              if (/^\d{6,}$/.test(raw)) return 'V-' + raw; // mostrar con prefijo
+              if (/^[VEJG]\d{6,}$/.test(raw)) return raw[0] + '-' + raw.slice(1);
+              if (/^[VEJG]-?\d{6,}$/.test(raw)) return raw.replace('-', '-');
+              return raw;
+            })()}
+            onChange={e=>{
+              const val = e.target.value.toUpperCase().replace(/\s+/g,'');
+              // permitir borrar completamente
+              if (!val) { setForm({...form, ci: ''}); return; }
+              // quitar prefijo V- si el usuario borra parte
+              const digits = val.replace(/^[VEJG]-?/, '');
+              // si empieza con VEJG conservar primera letra
+              if (/^[VEJG]/.test(val)) {
+                const pref = val[0];
+                const onlyDigits = digits.replace(/\D/g,'');
+                setForm({...form, ci: pref + onlyDigits});
+              } else {
+                // sólo dígitos
+                setForm({...form, ci: digits.replace(/\D/g,'')});
+              }
+            }}
             onBlur={()=>setTouched(t=>({...t,ci:true}))}
             aria-invalid={!!showError('ci')}
-            aria-describedby={showError('ci') ? 'err-ci' : undefined}
+            aria-describedby={showError('ci') ? 'err-ci' : 'hint-ci'}
           />
-          <p className="mt-1 text-[10px] text-gray-500">Formato sugerido: V-12345678</p>
+          <p id="hint-ci" className="mt-1 text-[10px] text-gray-500">Escribe solo números (mínimo 6) y se prefijará con V- automáticamente.</p>
           {showError('ci') && <p id="err-ci" className="mt-1 text-xs text-red-600">{errors.ci}</p>}
         </div>
       </div>

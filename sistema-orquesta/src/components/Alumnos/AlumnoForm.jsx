@@ -27,6 +27,7 @@ export default function AlumnoForm({ data, programas, onCancel, onSaved }) {
   const [nuevoVinculo, setNuevoVinculo] = useState({ id_representante: "", id_parentesco: "", principal: true });
   const [showCrearRep, setShowCrearRep] = useState(false);
   const [errors, setErrors] = useState({});
+  const [submitted, setSubmitted] = useState(false);
 
   const firstFieldRef = useRef(null);
   const initialSnapshotRef = useRef(null);
@@ -156,26 +157,13 @@ export default function AlumnoForm({ data, programas, onCancel, onSaved }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  const v = validateAlumnoForm({
-    ...formData,
-    id_representante: formData.representantes_links.find(r => r.principal) ? 'ok' : '',
-  });
+    setSubmitted(true);
+    const v = validateAlumnoForm({
+      ...formData,
+      id_representante: formData.representantes_links.find(r => r.principal) ? 'ok' : '',
+    });
     setErrors(v);
-    if (Object.keys(v).length) {
-      const order = ['nombre', 'fecha_nacimiento', 'programa_ids', 'telefono_contacto'];
-      for (const k of order) {
-        if (v[k]) {
-          const el = document.getElementById(k === 'nombre' ? 'alumno-nombre' : k === 'fecha_nacimiento' ? 'alumno-fecha' : null);
-          if (el) el.focus();
-          // Scroll suave al centro para mejorar percepción de error
-          if (el && el.scrollIntoView) {
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }
-          break;
-        }
-      }
-      return;
-    }
+    if (Object.keys(v).length) return; // errores visibles inline tras submit
     const canContinue = await openDeactivateFlowIfNeeded();
     if (!canContinue) return;
     await doSave();
@@ -183,17 +171,7 @@ export default function AlumnoForm({ data, programas, onCancel, onSaved }) {
 
   return (
     <>
-  <form onSubmit={handleSubmit} className="space-y-6" aria-describedby={Object.keys(errors).length ? 'form-errors' : undefined}>
-        {Object.keys(errors).length === 1 && (
-          <div id="form-errors" role="alert" aria-live="assertive" className="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-700">
-            Falta completar: {Object.keys(errors)[0]}
-          </div>
-        )}
-        {Object.keys(errors).length > 1 && (
-          <div id="form-errors" role="alert" aria-live="assertive" className="rounded-md border border-red-200 bg-red-50 p-3 text-xs text-red-700">
-            Corrige los siguientes campos: {Object.keys(errors).join(', ')}
-          </div>
-        )}
+  <form onSubmit={handleSubmit} className="space-y-6">
 
         <fieldset className="space-y-5" aria-labelledby="legend-datos-basicos">
           <legend id="legend-datos-basicos" className="sr-only">Datos básicos</legend>
@@ -210,11 +188,10 @@ export default function AlumnoForm({ data, programas, onCancel, onSaved }) {
                 value={formData.nombre}
                 onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                 placeholder="Ej: Juan Pérez"
-                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 placeholder:text-gray-400"
-                required
-                aria-invalid={errors?.nombre ? 'true' : 'false'}
+                className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 placeholder:text-gray-400 ${ (submitted && errors?.nombre) ? 'border-red-400 focus:ring-red-400 ring-red-300' : 'border-gray-300'}`}
+                aria-invalid={(submitted && errors?.nombre) ? 'true' : 'false'}
               />
-              {errors?.nombre && <p className="mt-1 text-xs text-red-600" role="alert">{errors.nombre}</p>}
+              {submitted && errors?.nombre && <p className="mt-1 text-xs text-red-600" role="alert">{errors.nombre}</p>}
             </div>
             <div>
               <label htmlFor="alumno-fecha" className="block text-xs font-medium text-gray-600 mb-1">Fecha de nacimiento *</label>
@@ -224,13 +201,12 @@ export default function AlumnoForm({ data, programas, onCancel, onSaved }) {
                 value={formData.fecha_nacimiento}
                 max={new Date().toISOString().slice(0, 10)}
                 onChange={(e) => setFormData({ ...formData, fecha_nacimiento: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                required
-                aria-invalid={errors?.fecha_nacimiento ? 'true' : 'false'}
+                className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 ${ (submitted && errors?.fecha_nacimiento) ? 'border-red-400 focus:ring-red-400 ring-red-300' : 'border-gray-300'}`}
+                aria-invalid={(submitted && errors?.fecha_nacimiento) ? 'true' : 'false'}
                 aria-describedby="hint-fecha"
               />
               <p id="hint-fecha" className="mt-1 text-[11px] text-gray-500">Usa el selector o escribe en formato AAAA-MM-DD.</p>
-              {errors?.fecha_nacimiento && <p className="mt-1 text-xs text-red-600" role="alert">{errors.fecha_nacimiento}</p>}
+              {submitted && errors?.fecha_nacimiento && <p className="mt-1 text-xs text-red-600" role="alert">{errors.fecha_nacimiento}</p>}
             </div>
             <div className="flex flex-col">
               <span className="block text-xs font-medium text-gray-600 mb-1">Edad</span>
@@ -283,13 +259,13 @@ export default function AlumnoForm({ data, programas, onCancel, onSaved }) {
                   setFormData(f => ({ ...f, telefono_contacto: val }));
                   setErrors(prev => ({ ...prev, telefono_contacto: undefined }));
                 }}
-                className="w-full p-2 border rounded-lg placeholder:text-gray-400"
-                aria-invalid={errors?.telefono_contacto ? 'true' : 'false'}
+                className={`w-full p-2 border rounded-lg placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 ${ (submitted && errors?.telefono_contacto) ? 'border-red-400 focus:ring-red-400 ring-red-300' : 'border-gray-300'}`}
+                aria-invalid={(submitted && errors?.telefono_contacto) ? 'true' : 'false'}
                 placeholder="Ej: 0412-1234567"
                 aria-describedby="hint-telefono"
               />
               <p id="hint-telefono" className="mt-1 text-[11px] text-gray-500">Formato sugerido: 0412-1234567</p>
-              {errors?.telefono_contacto && <p className="mt-1 text-xs text-red-600" role="alert">{errors.telefono_contacto}</p>}
+              {submitted && errors?.telefono_contacto && <p className="mt-1 text-xs text-red-600" role="alert">{errors.telefono_contacto}</p>}
             </div>
             <div className="md:col-span-2 space-y-4">
               <div className="space-y-3">
@@ -415,10 +391,10 @@ export default function AlumnoForm({ data, programas, onCancel, onSaved }) {
               />
               <div id="hint-programas" className="mt-1 flex flex-wrap items-center gap-3 text-[11px] text-gray-500">
                 <span>{formData.programa_ids.length} / 2 seleccionados</span>
-                {formData.programa_ids.length === 0 && !errors?.programa_ids && (
+                {formData.programa_ids.length === 0 && !(submitted && errors?.programa_ids) && (
                   <span className="text-gray-400">Selecciona al menos uno para continuar</span>
                 )}
-                {errors?.programa_ids && <span className="text-red-600">{errors.programa_ids}</span>}
+                {submitted && errors?.programa_ids && <span className="text-red-600">{errors.programa_ids}</span>}
               </div>
             </div>
           </div>

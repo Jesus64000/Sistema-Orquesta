@@ -22,6 +22,15 @@ export function computeEventoDiffs(before, after) {
 
 const router = Router();
 
+// Auto-finaliza eventos cuya fecha ya pasó (sin cambiar los CANCELADO)
+async function autoFinalizePastEvents() {
+  try {
+    await pool.query(`UPDATE Evento SET estado='FINALIZADO' WHERE fecha_evento < CURDATE() AND estado NOT IN ('FINALIZADO','CANCELADO')`);
+  } catch(err) {
+    console.warn('autoFinalizePastEvents error:', err.message);
+  }
+}
+
 
 // Estados válidos de un evento
 export const EVENTO_ESTADOS = ['PROGRAMADO','EN_CURSO','FINALIZADO','CANCELADO'];
@@ -37,16 +46,17 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Título, fecha, hora y lugar son obligatorios' });
     }
 
-    // Validar que la fecha no sea pasada
+    // Validar estado y lógica de fecha
     const hoy = new Date().toISOString().split('T')[0];
-    if (fecha_evento < hoy) {
-      return res.status(400).json({ error: 'La fecha no puede estar en el pasado' });
-    }
-
-    // Validar estado
     const estadoUpper = String(estado).toUpperCase();
     if (!EVENTO_ESTADOS.includes(estadoUpper)) {
       return res.status(400).json({ error: 'Estado inválido' });
+    }
+    // Reglas:
+    // - PROGRAMADO o EN_CURSO no pueden crearse en fecha pasada
+    // - FINALIZADO o CANCELADO sí pueden asociarse a una fecha pasada (registro retroactivo)
+    if (fecha_evento < hoy && ['PROGRAMADO','EN_CURSO'].includes(estadoUpper)) {
+      return res.status(400).json({ error: 'La fecha no puede ser pasada para este estado' });
     }
 
     const [result] = await pool.query(
@@ -94,9 +104,6 @@ router.put('/:id', async (req, res) => {
     }
 
     const hoy = new Date().toISOString().split('T')[0];
-    if (fecha_evento < hoy) {
-      return res.status(400).json({ error: 'La fecha no puede estar en el pasado' });
-    }
 
     let estadoUpper = undefined;
     if (estado != null) {
@@ -105,6 +112,10 @@ router.put('/:id', async (req, res) => {
         return res.status(400).json({ error: 'Estado inválido' });
       }
     }
+    // Reglas de fecha en actualización:
+    // - Si se intenta poner fecha pasada con estado PROGRAMADO o EN_CURSO -> error.
+    // - Si el estado (nuevo o existente) es FINALIZADO o CANCELADO se permite fecha pasada.
+    const estadoEvaluado = estadoUpper || undefined; // puede ser undefined => usar existing luego
 
     // Obtener registro existente para calcular diffs
     const [existingRows] = await pool.query(
@@ -115,6 +126,13 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Evento no encontrado' });
     }
     const existing = existingRows[0];
+
+    // Validar fecha vs hoy considerando estado nuevo o existente
+    const estadoActual = existingRows[0]?.estado;
+    const estadoFinalPrevisto = estadoUpper || estadoActual;
+    if (fecha_evento < hoy && ['PROGRAMADO','EN_CURSO'].includes(estadoFinalPrevisto)) {
+      return res.status(400).json({ error: 'La fecha no puede ser pasada para este estado' });
+    }
 
     const [result] = await pool.query(
       'UPDATE Evento SET titulo=?, descripcion=?, fecha_evento=?, hora_evento=?, lugar=?, id_programa=?, estado=COALESCE(?, estado) WHERE id_evento=?',
@@ -180,6 +198,7 @@ router.delete('/:id', async (req, res) => {
 // GET /eventos/futuros (con filtro opcional por programa_id)
 router.get('/futuros', async (req, res) => {
   try {
+    await autoFinalizePastEvents();
     const { programa_id } = req.query;
     let query = `
       SELECT 
@@ -214,6 +233,7 @@ router.get('/futuros', async (req, res) => {
 // GET /eventos/pasados (con filtro opcional por programa_id)
 router.get('/pasados', async (req, res) => {
   try {
+    await autoFinalizePastEvents();
     const { programa_id } = req.query;
     let query = `
       SELECT 
@@ -247,6 +267,7 @@ router.get('/pasados', async (req, res) => {
 // (Opcional) GET /eventos/futuros2 - mantiene compatibilidad si ya lo usas
 router.get('/futuros2', async (_req, res) => {
   try {
+    await autoFinalizePastEvents();
     const [rows] = await pool.query(
       `SELECT 
         id_evento, 
@@ -272,6 +293,7 @@ router.get('/futuros2', async (_req, res) => {
 // GET /eventos/suggest?q=term&limit=8  (búsqueda predictiva)
 router.get('/suggest', async (req, res) => {
   try {
+    await autoFinalizePastEvents();
     const { q = '', limit = 8 } = req.query;
     const term = String(q).trim();
     if (term.length < 2) return res.json([]); // mínimo 2 chars
@@ -325,6 +347,7 @@ router.get('/:id/historial', async (req, res) => {
 // GET /eventos/:id
 router.get('/:id', async (req, res) => {
   try {
+    await autoFinalizePastEvents();
     const { id } = req.params;
     const [rows] = await pool.query(
       `SELECT 
@@ -356,6 +379,7 @@ router.get('/:id', async (req, res) => {
 // GET /eventos (con filtros opcionales: programa_id y search)
 router.get('/', async (req, res) => {
   try {
+    await autoFinalizePastEvents();
     const { programa_id, search } = req.query;
 
     let query = `
@@ -402,6 +426,7 @@ router.get('/', async (req, res) => {
 // POST /eventos/export { ids?: number[], format?: 'csv'|'xlsx'|'pdf', search?: string }
 router.post('/export', async (req, res) => {
   try {
+    await autoFinalizePastEvents();
     const { ids = [], format = 'csv', search = '' } = req.body || {};
 
     // Construir query base similar a GET /eventos

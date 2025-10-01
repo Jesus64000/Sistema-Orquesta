@@ -35,7 +35,11 @@ export function validateEventoForm(input) {
   } else if (!isValidDate(out.fecha_evento)) {
     errors.fecha_evento = 'Formato de fecha inválido';
   } else if (out.fecha_evento < todayStr) {
-    errors.fecha_evento = 'La fecha no puede estar en el pasado';
+    // Permitir fecha pasada sólo si el estado (entrante) es FINALIZADO o CANCELADO
+    const estadoUpperPreview = (out.estado ? String(out.estado).toUpperCase() : 'PROGRAMADO');
+    if (!['FINALIZADO','CANCELADO'].includes(estadoUpperPreview)) {
+      errors.fecha_evento = 'La fecha no puede estar en el pasado';
+    }
   }
 
   // hora_evento

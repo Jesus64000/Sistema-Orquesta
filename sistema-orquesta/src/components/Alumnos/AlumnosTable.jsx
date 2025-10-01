@@ -86,10 +86,17 @@ const AlumnoRow = memo(function AlumnoRow({ a, isSelected, toggleSelect, openDet
       <td className="px-3 py-2 text-gray-600" role="cell">{a.telefono_contacto}</td>
       <td className="px-3 py-2" role="cell">
         {a.representante_nombre ? (
-          <div className="flex flex-col leading-tight">
-            <span className="font-medium text-gray-800">{a.representante_nombre}</span>
-            <span className="text-[11px] text-gray-500">{a.representante_telefono}</span>
-            <span className="text-[11px] text-gray-400 truncate max-w-[160px]">{a.representante_email}</span>
+          <div className="flex flex-col leading-tight max-w-[180px]">
+            <span className="font-medium text-gray-800">
+              {a.representante_nombre}
+              {a.parentesco_nombre && (
+                <span className="text-[11px] font-normal text-gray-500"> ({a.parentesco_nombre})</span>
+              )}
+            </span>
+            {a.representante_telefono_movil && (
+              <span className="text-[11px] text-gray-600">{a.representante_telefono_movil}</span>
+            )}
+            {/* Email removido según requerimiento */}
           </div>
         ) : (
           <span className="text-[11px] text-gray-400 italic">Sin representante</span>
