@@ -8,7 +8,7 @@ const router = Router();
 // Total de alumnos
 router.get('/alumnos-total', async (req, res) => {
   try {
-    const [rows] = await pool.query(`SELECT COUNT(*) AS total FROM Alumno`);
+  const [rows] = await pool.query(`SELECT COUNT(*) AS total FROM alumno`);
     res.json(rows[0]);
   } catch (err) {
     console.error('Error en /reportes/alumnos-total:', err);
@@ -19,7 +19,7 @@ router.get('/alumnos-total', async (req, res) => {
 // Alumnos activos
 router.get('/alumnos-activos', async (req, res) => {
   try {
-    const [rows] = await pool.query(`SELECT COUNT(*) AS total FROM Alumno WHERE estado='Activo'`);
+  const [rows] = await pool.query(`SELECT COUNT(*) AS total FROM alumno WHERE estado='Activo'`);
     res.json(rows[0]);
   } catch (err) {
     console.error('Error en /reportes/alumnos-activos:', err);
@@ -32,7 +32,7 @@ router.get('/alumnos-inactivos', async (req, res) => {
   try {
     const [rows] = await pool.query(`
       SELECT COUNT(*) AS total 
-      FROM Alumno 
+  FROM alumno 
       WHERE estado IN ('Inactivo','Retirado')
     `);
     res.json(rows[0]);
@@ -47,7 +47,7 @@ router.get('/alumnos-por-programa', async (req, res) => {
   try {
     const [rows] = await pool.query(`
       SELECT p.id_programa, p.nombre AS programa, COUNT(DISTINCT ap.id_alumno) AS cantidad
-      FROM Programa p
+  FROM programa p
       LEFT JOIN alumno_programa ap ON p.id_programa = ap.id_programa
       GROUP BY p.id_programa, p.nombre
       ORDER BY p.nombre
@@ -69,9 +69,9 @@ router.get('/alumnos-por-programa-anio', async (req, res) => {
       SELECT p.nombre AS programa,
         SUM(CASE WHEN YEAR(a.fecha_creacion) = ? THEN 1 ELSE 0 END) AS cantidad_anio1,
         SUM(CASE WHEN YEAR(a.fecha_creacion) = ? THEN 1 ELSE 0 END) AS cantidad_anio2
-      FROM Programa p
+  FROM programa p
       LEFT JOIN alumno_programa ap ON p.id_programa = ap.id_programa
-      LEFT JOIN Alumno a ON ap.id_alumno = a.id_alumno
+  LEFT JOIN alumno a ON ap.id_alumno = a.id_alumno
       GROUP BY p.id_programa, p.nombre
       ORDER BY p.nombre
     `, [anio1, anio2]);
@@ -96,9 +96,9 @@ router.get('/alumnos-por-edad', async (req, res) => {
           ELSE '30+' 
         END AS edad,
         COUNT(DISTINCT a.id_alumno) AS cantidad
-      FROM Alumno a
+  FROM alumno a
       INNER JOIN alumno_programa ap ON a.id_alumno = ap.id_alumno
-      INNER JOIN Programa p ON ap.id_programa = p.id_programa
+  INNER JOIN programa p ON ap.id_programa = p.id_programa
     `;
     const params = [];
     if (programa) {
@@ -119,9 +119,9 @@ router.get('/alumnos-por-genero', async (req, res) => {
   try {
     let query = `
       SELECT a.genero, COUNT(DISTINCT a.id_alumno) AS cantidad
-      FROM Alumno a
+  FROM alumno a
       INNER JOIN alumno_programa ap ON a.id_alumno = ap.id_alumno
-      INNER JOIN Programa p ON ap.id_programa = p.id_programa
+  INNER JOIN programa p ON ap.id_programa = p.id_programa
     `;
     const params = [];
     if (programa) {
@@ -143,7 +143,7 @@ router.get('/alumnos-por-genero', async (req, res) => {
 // Total de instrumentos
 router.get('/instrumentos-total', async (req, res) => {
   try {
-    const [rows] = await pool.query(`SELECT COUNT(*) AS total FROM Instrumento`);
+  const [rows] = await pool.query(`SELECT COUNT(*) AS total FROM instrumento`);
     res.json(rows[0]);
   } catch (err) {
     console.error('Error en /reportes/instrumentos-total:', err);
@@ -174,8 +174,8 @@ router.get('/instrumentos-por-estado', async (req, res) => {
     const whereClause = where.length ? `WHERE ${where.join(' AND ')}` : '';
     const [rows] = await pool.query(`
       SELECT e.id_estado, COALESCE(e.nombre, 'Desconocido') AS estado, COUNT(i.id_instrumento) AS cantidad
-      FROM Instrumento i
-      LEFT JOIN Estados e ON i.id_estado = e.id_estado
+  FROM instrumento i
+  LEFT JOIN estados e ON i.id_estado = e.id_estado
       ${whereClause}
       GROUP BY e.id_estado, e.nombre
       ORDER BY estado
@@ -210,7 +210,7 @@ router.get('/instrumentos-por-categoria', async (req, res) => {
     const whereClause = where.length ? `WHERE ${where.join(' AND ')}` : '';
     const [rows] = await pool.query(`
       SELECT c.id_categoria, c.nombre AS categoria, COUNT(i.id_instrumento) AS cantidad
-      FROM Instrumento i
+  FROM instrumento i
       LEFT JOIN categoria c ON i.id_categoria = c.id_categoria
       ${whereClause}
       GROUP BY c.id_categoria, c.nombre
@@ -228,7 +228,7 @@ router.get('/instrumentos-top-asignados', async (req, res) => {
   try {
     const [rows] = await pool.query(`
       SELECT i.id_instrumento, i.nombre, COUNT(ai.id_asignacion) AS veces_asignado
-      FROM Instrumento i
+      FROM instrumento i
       LEFT JOIN asignacion_instrumento ai 
         ON i.id_instrumento = ai.id_instrumento AND ai.estado = 'Activo'
       GROUP BY i.id_instrumento, i.nombre
@@ -246,7 +246,7 @@ router.get('/instrumentos-top-asignados', async (req, res) => {
 // Total de representantes
 router.get('/representantes-total', async (req, res) => {
   try {
-    const [rows] = await pool.query(`SELECT COUNT(*) AS total FROM Representante`);
+  const [rows] = await pool.query(`SELECT COUNT(*) AS total FROM representante`);
     res.json(rows[0]);
   } catch (err) {
     console.error('Error en /reportes/representantes-total:', err);
@@ -259,8 +259,8 @@ router.get('/representantes-por-alumnos', async (req, res) => {
   try {
     const [rows] = await pool.query(`
       SELECT r.id_representante, r.nombre, COUNT(a.id_alumno) AS cantidad_alumnos
-      FROM Representante r
-      LEFT JOIN Alumno a ON r.id_representante = a.id_representante
+  FROM representante r
+  LEFT JOIN alumno a ON r.id_representante = a.id_representante
       GROUP BY r.id_representante, r.nombre
       ORDER BY cantidad_alumnos DESC
     `);
@@ -275,7 +275,7 @@ router.get('/representantes-por-alumnos', async (req, res) => {
 // Total de eventos
 router.get('/eventos-total', async (req, res) => {
   try {
-    const [rows] = await pool.query(`SELECT COUNT(*) AS total FROM Evento`);
+  const [rows] = await pool.query(`SELECT COUNT(*) AS total FROM evento`);
     res.json(rows[0]);
   } catch (err) {
     console.error('Error en /reportes/eventos-total:', err);
@@ -288,7 +288,7 @@ router.get('/eventos-por-mes', async (req, res) => {
   try {
     const [rows] = await pool.query(`
       SELECT DATE_FORMAT(fecha_evento, '%Y-%m') AS mes, COUNT(*) AS cantidad
-      FROM Evento
+  FROM evento
       GROUP BY mes
       ORDER BY mes
     `);
@@ -303,7 +303,7 @@ router.get('/eventos-por-mes', async (req, res) => {
 // Total de usuarios
 router.get('/usuarios-total', async (req, res) => {
   try {
-    const [rows] = await pool.query(`SELECT COUNT(*) AS total FROM Usuario`);
+  const [rows] = await pool.query(`SELECT COUNT(*) AS total FROM usuario`);
     res.json(rows[0]);
   } catch (err) {
     console.error('Error en /reportes/usuarios-total:', err);
@@ -315,9 +315,11 @@ router.get('/usuarios-total', async (req, res) => {
 router.get('/usuarios-por-rol', async (req, res) => {
   try {
     const [rows] = await pool.query(`
-      SELECT rol, COUNT(*) AS cantidad
-      FROM Usuario
-      GROUP BY rol
+      SELECT COALESCE(r.nombre,'(sin rol)') AS rol, COUNT(u.id_usuario) AS cantidad
+      FROM usuario u
+      LEFT JOIN rol r ON u.id_rol = r.id_rol
+      GROUP BY COALESCE(r.nombre,'(sin rol)')
+      ORDER BY cantidad DESC
     `);
     res.json(rows);
   } catch (err) {

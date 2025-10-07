@@ -24,7 +24,7 @@ router.get('/stats', async (req, res) => {
       const [rAct] = await pool.query(
         `SELECT COUNT(DISTINCT ap.id_alumno) AS total
          FROM alumno_programa ap
-         JOIN Alumno a ON ap.id_alumno = a.id_alumno
+         JOIN alumno a ON ap.id_alumno = a.id_alumno
          WHERE ap.id_programa = ? AND a.estado = 'Activo'`,
         [programa_id]
       );
@@ -33,7 +33,7 @@ router.get('/stats', async (req, res) => {
       const [rInac] = await pool.query(
         `SELECT COUNT(DISTINCT ap.id_alumno) AS total
          FROM alumno_programa ap
-         JOIN Alumno a ON ap.id_alumno = a.id_alumno
+         JOIN alumno a ON ap.id_alumno = a.id_alumno
          WHERE ap.id_programa = ? AND a.estado = 'Inactivo'`,
         [programa_id]
       );
@@ -42,22 +42,22 @@ router.get('/stats', async (req, res) => {
       const [rRet] = await pool.query(
         `SELECT COUNT(DISTINCT ap.id_alumno) AS total
          FROM alumno_programa ap
-         JOIN Alumno a ON ap.id_alumno = a.id_alumno
+         JOIN alumno a ON ap.id_alumno = a.id_alumno
          WHERE ap.id_programa = ? AND a.estado = 'Retirado'`,
         [programa_id]
       );
       alumnosRetirados = rRet[0]?.total ?? 0;
     } else {
-      const [rTotal] = await pool.query(`SELECT COUNT(*) AS total FROM Alumno`);
+  const [rTotal] = await pool.query(`SELECT COUNT(*) AS total FROM alumno`);
       totalAlumnos = rTotal[0]?.total ?? 0;
 
-      const [rAct] = await pool.query(`SELECT COUNT(*) AS total FROM Alumno WHERE estado = 'Activo'`);
+  const [rAct] = await pool.query(`SELECT COUNT(*) AS total FROM alumno WHERE estado = 'Activo'`);
       alumnosActivos = rAct[0]?.total ?? 0;
 
-      const [rInac] = await pool.query(`SELECT COUNT(*) AS total FROM Alumno WHERE estado = 'Inactivo'`);
+  const [rInac] = await pool.query(`SELECT COUNT(*) AS total FROM alumno WHERE estado = 'Inactivo'`);
       alumnosInactivos = rInac[0]?.total ?? 0;
 
-      const [rRet] = await pool.query(`SELECT COUNT(*) AS total FROM Alumno WHERE estado = 'Retirado'`);
+  const [rRet] = await pool.query(`SELECT COUNT(*) AS total FROM alumno WHERE estado = 'Retirado'`);
       alumnosRetirados = rRet[0]?.total ?? 0;
     }
 
@@ -77,8 +77,8 @@ router.get('/stats', async (req, res) => {
       nuevosHoy = r[0]?.total ?? 0;
     } else {
       const [r] = await pool.query(
-        `SELECT COUNT(DISTINCT id_alumno) AS total
-         FROM Alumno_Historial
+  `SELECT COUNT(DISTINCT id_alumno) AS total
+   FROM alumno_historial
          WHERE DATE(creado_en) = CURDATE() AND tipo = 'CREACION'`
       );
       nuevosHoy = r[0]?.total ?? 0;
@@ -87,67 +87,67 @@ router.get('/stats', async (req, res) => {
     // personal (admins)
     const [p] = await pool.query(`
       SELECT COUNT(*) AS total
-      FROM Usuario u
+      FROM usuario u
       JOIN rol r ON u.id_rol = r.id_rol
-      WHERE r.nombre = 'Admin'`
+      WHERE r.nombre = 'administrador'`
     );
     const personal = p[0]?.total ?? 0;
 
     // totalProgramas
-    const [prog] = await pool.query(`SELECT COUNT(*) AS total FROM Programa`);
+  const [prog] = await pool.query(`SELECT COUNT(*) AS total FROM programa`);
     const totalProgramas = prog[0]?.total ?? 0;
 
     // Instrumentos: totales y por estado
-    const [instTot] = await pool.query(`SELECT COUNT(*) AS total FROM Instrumento`);
+  const [instTot] = await pool.query(`SELECT COUNT(*) AS total FROM instrumento`);
     const instrumentosTotal = instTot[0]?.total ?? 0;
 
     // Disponibles, Mantenimiento, Baja por Estados
     const [instDisp] = await pool.query(`
       SELECT COUNT(*) AS total
-      FROM Instrumento i
-      LEFT JOIN Estados e ON i.id_estado = e.id_estado
+  FROM instrumento i
+  LEFT JOIN estados e ON i.id_estado = e.id_estado
       WHERE e.nombre = 'Disponible'`);
     const instrumentosDisponibles = instDisp[0]?.total ?? 0;
 
     const [instMant] = await pool.query(`
       SELECT COUNT(*) AS total
-      FROM Instrumento i
-      LEFT JOIN Estados e ON i.id_estado = e.id_estado
+  FROM instrumento i
+  LEFT JOIN estados e ON i.id_estado = e.id_estado
       WHERE e.nombre = 'Mantenimiento'`);
     const instrumentosMantenimiento = instMant[0]?.total ?? 0;
 
     const [instBaja] = await pool.query(`
       SELECT COUNT(*) AS total
-      FROM Instrumento i
-      LEFT JOIN Estados e ON i.id_estado = e.id_estado
+  FROM instrumento i
+  LEFT JOIN estados e ON i.id_estado = e.id_estado
       WHERE e.nombre = 'Baja'`);
     const instrumentosBaja = instBaja[0]?.total ?? 0;
 
     // Asignados por asignaciones activas
     const [instAsig] = await pool.query(`
       SELECT COUNT(DISTINCT id_instrumento) AS total
-      FROM Asignacion_Instrumento
+  FROM asignacion_instrumento
       WHERE estado = 'Activo'`);
     const instrumentosAsignados = instAsig[0]?.total ?? 0;
 
     // Asignaciones vencidas
     const [asigVenc] = await pool.query(`
       SELECT COUNT(*) AS total
-      FROM Asignacion_Instrumento
+  FROM asignacion_instrumento
       WHERE estado = 'Activo' AND fecha_devolucion_prevista IS NOT NULL AND fecha_devolucion_prevista < CURDATE()`);
     const asignacionesVencidas = asigVenc[0]?.total ?? 0;
 
     // Eventos de esta semana (lunes-domingo)
     const [evWeek] = await pool.query(`
       SELECT COUNT(*) AS total
-      FROM Evento
+  FROM evento
       WHERE YEARWEEK(fecha_evento, 1) = YEARWEEK(CURDATE(), 1)`);
     const eventosSemana = evWeek[0]?.total ?? 0;
 
     // Asistencia promedio últimos 30 días
     const [asis] = await pool.query(`
       SELECT AVG(asistio) AS promedio
-      FROM Alumno_Asistencia
+  FROM alumno_asistencia
       WHERE creado_en >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)`);
     const asistenciaPromedio30d = Number(asis[0]?.promedio ?? 0);
 
@@ -156,7 +156,7 @@ router.get('/stats', async (req, res) => {
     if (programa_id) {
       const [cumR] = await pool.query(
         `SELECT COUNT(*) AS total
-         FROM Alumno a
+  FROM alumno a
          JOIN alumno_programa ap ON a.id_alumno = ap.id_alumno AND ap.id_programa = ?
          WHERE (
            CASE 
@@ -172,7 +172,7 @@ router.get('/stats', async (req, res) => {
     } else {
       const [cumR] = await pool.query(
         `SELECT COUNT(*) AS total
-         FROM Alumno a
+  FROM alumno a
          WHERE (
            CASE 
              WHEN DATE_FORMAT(a.fecha_nacimiento, '%m-%d') >= DATE_FORMAT(CURDATE(), '%m-%d') THEN
@@ -216,7 +216,7 @@ router.get('/proximo-evento', async (req, res) => {
     const programa_id = req.query.programa_id || null;
       let query = `
         SELECT id_evento, titulo, descripcion, fecha_evento, hora_evento, lugar, id_programa
-        FROM Evento
+        FROM evento
         WHERE (fecha_evento > CURDATE())
           OR (fecha_evento = CURDATE() AND hora_evento >= CURTIME())
       `;
@@ -240,7 +240,7 @@ router.get('/eventos-futuros', async (req, res) => {
     const programa_id = req.query.programa_id || null;
       let query = `
         SELECT id_evento, titulo, descripcion, fecha_evento, hora_evento, lugar, id_programa
-        FROM Evento
+        FROM evento
         WHERE (fecha_evento > CURDATE())
           OR (fecha_evento = CURDATE() AND hora_evento >= CURTIME())
       `;
@@ -265,9 +265,9 @@ router.get('/eventos-mes', async (req, res) => {
     if (!year || !month) {
       return res.status(400).json({ error: 'year y month son requeridos' });
     }
-    let query = `
-    SELECT id_evento, titulo, fecha_evento, hora_evento, lugar
-    FROM Evento
+  let query = `
+  SELECT id_evento, titulo, fecha_evento, hora_evento, lugar
+  FROM evento
     WHERE YEAR(fecha_evento)=? AND MONTH(fecha_evento)=?
     `;
     const params = [year, month];
@@ -303,9 +303,9 @@ router.get('/cumpleanios-proximos', async (req, res) => {
                  ELSE
                    STR_TO_DATE(CONCAT(YEAR(CURDATE())+1, '-', DATE_FORMAT(a1.fecha_nacimiento, '%m-%d')), '%Y-%m-%d')
                END AS next_birthday
-        FROM Alumno a1
+        FROM alumno a1
       ) nb
-      JOIN Alumno a ON a.id_alumno = nb.id_alumno
+      JOIN alumno a ON a.id_alumno = nb.id_alumno
     `;
     const params = [];
     if (programa_id) {

@@ -9,7 +9,7 @@ async function fetchProgramasPorAlumnos(idsAlumnos) {
   const [rows] = await pool.query(
     `SELECT ap.id_alumno, p.id_programa, p.nombre
      FROM alumno_programa ap
-     JOIN Programa p ON ap.id_programa = p.id_programa
+     JOIN programa p ON ap.id_programa = p.id_programa
      WHERE ap.id_alumno IN (?)`,
     [idsAlumnos]
   );
@@ -39,7 +39,7 @@ async function fetchAlumnosWithPrograms({ search, estado, programa_id, ids } = {
 
   const sql = `
     SELECT DISTINCT a.*
-    FROM Alumno a
+    FROM alumno a
     ${joinProgramFilter}
     ${where.length ? "WHERE " + where.join(" AND ") : ""}
     ORDER BY a.nombre ASC
@@ -55,7 +55,7 @@ async function fetchAlumnosWithPrograms({ search, estado, programa_id, ids } = {
   const [programasRows] = await pool.query(
     `SELECT ap.id_alumno, p.id_programa, p.nombre
      FROM alumno_programa ap
-     JOIN Programa p ON ap.id_programa = p.id_programa
+     JOIN programa p ON ap.id_programa = p.id_programa
      WHERE ap.id_alumno IN (?)`,
     [idsFound]
   );

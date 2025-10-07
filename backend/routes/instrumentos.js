@@ -4,6 +4,7 @@ import pool from '../db.js';
 import { registrarHistorialInstrumento, obtenerHistorialInstrumento } from '../helpers/historial.js';
 import XLSX from 'xlsx';
 import PDFDocument from 'pdfkit';
+import { requirePermission } from '../helpers/permissions.js';
 
 const router = Router();
 
@@ -18,9 +19,9 @@ router.get('/', async (_req, res) => {
   try {
     const [rows] = await pool.query(`
       SELECT i.*, c.nombre as categoria_nombre, e.nombre as estado_nombre
-      FROM Instrumento i
-      LEFT JOIN Categoria c ON i.id_categoria = c.id_categoria
-      LEFT JOIN Estados e ON i.id_estado = e.id_estado
+      FROM instrumento i
+      LEFT JOIN categoria c ON i.id_categoria = c.id_categoria
+      LEFT JOIN estados e ON i.id_estado = e.id_estado
       ORDER BY i.nombre ASC
     `);
     res.json(rows);
@@ -36,9 +37,9 @@ router.get('/:id', async (req, res) => {
 
     const [[instrumento]] = await pool.query(
       `SELECT i.*, c.nombre as categoria_nombre, e.nombre as estado_nombre
-       FROM Instrumento i
-       LEFT JOIN Categoria c ON i.id_categoria = c.id_categoria
-       LEFT JOIN Estados e ON i.id_estado = e.id_estado
+       FROM instrumento i
+       LEFT JOIN categoria c ON i.id_categoria = c.id_categoria
+       LEFT JOIN estados e ON i.id_estado = e.id_estado
        WHERE i.id_instrumento = ?`,
       [id]
     );
@@ -47,8 +48,8 @@ router.get('/:id', async (req, res) => {
     // ¿Está asignado actualmente? Traer todos los datos relevantes del alumno
     const [asignadoRows] = await pool.query(
       `SELECT a.id_alumno, a.nombre, a.genero, a.telefono_contacto, a.estado, ai.fecha_asignacion
-       FROM Asignacion_Instrumento ai
-       JOIN Alumno a ON ai.id_alumno = a.id_alumno
+       FROM asignacion_instrumento ai
+       JOIN alumno a ON ai.id_alumno = a.id_alumno
        WHERE ai.id_instrumento = ? AND ai.estado = 'Activo'
        ORDER BY ai.fecha_asignacion DESC
        LIMIT 1`,
@@ -58,9 +59,9 @@ router.get('/:id', async (req, res) => {
     if (asignadoRows[0]) {
       // Traer programas del alumno asignado
       const [programas] = await pool.query(
-        `SELECT p.id_programa, p.nombre
+      `SELECT p.id_programa, p.nombre
          FROM alumno_programa ap
-         JOIN Programa p ON ap.id_programa = p.id_programa
+        JOIN programa p ON ap.id_programa = p.id_programa
          WHERE ap.id_alumno = ?`,
         [asignadoRows[0].id_alumno]
       );
@@ -74,7 +75,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /instrumentos
-router.post('/', async (req, res) => {
+router.post('/', requirePermission('instrumentos:write'), async (req, res) => {
   try {
     const {
       nombre,
@@ -90,7 +91,7 @@ router.post('/', async (req, res) => {
     }
 
     const [result] = await pool.query(
-      `INSERT INTO Instrumento (nombre, id_categoria, numero_serie, id_estado, fecha_adquisicion, ubicacion)
+      `INSERT INTO instrumento (nombre, id_categoria, numero_serie, id_estado, fecha_adquisicion, ubicacion)
        VALUES (?, ?, ?, ?, ?, ?)`,
       [nombre, id_categoria, numero_serie, id_estado, fecha_adquisicion, ubicacion]
     );
@@ -105,9 +106,9 @@ router.post('/', async (req, res) => {
     let categoria_nombre = null;
     let estado_nombre = null;
     try {
-      const [[cat]] = await pool.query('SELECT nombre FROM Categoria WHERE id_categoria = ?', [id_categoria]);
+      const [[cat]] = await pool.query('SELECT nombre FROM categoria WHERE id_categoria = ?', [id_categoria]);
       categoria_nombre = cat ? cat.nombre : null;
-      const [[est]] = await pool.query('SELECT nombre FROM Estados WHERE id_estado = ?', [id_estado]);
+      const [[est]] = await pool.query('SELECT nombre FROM estados WHERE id_estado = ?', [id_estado]);
       estado_nombre = est ? est.nombre : null;
     } catch {}
 
@@ -129,13 +130,13 @@ router.post('/', async (req, res) => {
 });
 
 // PUT /instrumentos/:id
-router.put('/:id', async (req, res) => {
+router.put('/:id', requirePermission('instrumentos:write'), async (req, res) => {
   try {
     const { id } = req.params;
     const { nombre, id_categoria, numero_serie, id_estado, fecha_adquisicion, ubicacion } = req.body;
 
     const [result] = await pool.query(
-      `UPDATE Instrumento
+      `UPDATE instrumento
        SET nombre=?, id_categoria=?, numero_serie=?, id_estado=?, fecha_adquisicion=?, ubicacion=?
        WHERE id_instrumento=?`,
       [nombre, id_categoria, numero_serie, id_estado, fecha_adquisicion, ubicacion, id]
@@ -156,9 +157,9 @@ router.put('/:id', async (req, res) => {
     let categoria_nombre = null;
     let estado_nombre = null;
     try {
-      const [[cat]] = await pool.query('SELECT nombre FROM Categoria WHERE id_categoria = ?', [id_categoria]);
+      const [[cat]] = await pool.query('SELECT nombre FROM categoria WHERE id_categoria = ?', [id_categoria]);
       categoria_nombre = cat ? cat.nombre : null;
-      const [[est]] = await pool.query('SELECT nombre FROM Estados WHERE id_estado = ?', [id_estado]);
+      const [[est]] = await pool.query('SELECT nombre FROM estados WHERE id_estado = ?', [id_estado]);
       estado_nombre = est ? est.nombre : null;
     } catch {}
 
@@ -180,17 +181,17 @@ router.put('/:id', async (req, res) => {
 });
 
 // DELETE /instrumentos/:id
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requirePermission('instrumentos:write'), async (req, res) => {
   const { id } = req.params;
   try {
     // 1) Borrar asignaciones del instrumento
-    await pool.query('DELETE FROM Asignacion_Instrumento WHERE id_instrumento = ?', [id]);
+  await pool.query('DELETE FROM asignacion_instrumento WHERE id_instrumento = ?', [id]);
 
     // 2) Borrar historial del instrumento (tabla correcta)
-    await pool.query('DELETE FROM Instrumento_Historial WHERE id_instrumento = ?', [id]);
+  await pool.query('DELETE FROM instrumento_historial WHERE id_instrumento = ?', [id]);
 
     // 3) Borrar instrumento
-    const [del] = await pool.query('DELETE FROM Instrumento WHERE id_instrumento = ?', [id]);
+  const [del] = await pool.query('DELETE FROM instrumento WHERE id_instrumento = ?', [id]);
     if (del.affectedRows === 0) {
       return res.status(404).json({ error: 'Instrumento no encontrado' });
     }
@@ -208,9 +209,9 @@ router.get('/:id/historial', async (req, res) => {
     const { id } = req.params;
     const [rows] = await pool.query(
       `SELECT h.id_historial, h.tipo, h.descripcion, h.usuario, h.creado_en,
-              a.nombre AS nombre_alumno
-       FROM Instrumento_Historial h
-       LEFT JOIN Alumno a ON h.id_alumno = a.id_alumno
+        a.nombre AS nombre_alumno
+       FROM instrumento_historial h
+       LEFT JOIN alumno a ON h.id_alumno = a.id_alumno
        WHERE h.id_instrumento = ?
        ORDER BY h.creado_en DESC`,
       [id]
@@ -223,13 +224,13 @@ router.get('/:id/historial', async (req, res) => {
 });
 
 // POST /instrumentos/:id/historial
-router.post('/:id/historial', async (req, res) => {
+router.post('/:id/historial', requirePermission('instrumentos:write'), async (req, res) => {
   try {
     const { id } = req.params; // id_instrumento
     const { tipo = 'OTRO', descripcion = '', usuario = 'sistema', id_alumno = null } = req.body;
 
     await pool.query(
-      `INSERT INTO Instrumento_Historial (id_instrumento, tipo, descripcion, usuario, id_alumno) 
+      `INSERT INTO instrumento_historial (id_instrumento, tipo, descripcion, usuario, id_alumno) 
        VALUES (?, ?, ?, ?, ?)`,
       [id, tipo, descripcion, usuario, id_alumno]
     );
@@ -249,9 +250,9 @@ router.post('/export-masivo', async (req, res) => {
 
     const [rows] = await pool.query(
       `SELECT i.id_instrumento, i.nombre, i.numero_serie, c.nombre AS categoria, e.nombre AS estado, i.fecha_adquisicion, i.ubicacion
-       FROM Instrumento i
-       LEFT JOIN Categoria c ON i.id_categoria = c.id_categoria
-       LEFT JOIN Estados e ON i.id_estado = e.id_estado
+       FROM instrumento i
+       LEFT JOIN categoria c ON i.id_categoria = c.id_categoria
+       LEFT JOIN estados e ON i.id_estado = e.id_estado
        WHERE i.id_instrumento IN (?)
        ORDER BY i.nombre ASC`,
       [ids]
@@ -455,9 +456,9 @@ router.post('/export', async (req, res) => {
     const params = Array.isArray(ids) && ids.length ? [ids] : [];
     const [rows] = await pool.query(
       `SELECT i.id_instrumento, i.nombre, i.numero_serie, c.nombre AS categoria, e.nombre AS estado, i.fecha_adquisicion, i.ubicacion
-       FROM Instrumento i
-       LEFT JOIN Categoria c ON i.id_categoria = c.id_categoria
-       LEFT JOIN Estados e ON i.id_estado = e.id_estado
+       FROM instrumento i
+       LEFT JOIN categoria c ON i.id_categoria = c.id_categoria
+       LEFT JOIN estados e ON i.id_estado = e.id_estado
        ${where}
        ORDER BY i.nombre ASC`,
       params
@@ -679,7 +680,7 @@ router.post('/export', async (req, res) => {
 });
 
 // PUT /instrumentos/estado-masivo  { ids: number[], id_estado?: number, estado_nombre?: string, usuario?: string }
-router.put('/estado-masivo', async (req, res) => {
+router.put('/estado-masivo', requirePermission('instrumentos:write'), async (req, res) => {
   try {
     const { ids = [], id_estado = null, estado_nombre = null, usuario = 'sistema' } = req.body;
     if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: 'ids array requerido' });
@@ -687,7 +688,7 @@ router.put('/estado-masivo', async (req, res) => {
     let targetIdEstado = id_estado;
     let targetNombre = null;
     if (!targetIdEstado && estado_nombre) {
-      const [[row]] = await pool.query('SELECT id_estado, nombre FROM Estados WHERE nombre = ? LIMIT 1', [estado_nombre]);
+  const [[row]] = await pool.query('SELECT id_estado, nombre FROM estados WHERE nombre = ? LIMIT 1', [estado_nombre]);
       if (!row) return res.status(400).json({ error: 'estado_nombre no válido' });
       targetIdEstado = row.id_estado;
       targetNombre = row.nombre;
@@ -696,11 +697,11 @@ router.put('/estado-masivo', async (req, res) => {
 
     // Obtener nombre si no lo tenemos
     if (!targetNombre) {
-      const [[row]] = await pool.query('SELECT nombre FROM Estados WHERE id_estado = ? LIMIT 1', [targetIdEstado]);
+  const [[row]] = await pool.query('SELECT nombre FROM estados WHERE id_estado = ? LIMIT 1', [targetIdEstado]);
       targetNombre = row ? row.nombre : String(targetIdEstado);
     }
 
-    await pool.query('UPDATE Instrumento SET id_estado = ? WHERE id_instrumento IN (?)', [targetIdEstado, ids]);
+  await pool.query('UPDATE instrumento SET id_estado = ? WHERE id_instrumento IN (?)', [targetIdEstado, ids]);
     for (const id of ids) {
       await registrarHistorialInstrumento(id, 'ESTADO', `Estado cambiado a ${targetNombre}`, usuario);
     }
@@ -712,14 +713,14 @@ router.put('/estado-masivo', async (req, res) => {
 });
 
 // POST /instrumentos/eliminar-masivo { ids: number[] }
-router.post('/eliminar-masivo', async (req, res) => {
+router.post('/eliminar-masivo', requirePermission('instrumentos:write'), async (req, res) => {
   try {
     const { ids = [] } = req.body;
     if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: 'ids array requerido' });
 
-    await pool.query('DELETE FROM Asignacion_Instrumento WHERE id_instrumento IN (?)', [ids]);
-    await pool.query('DELETE FROM Instrumento_Historial WHERE id_instrumento IN (?)', [ids]);
-    await pool.query('DELETE FROM Instrumento WHERE id_instrumento IN (?)', [ids]);
+  await pool.query('DELETE FROM asignacion_instrumento WHERE id_instrumento IN (?)', [ids]);
+  await pool.query('DELETE FROM instrumento_historial WHERE id_instrumento IN (?)', [ids]);
+  await pool.query('DELETE FROM instrumento WHERE id_instrumento IN (?)', [ids]);
 
     res.json({ message: 'Instrumentos eliminados correctamente' });
   } catch (err) {

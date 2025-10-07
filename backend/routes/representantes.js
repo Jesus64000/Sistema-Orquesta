@@ -3,6 +3,7 @@ import { Router } from 'express';
 import pool from '../db.js';
 import XLSX from 'xlsx';
 import PDFDocument from 'pdfkit';
+import { requirePermission } from '../helpers/permissions.js';
 
 const router = Router();
 
@@ -21,9 +22,9 @@ router.get('/', async (req, res) => {
                       r.creado_en, r.actualizado_en,
                       r.creado_por, r.actualizado_por,
                       COUNT(a.id_alumno) AS alumnos_count
-               FROM Representante r
-               LEFT JOIN Alumno a ON a.id_representante = r.id_representante
-               LEFT JOIN Parentesco p ON r.id_parentesco = p.id_parentesco
+               FROM representante r
+               LEFT JOIN alumno a ON a.id_representante = r.id_representante
+               LEFT JOIN parentesco p ON r.id_parentesco = p.id_parentesco
                WHERE 1=1`;
     const params = [];
     if (q && q.trim()) {
@@ -44,9 +45,9 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const [[row]] = await pool.query(`SELECT r.id_representante, r.nombre, r.apellido, r.ci, r.telefono, r.telefono_movil, r.email, r.id_parentesco, p.nombre AS parentesco_nombre, r.activo, r.creado_en, r.actualizado_en FROM Representante r LEFT JOIN Parentesco p ON r.id_parentesco=p.id_parentesco WHERE r.id_representante = ?`, [id]);
+  const [[row]] = await pool.query(`SELECT r.id_representante, r.nombre, r.apellido, r.ci, r.telefono, r.telefono_movil, r.email, r.id_parentesco, p.nombre AS parentesco_nombre, r.activo, r.creado_en, r.actualizado_en FROM representante r LEFT JOIN parentesco p ON r.id_parentesco=p.id_parentesco WHERE r.id_representante = ?`, [id]);
     if (!row) return res.status(404).json({ error: 'Representante no encontrado' });
-    const [alumnos] = await pool.query(`SELECT id_alumno, nombre FROM Alumno WHERE id_representante = ? ORDER BY nombre ASC`, [id]);
+  const [alumnos] = await pool.query(`SELECT id_alumno, nombre FROM alumno WHERE id_representante = ? ORDER BY nombre ASC`, [id]);
     row.alumnos = alumnos;
     res.json(row);
   } catch (err) {
@@ -56,13 +57,13 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /representantes
-router.post('/', async (req, res) => {
+router.post('/', requirePermission('representantes:write'), async (req, res) => {
   try {
     const { nombre, apellido = null, ci = null, telefono = null, telefono_movil = null, email, id_parentesco = null, activo = 1 } = req.body;
     if (!nombre || !email) {
       return res.status(400).json({ error: 'nombre y email son requeridos' });
     }
-    const [result] = await pool.query(`INSERT INTO Representante (nombre, apellido, ci, telefono, telefono_movil, email, id_parentesco, activo) VALUES (?,?,?,?,?,?,?,?)`, [nombre, apellido, ci, telefono, telefono_movil, email, id_parentesco, activo ? 1 : 0]);
+  const [result] = await pool.query(`INSERT INTO representante (nombre, apellido, ci, telefono, telefono_movil, email, id_parentesco, activo) VALUES (?,?,?,?,?,?,?,?)`, [nombre, apellido, ci, telefono, telefono_movil, email, id_parentesco, activo ? 1 : 0]);
     res.status(201).json({ id_representante: result.insertId, nombre, apellido, ci, telefono, telefono_movil, email, id_parentesco, activo: activo?1:0 });
   } catch (err) {
     console.error('Error en POST /representantes:', err);
@@ -71,11 +72,11 @@ router.post('/', async (req, res) => {
 });
 
 // PUT /representantes/:id
-router.put('/:id', async (req, res) => {
+router.put('/:id', requirePermission('representantes:write'), async (req, res) => {
   try {
     const { id } = req.params;
     const { nombre, apellido = null, ci = null, telefono = null, telefono_movil = null, email, id_parentesco = null, activo } = req.body;
-    const [result] = await pool.query(`UPDATE Representante SET 
+    const [result] = await pool.query(`UPDATE representante SET 
       nombre = COALESCE(?, nombre),
       apellido = COALESCE(?, apellido),
       ci = COALESCE(?, ci),
@@ -94,10 +95,10 @@ router.put('/:id', async (req, res) => {
 });
 
 // DELETE /representantes/:id
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requirePermission('representantes:write'), async (req, res) => {
   try {
     const { id } = req.params;
-    const [result] = await pool.query('DELETE FROM Representante WHERE id_representante = ?', [id]);
+  const [result] = await pool.query('DELETE FROM representante WHERE id_representante = ?', [id]);
     if (result.affectedRows === 0) return res.status(404).json({ error: 'Representante no encontrado' });
     res.json({ message: 'Representante eliminado correctamente' });
   } catch (err) {
@@ -116,9 +117,9 @@ router.post('/export', async (req, res) => {
                       p.nombre AS parentesco_nombre,
                       r.activo,
                       COUNT(a.id_alumno) AS alumnos_count
-               FROM Representante r
-               LEFT JOIN Alumno a ON a.id_representante = r.id_representante
-               LEFT JOIN Parentesco p ON r.id_parentesco = p.id_parentesco
+               FROM representante r
+               LEFT JOIN alumno a ON a.id_representante = r.id_representante
+               LEFT JOIN parentesco p ON r.id_parentesco = p.id_parentesco
                WHERE 1=1`;
     const params = [];
     if (Array.isArray(ids) && ids.length) { sql += ' AND r.id_representante IN (?)'; params.push(ids); }

@@ -6,6 +6,7 @@ import { registrarHistorial, registrarHistorialInstrumento } from '../helpers/hi
 import alumnosHelpers from '../helpers/alumnos.js';
 import XLSX from 'xlsx';
 import PDFDocument from 'pdfkit';
+import { requirePermission } from '../helpers/permissions.js';
 
 const { fetchProgramasPorAlumnos, fetchAlumnosWithPrograms } = alumnosHelpers;
 
@@ -61,10 +62,10 @@ router.get('/', async (req, res) => {
         r.telefono_movil AS representante_telefono_movil,
              r.email AS representante_email,
              par.nombre AS parentesco_nombre
-      FROM Alumno a
+      FROM alumno a
       LEFT JOIN alumno_representante ar ON a.id_alumno = ar.id_alumno AND ar.principal = 1
-      LEFT JOIN Representante r ON ar.id_representante = r.id_representante
-      LEFT JOIN Parentesco par ON ar.id_parentesco = par.id_parentesco
+      LEFT JOIN representante r ON ar.id_representante = r.id_representante
+      LEFT JOIN parentesco par ON ar.id_parentesco = par.id_parentesco
       ${joinProgramFilter}
       ${where.length ? "WHERE " + where.join(" AND ") : ""}
       ORDER BY a.nombre ASC
@@ -102,7 +103,7 @@ router.get('/:id', async (req, res) => {
     const [[alumnoRow]] = await pool.query(
       `SELECT a.*,
               TIMESTAMPDIFF(YEAR, a.fecha_nacimiento, CURDATE()) AS edad
-       FROM Alumno a
+       FROM alumno a
        WHERE a.id_alumno = ?`,
       [id]
     );
@@ -118,9 +119,9 @@ router.get('/:id', async (req, res) => {
              r.telefono_movil,
              r.email,
              p.nombre AS parentesco_nombre
-      FROM alumno_representante ar
-      JOIN Representante r ON ar.id_representante = r.id_representante
-      LEFT JOIN Parentesco p ON ar.id_parentesco = p.id_parentesco
+  FROM alumno_representante ar
+  JOIN representante r ON ar.id_representante = r.id_representante
+  LEFT JOIN parentesco p ON ar.id_parentesco = p.id_parentesco
       WHERE ar.id_alumno = ?
       ORDER BY ar.principal DESC, r.nombre ASC`, [id]);
 
@@ -138,7 +139,7 @@ router.get('/:id', async (req, res) => {
     const [programasRows] = await pool.query(
       `SELECT p.id_programa, p.nombre
        FROM alumno_programa ap
-       JOIN Programa p ON ap.id_programa = p.id_programa
+       JOIN programa p ON ap.id_programa = p.id_programa
        WHERE ap.id_alumno = ?`,
       [id]
     );
@@ -151,7 +152,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Crear alumno (acepta programa_ids array)
-router.post('/', async (req, res) => {
+router.post('/', requirePermission('alumnos:write'), async (req, res) => {
   try {
     const {
       nombre,
@@ -187,7 +188,7 @@ router.post('/', async (req, res) => {
     if (edad < 18 && principalCount === 0) return res.status(400).json({ error: 'Menor de edad requiere representante principal' });
 
     const [result] = await pool.query(
-      `INSERT INTO Alumno (nombre, fecha_nacimiento, genero, telefono_contacto, estado)
+      `INSERT INTO alumno (nombre, fecha_nacimiento, genero, telefono_contacto, estado)
       VALUES (?, ?, ?, ?, ?)`,
       [nombre, fecha_nacimiento, genero, telefono_contacto, estado]
     );
@@ -217,7 +218,7 @@ router.post('/', async (req, res) => {
     const [programasRows] = await pool.query(
       `SELECT p.id_programa, p.nombre
        FROM alumno_programa ap
-       JOIN Programa p ON ap.id_programa = p.id_programa
+       JOIN programa p ON ap.id_programa = p.id_programa
        WHERE ap.id_alumno = ?`,
       [id_alumno]
     );
@@ -232,7 +233,7 @@ router.post('/', async (req, res) => {
 });
 
 // Actualizar alumno (+ reemplazar programas si viene programa_ids)
-router.put('/:id', async (req, res) => {
+router.put('/:id', requirePermission('alumnos:write'), async (req, res) => {
   try {
     const { id } = req.params; // ← Línea añadida para extraer el id
     const {
@@ -269,7 +270,7 @@ router.put('/:id', async (req, res) => {
     if (edad < 18 && principalCount === 0) return res.status(400).json({ error: 'Menor de edad requiere representante principal' });
 
     await pool.query(
-      `UPDATE Alumno SET nombre=?, fecha_nacimiento=?, genero=?, telefono_contacto=?, estado=? WHERE id_alumno=?`,
+      `UPDATE alumno SET nombre=?, fecha_nacimiento=?, genero=?, telefono_contacto=?, estado=? WHERE id_alumno=?`,
       [nombre, fecha_nacimiento, genero, telefono_contacto, estado, id]
     );
 
@@ -294,11 +295,11 @@ router.put('/:id', async (req, res) => {
 
     await registrarHistorial(id, "ACTUALIZACION", `Alumno actualizado. Programas ahora: ${progIds.join(", ")}`, usuario);
 
-  const [[alumnoRow]] = await pool.query(`SELECT a.*, ar.id_representante, ar.id_parentesco FROM Alumno a LEFT JOIN alumno_representante ar ON a.id_alumno=ar.id_alumno AND ar.principal=1 WHERE a.id_alumno = ?`, [id]);
+  const [[alumnoRow]] = await pool.query(`SELECT a.*, ar.id_representante, ar.id_parentesco FROM alumno a LEFT JOIN alumno_representante ar ON a.id_alumno=ar.id_alumno AND ar.principal=1 WHERE a.id_alumno = ?`, [id]);
     const [programasRows] = await pool.query(
       `SELECT p.id_programa, p.nombre
        FROM alumno_programa ap
-       JOIN Programa p ON ap.id_programa = p.id_programa
+       JOIN programa p ON ap.id_programa = p.id_programa
        WHERE ap.id_alumno = ?`,
       [id]
     );
@@ -311,7 +312,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // PUT /alumnos/:id/desactivar
-router.put('/:id/desactivar', async (req, res) => {
+router.put('/:id/desactivar', requirePermission('alumnos:write'), async (req, res) => {
   const { id } = req.params;
   const { instrumentosDevueltos } = req.body;
 
@@ -352,7 +353,7 @@ router.put('/:id/desactivar', async (req, res) => {
 
 
 // Eliminar alumno
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requirePermission('alumnos:write'), async (req, res) => {
 const { id } = req.params;
 
   try {
@@ -378,13 +379,13 @@ const { id } = req.params;
 });
 
 // Cambio rápido de estado
-router.put('/:id/estado', async (req, res) => {
+router.put('/:id/estado', requirePermission('alumnos:write'), async (req, res) => {
   try {
     const { id } = req.params;
     const { estado, usuario = "sistema" } = req.body;
     if (!estado) return res.status(400).json({ error: "Campo 'estado' requerido" });
 
-    await pool.query(`UPDATE Alumno SET estado = ? WHERE id_alumno = ?`, [estado, id]);
+  await pool.query(`UPDATE alumno SET estado = ? WHERE id_alumno = ?`, [estado, id]);
     await registrarHistorial(id, "ESTADO", `Estado cambiado a ${estado}`, usuario);
     res.json({ message: "Estado actualizado" });
   } catch (err) {
@@ -394,13 +395,13 @@ router.put('/:id/estado', async (req, res) => {
 });
 
 // Acciones masivas: cambiar estado
-router.put('/estado-masivo', async (req, res) => {
+router.put('/estado-masivo', requirePermission('alumnos:write'), async (req, res) => {
   try {
     const { ids = [], estado, usuario = "sistema" } = req.body;
     if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: "ids array requerido" });
     if (!estado) return res.status(400).json({ error: "estado requerido" });
 
-    await pool.query(`UPDATE Alumno SET estado = ? WHERE id_alumno IN (?)`, [estado, ids]);
+  await pool.query(`UPDATE alumno SET estado = ? WHERE id_alumno IN (?)`, [estado, ids]);
     for (const id of ids) {
       await registrarHistorial(id, "ESTADO", `Estado cambiando masivo a ${estado}`, usuario);
     }
@@ -731,7 +732,7 @@ router.post('/export', async (req, res) => {
 });
 
 // Importación masiva (CSV o XLSX) - multipart/form-data field: file
-router.post('/import-masivo', upload.single('file'), async (req, res) => {
+router.post('/import-masivo', requirePermission('alumnos:write'), upload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: "Archivo requerido (field 'file')" });
 
@@ -757,7 +758,7 @@ router.post('/import-masivo', upload.single('file'), async (req, res) => {
         if (id_alumno) {
           // actualizar si existe
           await pool.query(
-            `UPDATE Alumno SET nombre=?, fecha_nacimiento=?, genero=?, telefono_contacto=?, estado=? WHERE id_alumno=?`,
+            `UPDATE alumno SET nombre=?, fecha_nacimiento=?, genero=?, telefono_contacto=?, estado=? WHERE id_alumno=?`,
             [nombre, fecha_nacimiento || null, genero, telefono_contacto, estado, id_alumno]
           );
           updated++;
@@ -767,14 +768,14 @@ router.post('/import-masivo', upload.single('file'), async (req, res) => {
             const progNombres = String(programasStr).split('|').map(s => s.trim()).filter(Boolean);
             await pool.query(`DELETE FROM alumno_programa WHERE id_alumno = ?`, [id_alumno]);
             for (const pn of progNombres.slice(0, 2)) {
-              const [[pr]] = await pool.query(`SELECT id_programa FROM Programa WHERE nombre = ? LIMIT 1`, [pn]);
+              const [[pr]] = await pool.query(`SELECT id_programa FROM programa WHERE nombre = ? LIMIT 1`, [pn]);
               if (pr) await pool.query(`INSERT INTO alumno_programa (id_alumno, id_programa) VALUES (?, ?)`, [id_alumno, pr.id_programa]);
             }
           }
         } else {
           // crear
           const [ins] = await pool.query(
-            `INSERT INTO Alumno (nombre, fecha_nacimiento, genero, telefono_contacto, estado) VALUES (?, ?, ?, ?, ?)`,
+            `INSERT INTO alumno (nombre, fecha_nacimiento, genero, telefono_contacto, estado) VALUES (?, ?, ?, ?, ?)`,
             [nombre, fecha_nacimiento || null, genero, telefono_contacto, estado]
           );
           const newId = ins.insertId;
@@ -783,7 +784,7 @@ router.post('/import-masivo', upload.single('file'), async (req, res) => {
           if (programasStr) {
             const progNombres = String(programasStr).split('|').map(s => s.trim()).filter(Boolean);
             for (const pn of progNombres.slice(0, 2)) {
-              const [[pr]] = await pool.query(`SELECT id_programa FROM Programa WHERE nombre = ? LIMIT 1`, [pn]);
+              const [[pr]] = await pool.query(`SELECT id_programa FROM programa WHERE nombre = ? LIMIT 1`, [pn]);
               if (pr) await pool.query(`INSERT INTO alumno_programa (id_alumno, id_programa) VALUES (?, ?)`, [newId, pr.id_programa]);
             }
           }
@@ -802,7 +803,7 @@ router.post('/import-masivo', upload.single('file'), async (req, res) => {
 
 // Acciones masivas: agregar o quitar programa a un conjunto de alumnos
 // body: { ids: number[], id_programa: number, action: 'add' | 'remove' }
-router.post('/programa-masivo', async (req, res) => {
+router.post('/programa-masivo', requirePermission('alumnos:write'), async (req, res) => {
   try {
     const { ids = [], id_programa, action = 'add' } = req.body;
     if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: 'ids array requerido' });
@@ -825,7 +826,7 @@ router.post('/programa-masivo', async (req, res) => {
 });
 
 // Desactivación masiva de alumnos (soft delete: estado = 'Inactivo')
-router.post('/desactivar-masivo', async (req, res) => {
+router.post('/desactivar-masivo', requirePermission('alumnos:write'), async (req, res) => {
   try {
     const { ids = [], usuario = 'sistema' } = req.body;
     if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: 'ids array requerido' });
@@ -833,7 +834,7 @@ router.post('/desactivar-masivo', async (req, res) => {
     // Validar que ningún alumno tenga instrumento activo
     const [asigs] = await pool.query(
       `SELECT DISTINCT ai.id_alumno
-       FROM Asignacion_Instrumento ai
+       FROM asignacion_instrumento ai
        WHERE ai.estado = 'Activo' AND ai.id_alumno IN (?)`,
       [ids]
     );
@@ -842,7 +843,7 @@ router.post('/desactivar-masivo', async (req, res) => {
       return res.status(400).json({ error: 'Algunos alumnos tienen instrumentos asignados activos. Deben devolverlos antes de desactivar.', bloqueados });
     }
 
-    await pool.query(`UPDATE Alumno SET estado = 'Inactivo' WHERE id_alumno IN (?)`, [ids]);
+  await pool.query(`UPDATE alumno SET estado = 'Inactivo' WHERE id_alumno IN (?)`, [ids]);
     for (const id of ids) {
       await registrarHistorial(id, 'ESTADO', 'Desactivación masiva (estado=Inactivo)', usuario);
     }
@@ -861,7 +862,7 @@ router.post('/verificar-desactivacion', async (req, res) => {
 
     const [asigs] = await pool.query(
       `SELECT DISTINCT ai.id_alumno
-       FROM Asignacion_Instrumento ai
+       FROM asignacion_instrumento ai
        WHERE ai.estado = 'Activo' AND ai.id_alumno IN (?)`,
       [ids]
     );
@@ -879,7 +880,7 @@ router.get('/:id/historial', async (req, res) => {
     const { id } = req.params;
     const [rows] = await pool.query(
       `SELECT id_historial, tipo, descripcion, usuario, creado_en
-       FROM Alumno_Historial
+       FROM alumno_historial
        WHERE id_alumno = ?
        ORDER BY creado_en DESC`,
       [id]
@@ -892,11 +893,11 @@ router.get('/:id/historial', async (req, res) => {
 });
 
 // Registrar historial (POST)
-router.post('/:id/historial', async (req, res) => {
+router.post('/:id/historial', requirePermission('alumnos:write'), async (req, res) => {
   try {
     const { id } = req.params;
     const { tipo = "OTRO", descripcion = "", usuario = "sistema" } = req.body;
-    await pool.query(`INSERT INTO Alumno_Historial (id_alumno, tipo, descripcion, usuario) VALUES (?, ?, ?, ?)`, [id, tipo, descripcion, usuario]);
+  await pool.query(`INSERT INTO alumno_historial (id_alumno, tipo, descripcion, usuario) VALUES (?, ?, ?, ?)`, [id, tipo, descripcion, usuario]);
     res.json({ message: "Historial registrado" });
   } catch (err) {
     console.error("Error en POST /alumnos/:id/historial", err);
@@ -905,11 +906,11 @@ router.post('/:id/historial', async (req, res) => {
 });
 
 // Nota interna
-router.put('/:id/nota', async (req, res) => {
+router.put('/:id/nota', requirePermission('alumnos:write'), async (req, res) => {
   try {
     const { id } = req.params;
     const { nota = "", usuario = "sistema" } = req.body;
-    await pool.query(`UPDATE Alumno SET nota = ? WHERE id_alumno = ?`, [nota, id]);
+  await pool.query(`UPDATE alumno SET nota = ? WHERE id_alumno = ?`, [nota, id]);
     await registrarHistorial(id, "NOTA", `Nota actualizada: ${nota}`, usuario);
     res.json({ message: "Nota actualizada" });
   } catch (err) {
@@ -930,10 +931,10 @@ router.get('/:id/instrumento', async (req, res) => {
       COALESCE(e.nombre, 'Desconocido') AS estado_instrumento,
       ai.fecha_asignacion,
       c.nombre AS categoria_nombre
-       FROM Asignacion_Instrumento ai
-       JOIN Instrumento i ON ai.id_instrumento = i.id_instrumento
-       LEFT JOIN Categoria c ON i.id_categoria = c.id_categoria
-       LEFT JOIN Estados e ON i.id_estado = e.id_estado
+       FROM asignacion_instrumento ai
+       JOIN instrumento i ON ai.id_instrumento = i.id_instrumento
+       LEFT JOIN categoria c ON i.id_categoria = c.id_categoria
+       LEFT JOIN estados e ON i.id_estado = e.id_estado
        WHERE ai.id_alumno = ? AND ai.estado = 'Activo'
        ORDER BY ai.fecha_asignacion DESC
        LIMIT 1`,
@@ -947,7 +948,7 @@ router.get('/:id/instrumento', async (req, res) => {
 });
 
 // Asignar instrumento a alumno
-router.post('/:id/instrumento', async (req, res) => {
+router.post('/:id/instrumento', requirePermission('alumnos:write'), async (req, res) => {
   try {
       const { id } = req.params;
       const { id_instrumento, usuario = "sistema" } = req.body;
@@ -956,8 +957,8 @@ router.post('/:id/instrumento', async (req, res) => {
       // verificar disponibilidad
       const [[inst]] = await pool.query(
         `SELECT i.*, COALESCE(e.nombre, 'Desconocido') AS estado_nombre
-         FROM Instrumento i
-         LEFT JOIN Estados e ON i.id_estado = e.id_estado
+         FROM instrumento i
+         LEFT JOIN estados e ON i.id_estado = e.id_estado
          WHERE i.id_instrumento = ?`,
         [id_instrumento]
       );
@@ -966,7 +967,7 @@ router.post('/:id/instrumento', async (req, res) => {
 
       // registrar asignación
       await pool.query(
-        `INSERT INTO Asignacion_Instrumento (id_instrumento, id_alumno, fecha_asignacion, estado)
+        `INSERT INTO asignacion_instrumento (id_instrumento, id_alumno, fecha_asignacion, estado)
         VALUES (?, ?, NOW(), 'Activo')`,
         [id_instrumento, id]
       );
@@ -981,10 +982,10 @@ router.post('/:id/instrumento', async (req, res) => {
 
       // actualizar estado instrumento -> id_estado = (estado 'Asignado')
       const [[estAsig]] = await pool.query(
-        `SELECT id_estado FROM Estados WHERE nombre = 'Asignado' LIMIT 1`
+        `SELECT id_estado FROM estados WHERE nombre = 'Asignado' LIMIT 1`
       );
       if (estAsig && estAsig.id_estado) {
-        await pool.query(`UPDATE Instrumento SET id_estado = ? WHERE id_instrumento = ?`, [estAsig.id_estado, id_instrumento]);
+        await pool.query(`UPDATE instrumento SET id_estado = ? WHERE id_instrumento = ?`, [estAsig.id_estado, id_instrumento]);
       }
 
       await registrarHistorial(id, "ASIGNACION_INSTRUMENTO", `Instrumento ${id_instrumento} asignado`, usuario);
@@ -997,14 +998,14 @@ router.post('/:id/instrumento', async (req, res) => {
 });
 
 // Devolver/quitar instrumento asignado
-router.delete('/:id/instrumento', async (req, res) => {
+router.delete('/:id/instrumento', requirePermission('alumnos:write'), async (req, res) => {
   try {
     const { id } = req.params;
     const usuario = req.body?.usuario || "sistema";
 
     // buscar asignacion activa
     const [rows] = await pool.query(
-      `SELECT * FROM Asignacion_Instrumento WHERE id_alumno = ? AND estado = 'Activo' ORDER BY fecha_asignacion DESC LIMIT 1`,
+      `SELECT * FROM asignacion_instrumento WHERE id_alumno = ? AND estado = 'Activo' ORDER BY fecha_asignacion DESC LIMIT 1`,
       [id]
     );
     const asign = rows[0];
@@ -1012,16 +1013,16 @@ router.delete('/:id/instrumento', async (req, res) => {
 
     // marcar devolucion
     await pool.query(
-      `UPDATE Asignacion_Instrumento
+      `UPDATE asignacion_instrumento
        SET fecha_devolucion_real = NOW(), estado = 'Finalizado'
        WHERE id_asignacion = ?`,
       [asign.id_asignacion]
     );
 
     // actualizar instrumento a Disponible (id_estado)
-    const [[estDisp]] = await pool.query(`SELECT id_estado FROM Estados WHERE nombre = 'Disponible' LIMIT 1`);
+    const [[estDisp]] = await pool.query(`SELECT id_estado FROM estados WHERE nombre = 'Disponible' LIMIT 1`);
     if (estDisp && estDisp.id_estado) {
-      await pool.query(`UPDATE Instrumento SET id_estado = ? WHERE id_instrumento = ?`, [estDisp.id_estado, asign.id_instrumento]);
+      await pool.query(`UPDATE instrumento SET id_estado = ? WHERE id_instrumento = ?`, [estDisp.id_estado, asign.id_instrumento]);
     }
 
     await registrarHistorial(id, "ASIGNACION_INSTRUMENTO", `Instrumento ${asign.id_instrumento} devuelto`, usuario);
@@ -1042,7 +1043,7 @@ router.delete('/:id/instrumento', async (req, res) => {
 });
 
 // DELETE /alumnos/:id/instrumento (o PUT para devolver)
-router.put('/:id/instrumento/devolver', async (req, res) => {
+router.put('/:id/instrumento/devolver', requirePermission('alumnos:write'), async (req, res) => {
   const { id } = req.params;
   const { id_instrumento } = req.body; // El instrumento que se devuelve
 
@@ -1070,10 +1071,10 @@ router.put('/:id/instrumento/devolver', async (req, res) => {
     );
 
     // 4️⃣ Actualizar estado del instrumento a "Disponible" (id_estado)
-    const [[estDisp]] = await pool.query(`SELECT id_estado FROM Estados WHERE nombre = 'Disponible' LIMIT 1`);
+    const [[estDisp]] = await pool.query(`SELECT id_estado FROM estados WHERE nombre = 'Disponible' LIMIT 1`);
     if (estDisp && estDisp.id_estado) {
       await pool.query(
-        "UPDATE Instrumento SET id_estado = ? WHERE id_instrumento = ?",
+        "UPDATE instrumento SET id_estado = ? WHERE id_instrumento = ?",
         [estDisp.id_estado, id_instrumento]
       );
     }
@@ -1088,14 +1089,14 @@ router.put('/:id/instrumento/devolver', async (req, res) => {
 // Documentos de alumno (upload)
 
 // POST /alumnos/:id/documentos (multipart/form-data) -> file + tipo
-router.post('/:id/documento', upload.single('file'), async (req, res) => {
+router.post('/:id/documento', requirePermission('alumnos:write'), upload.single('file'), async (req, res) => {
 try {
     const { id } = req.params;
     const { tipo = "otro", usuario = "sistema" } = req.body;
     if (!req.file) return res.status(400).json({ error: "Archivo requerido (field 'file')" });
 
     const archivo_url = `/uploads/alumnos/${id}/${req.file.filename}`; // ruta relativa
-    await pool.query(`INSERT INTO Alumno_Documento (id_alumno, tipo, archivo_url) VALUES (?, ?, ?)`, [id, tipo, archivo_url]);
+  await pool.query(`INSERT INTO alumno_documento (id_alumno, tipo, archivo_url) VALUES (?, ?, ?)`, [id, tipo, archivo_url]);
     await registrarHistorial(id, "DOCUMENTO", `Documento subido: ${req.file.originalname}`, usuario);
     res.json({ message: "Documento subido", archivo_url });
   } catch (err) {
@@ -1108,7 +1109,7 @@ try {
 router.get('/:id/documentos', async (req, res) => {
   try {
     const { id } = req.params;
-    const [rows] = await pool.query(`SELECT id_documento, tipo, archivo_url, creado_en FROM Alumno_Documento WHERE id_alumno = ? ORDER BY creado_en DESC`, [id]);
+  const [rows] = await pool.query(`SELECT id_documento, tipo, archivo_url, creado_en FROM alumno_documento WHERE id_alumno = ? ORDER BY creado_en DESC`, [id]);
     res.json(rows);
   } catch (err) {
     console.error("Error en GET /alumnos/:id/documentos", err);
@@ -1118,13 +1119,13 @@ router.get('/:id/documentos', async (req, res) => {
 
 // ASISTENCIA a eventos por alumno
 // POST /alumnos/:id/asistencia  { id_evento, asistio: true/false, usuario }
-router.post('/:id/asistencia', async (req, res) => {
+router.post('/:id/asistencia', requirePermission('alumnos:write'), async (req, res) => {
    try {
     const { id } = req.params;
     const { id_evento, asistio = true, usuario = "sistema" } = req.body;
     if (!id_evento) return res.status(400).json({ error: "id_evento requerido" });
 
-    await pool.query(`INSERT INTO Alumno_Asistencia (id_alumno, id_evento, asistio, usuario) VALUES (?, ?, ?, ?)`, [id, id_evento, asistio ? 1 : 0, usuario]);
+    await pool.query(`INSERT INTO alumno_asistencia (id_alumno, id_evento, asistio, usuario) VALUES (?, ?, ?, ?)`, [id, id_evento, asistio ? 1 : 0, usuario]);
     await registrarHistorial(id, "ASISTENCIA", `Registro asistencia evento ${id_evento}: ${asistio ? "Presente" : "Ausente"}`, usuario);
     res.json({ message: "Asistencia registrada" });
   } catch (err) {
@@ -1139,8 +1140,8 @@ router.get('/:id/representantes', async (req, res) => {
              r.nombre AS representante_nombre, r.telefono, r.email,
              p.nombre AS parentesco_nombre
       FROM alumno_representante ar
-      JOIN Representante r ON ar.id_representante = r.id_representante
-      LEFT JOIN Parentesco p ON ar.id_parentesco = p.id_parentesco
+      JOIN representante r ON ar.id_representante = r.id_representante
+      LEFT JOIN parentesco p ON ar.id_parentesco = p.id_parentesco
       WHERE ar.id_alumno = ?
       ORDER BY ar.principal DESC, r.nombre ASC
     `, [id]);
@@ -1152,7 +1153,7 @@ router.get('/:id/representantes', async (req, res) => {
 });
 
 // POST /alumnos/:id/representantes { id_representante, id_parentesco, principal }
-router.post('/:id/representantes', async (req, res) => {
+router.post('/:id/representantes', requirePermission('alumnos:write'), async (req, res) => {
   try {
     const { id } = req.params; // alumno
     const { id_representante, id_parentesco = null, principal = 0, usuario = 'sistema' } = req.body;
@@ -1174,8 +1175,8 @@ router.post('/:id/representantes', async (req, res) => {
                r.nombre AS representante_nombre, r.telefono, r.email,
                p.nombre AS parentesco_nombre
         FROM alumno_representante ar
-        JOIN Representante r ON ar.id_representante = r.id_representante
-        LEFT JOIN Parentesco p ON ar.id_parentesco = p.id_parentesco
+        JOIN representante r ON ar.id_representante = r.id_representante
+        LEFT JOIN parentesco p ON ar.id_parentesco = p.id_parentesco
         WHERE ar.id = ?
       `, [existe.id]);
       return res.json(row);
@@ -1189,8 +1190,8 @@ router.post('/:id/representantes', async (req, res) => {
              r.nombre AS representante_nombre, r.telefono, r.email,
              p.nombre AS parentesco_nombre
       FROM alumno_representante ar
-      JOIN Representante r ON ar.id_representante = r.id_representante
-      LEFT JOIN Parentesco p ON ar.id_parentesco = p.id_parentesco
+      JOIN representante r ON ar.id_representante = r.id_representante
+      LEFT JOIN parentesco p ON ar.id_parentesco = p.id_parentesco
       WHERE ar.id = ?
     `, [insertId]);
     res.status(201).json(row);
@@ -1201,7 +1202,7 @@ router.post('/:id/representantes', async (req, res) => {
 });
 
 // PUT /alumnos/:id/representantes/:relId  { id_parentesco?, principal? }
-router.put('/:id/representantes/:relId', async (req, res) => {
+router.put('/:id/representantes/:relId', requirePermission('alumnos:write'), async (req, res) => {
   try {
     const { id, relId } = req.params; // alumno id y relación pivot id
     const { id_parentesco = null, principal = null, usuario = 'sistema' } = req.body;
@@ -1221,8 +1222,8 @@ router.put('/:id/representantes/:relId', async (req, res) => {
              r.nombre AS representante_nombre, r.telefono, r.email,
              p.nombre AS parentesco_nombre
       FROM alumno_representante ar
-      JOIN Representante r ON ar.id_representante = r.id_representante
-      LEFT JOIN Parentesco p ON ar.id_parentesco = p.id_parentesco
+      JOIN representante r ON ar.id_representante = r.id_representante
+      LEFT JOIN parentesco p ON ar.id_parentesco = p.id_parentesco
       WHERE ar.id = ?
     `, [relId]);
     res.json(row);
@@ -1233,7 +1234,7 @@ router.put('/:id/representantes/:relId', async (req, res) => {
 });
 
 // DELETE /alumnos/:id/representantes/:relId  -> elimina vínculo
-router.delete('/:id/representantes/:relId', async (req, res) => {
+router.delete('/:id/representantes/:relId', requirePermission('alumnos:write'), async (req, res) => {
   try {
     const { id, relId } = req.params;
     const { usuario = 'sistema' } = req.body || {};
@@ -1254,8 +1255,8 @@ router.delete('/:id/representantes/:relId', async (req, res) => {
 
 router.get('/:id/asistencias', async (req, res) => {
   try {
-    const { id } = req.params;
-    const [rows] = await pool.query(`SELECT id_asistencia, id_evento, asistio, usuario, creado_en FROM Alumno_Asistencia WHERE id_alumno = ? ORDER BY creado_en DESC`, [id]);
+  const { id } = req.params;
+  const [rows] = await pool.query(`SELECT id_asistencia, id_evento, asistio, usuario, creado_en FROM alumno_asistencia WHERE id_alumno = ? ORDER BY creado_en DESC`, [id]);
     res.json(rows);
   } catch (err) {
     console.error("Error en GET /alumnos/:id/asistencias", err);

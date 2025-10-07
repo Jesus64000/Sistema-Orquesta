@@ -1,13 +1,14 @@
 // backend/routes/administracion/programas.js
 import { Router } from 'express';
 import pool from '../../db.js';
+import { requirePermission } from '../../helpers/permissions.js';
 
 const router = Router();
 
 // GET /administracion/programas
 router.get('/', async (_req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM Programa ORDER BY nombre ASC');
+  const [rows] = await pool.query('SELECT * FROM programa ORDER BY nombre ASC');
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -15,13 +16,13 @@ router.get('/', async (_req, res) => {
 });
 
 // POST /administracion/programas
-router.post('/', async (req, res) => {
+router.post('/', requirePermission('programas:write'), async (req, res) => {
   try {
     const { nombre, descripcion = null } = req.body;
     if (!nombre) return res.status(400).json({ error: 'nombre es requerido' });
 
     const [result] = await pool.query(
-      'INSERT INTO Programa (nombre, descripcion) VALUES (?, ?)',
+      'INSERT INTO programa (nombre, descripcion) VALUES (?, ?)',
       [nombre, descripcion]
     );
     res.status(201).json({ id_programa: result.insertId, nombre, descripcion });
@@ -31,13 +32,13 @@ router.post('/', async (req, res) => {
 });
 
 // PUT /administracion/programas/:id
-router.put('/:id', async (req, res) => {
+router.put('/:id', requirePermission('programas:write'), async (req, res) => {
   try {
     const { id } = req.params;
     const { nombre, descripcion = null } = req.body;
 
     const [result] = await pool.query(
-      'UPDATE Programa SET nombre = ?, descripcion = ? WHERE id_programa = ?',
+      'UPDATE programa SET nombre = ?, descripcion = ? WHERE id_programa = ?',
       [nombre, descripcion, id]
     );
     if (result.affectedRows === 0) {
@@ -50,10 +51,10 @@ router.put('/:id', async (req, res) => {
 });
 
 // DELETE /administracion/programas/:id
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requirePermission('programas:write'), async (req, res) => {
   try {
     const { id } = req.params;
-    const [result] = await pool.query('DELETE FROM Programa WHERE id_programa = ?', [id]);
+  const [result] = await pool.query('DELETE FROM programa WHERE id_programa = ?', [id]);
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Programa no encontrado' });
     }

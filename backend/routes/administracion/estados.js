@@ -1,6 +1,7 @@
 import express from 'express';
 const router = express.Router();
 import db from '../../db.js';
+import { requirePermission } from '../../helpers/permissions.js';
 
 // Listar estados
 router.get('/', async (req, res) => {
@@ -13,7 +14,7 @@ router.get('/', async (req, res) => {
 });
 
 // Crear estado
-router.post('/', async (req, res) => {
+router.post('/', requirePermission('instrumentos:write'), async (req, res) => {
   const { nombre } = req.body;
   try {
     await db.query('INSERT INTO estados (nombre) VALUES (?)', [nombre]);
@@ -24,7 +25,7 @@ router.post('/', async (req, res) => {
 });
 
 // Editar estado
-router.put('/:id', async (req, res) => {
+router.put('/:id', requirePermission('instrumentos:write'), async (req, res) => {
   const { nombre } = req.body;
   try {
     await db.query('UPDATE estados SET nombre=? WHERE id_estado=?', [nombre, req.params.id]);
@@ -35,7 +36,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Eliminar estado
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requirePermission('instrumentos:write'), async (req, res) => {
   try {
     await db.query('DELETE FROM estados WHERE id_estado=?', [req.params.id]);
     res.json({ success: true });

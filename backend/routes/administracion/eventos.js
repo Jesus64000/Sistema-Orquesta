@@ -1,11 +1,12 @@
 import express from 'express';
 const router = express.Router();
 import db from '../../db.js';
+import { requirePermission } from '../../helpers/permissions.js';
 
 // Listar eventos
 router.get('/', async (req, res) => {
   try {
-    const [rows] = await db.query('SELECT * FROM eventos');
+  const [rows] = await db.query('SELECT * FROM evento');
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: 'Error al obtener eventos' });
@@ -13,10 +14,10 @@ router.get('/', async (req, res) => {
 });
 
 // Crear evento
-router.post('/', async (req, res) => {
+router.post('/', requirePermission('eventos:write'), async (req, res) => {
   const { nombre, fecha, programa, instrumento } = req.body;
   try {
-    await db.query('INSERT INTO eventos (nombre, fecha, programa, instrumento) VALUES (?, ?, ?, ?)', [nombre, fecha, programa, instrumento]);
+  await db.query('INSERT INTO evento (titulo, fecha_evento, id_programa, lugar) VALUES (?, ?, ?, ?)', [nombre, fecha, programa, instrumento]);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Error al crear evento' });
@@ -24,10 +25,10 @@ router.post('/', async (req, res) => {
 });
 
 // Editar evento
-router.put('/:id', async (req, res) => {
+router.put('/:id', requirePermission('eventos:write'), async (req, res) => {
   const { nombre, fecha, programa, instrumento } = req.body;
   try {
-    await db.query('UPDATE eventos SET nombre=?, fecha=?, programa=?, instrumento=? WHERE id_evento=?', [nombre, fecha, programa, instrumento, req.params.id]);
+  await db.query('UPDATE evento SET titulo=?, fecha_evento=?, id_programa=?, lugar=? WHERE id_evento=?', [nombre, fecha, programa, instrumento, req.params.id]);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Error al editar evento' });
@@ -35,9 +36,9 @@ router.put('/:id', async (req, res) => {
 });
 
 // Eliminar evento
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requirePermission('eventos:write'), async (req, res) => {
   try {
-    await db.query('DELETE FROM eventos WHERE id_evento=?', [req.params.id]);
+  await db.query('DELETE FROM evento WHERE id_evento=?', [req.params.id]);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Error al eliminar evento' });

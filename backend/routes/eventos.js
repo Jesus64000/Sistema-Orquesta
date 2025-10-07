@@ -3,6 +3,7 @@ import { Router } from 'express';
 import pool from '../db.js';
 import XLSX from 'xlsx';
 import PDFDocument from 'pdfkit';
+import { requirePermission } from '../helpers/permissions.js';
 
 // Helper para calcular diffs (también exportado para tests)
 export function computeEventoDiffs(before, after) {
@@ -25,7 +26,7 @@ const router = Router();
 // Auto-finaliza eventos cuya fecha ya pasó (sin cambiar los CANCELADO)
 async function autoFinalizePastEvents() {
   try {
-    await pool.query(`UPDATE Evento SET estado='FINALIZADO' WHERE fecha_evento < CURDATE() AND estado NOT IN ('FINALIZADO','CANCELADO')`);
+  await pool.query(`UPDATE evento SET estado='FINALIZADO' WHERE fecha_evento < CURDATE() AND estado NOT IN ('FINALIZADO','CANCELADO')`);
   } catch(err) {
     console.warn('autoFinalizePastEvents error:', err.message);
   }
@@ -38,7 +39,7 @@ export const EVENTO_ESTADOS = ['PROGRAMADO','EN_CURSO','FINALIZADO','CANCELADO']
 // ALTER TABLE evento ADD COLUMN estado ENUM('PROGRAMADO','EN_CURSO','FINALIZADO','CANCELADO') NOT NULL DEFAULT 'PROGRAMADO' AFTER id_programa;
 
 // POST /eventos
-router.post('/', async (req, res) => {
+router.post('/', requirePermission('eventos:write'), async (req, res) => {
   try {
     const { titulo, descripcion, fecha_evento, hora_evento, lugar, id_programa = null, estado = 'PROGRAMADO' } = req.body;
 
@@ -60,7 +61,7 @@ router.post('/', async (req, res) => {
     }
 
     const [result] = await pool.query(
-      'INSERT INTO Evento (titulo, descripcion, fecha_evento, hora_evento, lugar, id_programa, estado) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO evento (titulo, descripcion, fecha_evento, hora_evento, lugar, id_programa, estado) VALUES (?, ?, ?, ?, ?, ?, ?)',
       [titulo, descripcion, fecha_evento, hora_evento, lugar, id_programa, estadoUpper]
     );
 
@@ -93,7 +94,7 @@ router.post('/', async (req, res) => {
 //   creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 //   FOREIGN KEY (id_evento) REFERENCES Evento(id_evento) ON DELETE CASCADE
 // );
-router.put('/:id', async (req, res) => {
+router.put('/:id', requirePermission('eventos:write'), async (req, res) => {
   const connLabel = 'PUT /eventos/:id';
   try {
     const { id } = req.params;
@@ -119,7 +120,7 @@ router.put('/:id', async (req, res) => {
 
     // Obtener registro existente para calcular diffs
     const [existingRows] = await pool.query(
-      'SELECT titulo, descripcion, fecha_evento, hora_evento, lugar, id_programa, estado FROM Evento WHERE id_evento=?',
+      'SELECT titulo, descripcion, fecha_evento, hora_evento, lugar, id_programa, estado FROM evento WHERE id_evento=?',
       [id]
     );
     if (existingRows.length === 0) {
@@ -135,7 +136,7 @@ router.put('/:id', async (req, res) => {
     }
 
     const [result] = await pool.query(
-      'UPDATE Evento SET titulo=?, descripcion=?, fecha_evento=?, hora_evento=?, lugar=?, id_programa=?, estado=COALESCE(?, estado) WHERE id_evento=?',
+      'UPDATE evento SET titulo=?, descripcion=?, fecha_evento=?, hora_evento=?, lugar=?, id_programa=?, estado=COALESCE(?, estado) WHERE id_evento=?',
       [titulo, descripcion, fecha_evento, hora_evento, lugar, id_programa, estadoUpper, id]
     );
 
@@ -180,10 +181,10 @@ router.put('/:id', async (req, res) => {
 
 
 // DELETE /eventos/:id
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requirePermission('eventos:write'), async (req, res) => {
   try {
     const { id } = req.params;
-    const [result] = await pool.query('DELETE FROM Evento WHERE id_evento=?', [id]);
+  const [result] = await pool.query('DELETE FROM evento WHERE id_evento=?', [id]);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Evento no encontrado' });
@@ -210,7 +211,7 @@ router.get('/futuros', async (req, res) => {
         lugar, 
         id_programa,
         estado
-      FROM Evento
+  FROM evento
       WHERE fecha_evento >= CURDATE()
     `;
 
@@ -245,7 +246,7 @@ router.get('/pasados', async (req, res) => {
         lugar, 
         id_programa,
         estado
-      FROM Evento
+  FROM evento
       WHERE fecha_evento < CURDATE()
     `;
     const params = [];
@@ -278,7 +279,7 @@ router.get('/futuros2', async (_req, res) => {
         lugar, 
         id_programa,
         estado
-      FROM Evento
+  FROM evento
       WHERE fecha_evento >= CURDATE()
       ORDER BY fecha_evento ASC`
     );
@@ -307,7 +308,7 @@ router.get('/suggest', async (req, res) => {
         DATE_FORMAT(hora_evento, '%H:%i') AS hora_evento,
         lugar,
         estado
-      FROM Evento
+  FROM evento
       WHERE (titulo LIKE ? OR lugar LIKE ? OR descripcion LIKE ?)
       ORDER BY fecha_evento ASC, hora_evento ASC
       LIMIT ?`,
@@ -360,7 +361,7 @@ router.get('/:id', async (req, res) => {
         id_programa, 
         creado_en,
         estado
-      FROM Evento 
+  FROM evento 
       WHERE id_evento = ?`,
       [id]
     );
@@ -393,7 +394,7 @@ router.get('/', async (req, res) => {
         id_programa, 
         creado_en,
         estado
-      FROM Evento
+  FROM evento
       WHERE 1=1
     `;
 
@@ -441,7 +442,7 @@ router.post('/export', async (req, res) => {
         id_programa,
         creado_en,
         estado
-      FROM Evento
+  FROM evento
       WHERE 1=1`;
     const params = [];
 
