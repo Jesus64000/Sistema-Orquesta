@@ -1,0 +1,24 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "API del sistema orquesta",
+  "main": "index.js",
+  "scripts": {
+  "test": "node --test \"tests/**/*.test.js\"",
+  "test:watch": "node --test --watch \"tests/**/*.test.js\"",
+    "start": "node index.js"
+  },
+  "keywords": ["orquesta","eventos","api"],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "csv-writer": "^1.6.0",
+    "express": "^5.1.0",
+    "multer": "^2.0.2",
+    "mysql2": "^3.14.4",
+    "xlsx": "^0.18.5",
+    "pdfkit": "^0.15.1"
+  }
+}

@@ -1,0 +1,22 @@
+# General
+node_modules/
+.env
+.env.*
+*.log
+logs/
+.vscode/
+.DS_Store
+Thumbs.db
+coverage/
+dist/
+build/
+.tmp/
+*.local
+
+# Backend
+backend/uploads/
+backend/*.sqlite
+
+# Frontend
+sistema-orquesta/.vite/
+sistema-orquesta/dist/
