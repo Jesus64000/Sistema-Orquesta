@@ -1,5 +1,7 @@
 // sistema-orquesta/src/pages/Alumnos.jsx
-import { useEffect, useMemo, useState, useDeferredValue, useRef } from "react";
+import { useEffect, useMemo, useState, useDeferredValue, useRef, useCallback } from "react";
+import { useAuth } from "../context/AuthContext";
+import { http } from "../api/http";
 import toast from "react-hot-toast";
 
 import {
@@ -29,6 +31,12 @@ import AlumnosBulkActionsModal from "../components/Alumnos/AlumnosBulkActionsMod
 
 
 export default function Alumnos() {
+  const { tienePermiso, token, initializing } = useAuth();
+  const canCreate = tienePermiso('alumnos','create');
+  const canUpdate = tienePermiso('alumnos','update');
+  const canDelete = tienePermiso('alumnos','delete');
+  const canExport = tienePermiso('alumnos','export');
+  // Programas son visibles para todo usuario autenticado (lectura libre)
   // Data
   const [alumnos, setAlumnos] = useState([]);
   const [programas, setProgramas] = useState([]);
@@ -72,12 +80,15 @@ export default function Alumnos() {
   const [updatingId, setUpdatingId] = useState(null); // id del alumno mientras se persiste cambio de estado
 
   // Load data
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [resP, resA] = await Promise.all([getProgramas(), getAlumnos()]);
-      setProgramas(resP.data || []);
-      setAlumnos(resA.data || []);
+  const promises = [token ? getProgramas() : Promise.resolve({ data: [] }), getAlumnos()];
+      const responses = await Promise.all(promises);
+      // Si puede leer programas, responses[0] es programas
+      const [resP, resA] = responses;
+      if (!resP?.data?._denied) setProgramas(resP?.data || []);
+      if (!resA?.data?._denied) setAlumnos(resA?.data || []);
       setLoadError(false);
     } catch (e) {
       toast.error("Error cargando alumnos");
@@ -86,8 +97,9 @@ export default function Alumnos() {
     } finally {
       setLoading(false);
     }
-  };
-  useEffect(() => { loadData(); }, []);
+  }, [token]);
+  // Cargar una vez al montar
+  useEffect(() => { if (!initializing) loadData(); }, [token, initializing, loadData]);
 
   // Filtros + orden + paginación
   // Debounce simple de búsqueda usando deferred value (React 18+)
@@ -275,9 +287,9 @@ export default function Alumnos() {
       {/* Encabezado */}
       <AlumnosHeader
         selected={selected}
-        onExport={bulkExport}
-        onCreate={openCreate}
-        onOpenActions={() => setActionsOpen(true)}
+        onExport={canExport && selected.length>0 ? bulkExport : undefined}
+        onCreate={canCreate ? openCreate : undefined}
+        onOpenActions={canUpdate || canDelete ? () => setActionsOpen(true) : undefined}
       />
 
       {/* Filtros */}
@@ -361,8 +373,8 @@ export default function Alumnos() {
           sortBy={sortBy}
           sortDir={sortDir}
           toggleSort={toggleSort}
-          openEdit={openEdit}
-          handleEstadoClick={handleEstadoClick}
+          openEdit={canUpdate ? openEdit : () => {}}
+          handleEstadoClick={canUpdate ? handleEstadoClick : () => {}}
           checkingId={checkingId}
           updatingId={updatingId}
           openDetail={openDetail}
@@ -432,13 +444,7 @@ export default function Alumnos() {
             let toastId;
             try { toastId = toast.loading("Guardando cambio..."); } catch { /* noop */ }
 
-            const res = await fetch(`http://localhost:4000/alumnos/${alumnoId}/estado`, {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ estado: nuevoEstado }),
-            });
-
-            if (!res.ok) throw new Error("Error actualizando estado");
+            await http.put(`/alumnos/${alumnoId}/estado`, { estado: nuevoEstado });
 
             toast.success(`Alumno ${selectedAlumno.nombre} ${nuevoEstado === "Activo" ? "activado" : "desactivado"} correctamente`, { id: toastId });
           } catch (e) {

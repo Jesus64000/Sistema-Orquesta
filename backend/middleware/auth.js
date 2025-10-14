@@ -27,18 +27,27 @@ export async function authOptional(req, res, next) {
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     // Cargar usuario + rol
-    const [[userRow]] = await db.query(`SELECT u.id_usuario, u.nombre, u.email, u.id_rol, u.permisos_extra, u.permisos_denegados, r.nombre AS rol_nombre, r.permisos AS rol_permisos
-      FROM Usuario u
-      LEFT JOIN Rol r ON u.id_rol = r.id_rol
+    const [[userRow]] = await db.query(`SELECT u.id_usuario, u.nombre, u.email, u.id_rol, u.nivel_acceso, r.nombre AS rol_nombre, r.permisos AS rol_permisos
+      FROM usuario u
+      LEFT JOIN rol r ON u.id_rol = r.id_rol
       WHERE u.id_usuario = ?`, [decoded.sub]);
     if (!userRow) return res.status(401).json({ error: { code: 'USER_NOT_FOUND', message: 'Usuario no encontrado' } });
 
     let rolPerms = {};
     try { rolPerms = JSON.parse(userRow.rol_permisos || '{}'); } catch {}
-    let extras = {};
-    try { extras = JSON.parse(userRow.permisos_extra || '{}'); } catch {}
+  let extras = {};
 
     const effectivePerms = mergeRoleAndUserExtras(rolPerms, extras);
+    // Nivel de acceso (0=admin total, 1=puede ver Administración si tiene permisos, 2=sin Administración)
+    const nivelAcceso = (userRow.nivel_acceso !== undefined && userRow.nivel_acceso !== null)
+      ? userRow.nivel_acceso
+      : (typeof rolPerms?.$nivel === 'number'
+        ? rolPerms.$nivel
+        : ((userRow.rol_nombre || '').toLowerCase().includes('admin') ? 0 : 2));
+    // Limpiar metadatos del objeto de permisos efectivo si se coló
+    if (effectivePerms && typeof effectivePerms === 'object') {
+      delete effectivePerms['$nivel'];
+    }
     req.user = {
       id_usuario: userRow.id_usuario,
       nombre: userRow.nombre,
@@ -46,7 +55,10 @@ export async function authOptional(req, res, next) {
       rol: { id_rol: userRow.id_rol, nombre: userRow.rol_nombre, permisos: rolPerms },
       permisos_extra: extras,
       permisos_denegados: userRow.permisos_denegados ? JSON.parse(userRow.permisos_denegados) : {},
-      effectivePerms
+      effectivePerms,
+      nivel_acceso: nivelAcceso,
+      // Exponer permisos para middlewares de autorización (acepta objeto)
+      permisos: effectivePerms
     };
     next();
   } catch (e) {

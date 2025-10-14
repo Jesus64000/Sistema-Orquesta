@@ -1,18 +1,16 @@
 // sistema-orquesta/src/api/configuraciones.js
 // Aquí centralizamos configuraciones del sistema, roles y usuarios
 
-import axios from "axios";
-
-const API = "http://localhost:4000";
+import { http } from './http';
 
 // Obtener usuarios
-export const getUsuarios = () => axios.get(`${API}/usuarios`);
+export const getUsuarios = () => http.get(`/usuarios`);
 
 // Crear usuario
-export const createUsuario = (data) => axios.post(`${API}/usuarios`, data);
+export const createUsuario = (data) => http.post(`/usuarios`, data);
 
 // Editar usuario
-export const updateUsuario = (id, data) => axios.put(`${API}/usuarios/${id}`, data);
+export const updateUsuario = (id, data) => http.put(`/usuarios/${id}`, data);
 
 // Eliminar usuario
-export const deleteUsuario = (id) => axios.delete(`${API}/usuarios/${id}`);
+export const deleteUsuario = (id) => http.delete(`/usuarios/${id}`);

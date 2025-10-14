@@ -1,11 +1,12 @@
 // backend/routes/dashboard.js
 import { Router } from 'express';
 import pool from '../db.js';
+import { requirePermission } from '../helpers/permissions.js';
 
 const router = Router();
 
 // Obtener estadísticas
-router.get('/stats', async (req, res) => {
+router.get('/stats', requirePermission('dashboard:read'), async (req, res) => {
   try {
     const programa_id = req.query.programa_id || null;
 
@@ -211,7 +212,7 @@ router.get('/stats', async (req, res) => {
 });
 
 // Obtener próximo evento
-router.get('/proximo-evento', async (req, res) => {
+router.get('/proximo-evento', requirePermission('dashboard:read'), async (req, res) => {
   try {
     const programa_id = req.query.programa_id || null;
       let query = `
@@ -235,7 +236,7 @@ router.get('/proximo-evento', async (req, res) => {
 });
 
 // Obtener eventos futuros
-router.get('/eventos-futuros', async (req, res) => {
+router.get('/eventos-futuros', requirePermission('dashboard:read'), async (req, res) => {
   try {
     const programa_id = req.query.programa_id || null;
       let query = `
@@ -259,7 +260,7 @@ router.get('/eventos-futuros', async (req, res) => {
 });
 
 // Obtener eventos del mes
-router.get('/eventos-mes', async (req, res) => {
+router.get('/eventos-mes', requirePermission('dashboard:read'), async (req, res) => {
   try {
     const { year, month, programa_id } = req.query;
     if (!year || !month) {
@@ -285,7 +286,7 @@ router.get('/eventos-mes', async (req, res) => {
 });
 
 // Lista de próximos cumpleaños
-router.get('/cumpleanios-proximos', async (req, res) => {
+router.get('/cumpleanios-proximos', requirePermission('dashboard:read'), async (req, res) => {
   try {
     const days = Math.max(1, Math.min(365, Number(req.query.days) || 30));
     const programa_id = req.query.programa_id || null;

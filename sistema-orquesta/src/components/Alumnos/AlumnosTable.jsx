@@ -31,7 +31,12 @@ const EstadoPill = ({ estado, loading = false }) => {
 
 // Cabecera simple
 const HeadTH = ({ children, className = "" }) => (
-  <th scope="col" className={`px-3 py-2 font-semibold ${className}`}>{children}</th>
+  <th
+    scope="col"
+    className={`px-3 py-2 font-semibold ${className}`}
+  >
+    {children}
+  </th>
 );
 
 // Cabecera ordenable accesible
@@ -41,7 +46,7 @@ const SortableTH = ({ label, col, sortBy, sortDir, onToggle }) => {
     <th
       scope="col"
       aria-sort={ariaSort}
-      className="px-3 py-2 font-semibold cursor-pointer select-none group"
+      className="px-3 py-2 font-semibold cursor-pointer select-none group text-gray-700"
       onClick={() => onToggle(col)}
       role="columnheader"
     >
@@ -58,7 +63,7 @@ const AlumnoRow = memo(function AlumnoRow({ a, isSelected, toggleSelect, openDet
   return (
     <tr
       role="row"
-      className={`transition cursor-default ${isSelected ? "bg-yellow-50" : "hover:bg-gray-50"}`}
+      className={`transition cursor-default ${isSelected ? "bg-yellow-50" : "hover:bg-gray-50"} border-b border-gray-100 last:border-b-0`}
       aria-busy={isUpdating ? "true" : undefined}
     >
       <td className="px-3 py-2 align-middle" role="cell">
@@ -103,16 +108,20 @@ const AlumnoRow = memo(function AlumnoRow({ a, isSelected, toggleSelect, openDet
         )}
       </td>
       <td className="px-3 py-2" role="cell">
-        <button
-          type="button"
-          onClick={() => handleEstadoClick(a)}
-          disabled={checkingId === a.id_alumno || isUpdating}
-          className={`focus:outline-none focus:ring-2 focus:ring-offset-1 rounded-full ${checkingId === a.id_alumno || isUpdating ? "opacity-60 cursor-wait" : ""}`}
-          title="Cambiar estado"
-          aria-label={`Cambiar estado de ${a.nombre}`}
-        >
-          <EstadoPill estado={a.estado} loading={isUpdating} />
-        </button>
+        {handleEstadoClick ? (
+          <button
+            type="button"
+            onClick={() => handleEstadoClick(a)}
+            disabled={checkingId === a.id_alumno || isUpdating}
+            className={`focus:outline-none focus:ring-2 focus:ring-offset-1 rounded-full ${checkingId === a.id_alumno || isUpdating ? "opacity-60 cursor-wait" : ""}`}
+            title="Cambiar estado"
+            aria-label={`Cambiar estado de ${a.nombre}`}
+          >
+            <EstadoPill estado={a.estado} loading={isUpdating} />
+          </button>
+        ) : (
+          <EstadoPill estado={a.estado} />
+        )}
       </td>
       <td className="px-3 py-2" role="cell">
         <div className="flex flex-wrap gap-1.5">
@@ -126,28 +135,32 @@ const AlumnoRow = memo(function AlumnoRow({ a, isSelected, toggleSelect, openDet
       </td>
       <td className="px-3 py-2" role="cell">
         <div className="flex items-center gap-1.5">
-          <button
-            onClick={() => openEdit(a)}
-            disabled={isUpdating}
-            className={`p-1.5 rounded-lg border bg-blue-50 text-blue-600 hover:bg-blue-100 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1 ${isUpdating ? "opacity-50 cursor-not-allowed" : ""}`}
-            title="Editar"
-            aria-label={`Editar ${a.nombre}`}
-          >
-            <Edit className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => handleEstadoClick(a)}
-            disabled={checkingId === a.id_alumno || isUpdating}
-            className={`px-2 h-8 inline-flex items-center rounded-full text-[11px] font-medium border transition ${
-              a.estado === "Activo"
-                ? "bg-gradient-to-b from-red-50 to-red-100 text-red-700 border-red-200 hover:from-red-100 hover:to-red-200"
-                : "bg-gradient-to-b from-emerald-50 to-emerald-100 text-emerald-700 border-emerald-200 hover:from-emerald-100 hover:to-emerald-200"
-            } ${(checkingId === a.id_alumno || isUpdating) ? "opacity-60 cursor-wait" : ""}`}
-            title={a.estado === "Activo" ? "Desactivar" : "Activar"}
-            aria-label={`${a.estado === "Activo" ? "Desactivar" : "Activar"} ${a.nombre}`}
-          >
-            {(checkingId === a.id_alumno || isUpdating) ? "..." : a.estado === "Activo" ? "Desactivar" : "Activar"}
-          </button>
+          {openEdit && (
+            <button
+              onClick={() => openEdit(a)}
+              disabled={isUpdating}
+              className={`p-1.5 rounded-lg border bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:ring-offset-1 ${isUpdating ? "opacity-50 cursor-not-allowed" : ""}`}
+              title="Editar"
+              aria-label={`Editar ${a.nombre}`}
+            >
+              <Edit className="h-4 w-4" />
+            </button>
+          )}
+          {handleEstadoClick && (
+            <button
+              onClick={() => handleEstadoClick(a)}
+              disabled={checkingId === a.id_alumno || isUpdating}
+              className={`px-2 h-8 inline-flex items-center rounded-full text-[11px] font-medium border transition ${
+                a.estado === "Activo"
+                  ? "bg-gradient-to-b from-red-50 to-red-100 text-red-700 border-red-200 hover:from-red-100 hover:to-red-200"
+                  : "bg-gradient-to-b from-emerald-50 to-emerald-100 text-emerald-700 border-emerald-200 hover:from-emerald-100 hover:to-emerald-200"
+              } ${(checkingId === a.id_alumno || isUpdating) ? "opacity-60 cursor-wait" : ""}`}
+              title={a.estado === "Activo" ? "Desactivar" : "Activar"}
+              aria-label={`${a.estado === "Activo" ? "Desactivar" : "Activar"} ${a.nombre}`}
+            >
+              {(checkingId === a.id_alumno || isUpdating) ? "..." : a.estado === "Activo" ? "Desactivar" : "Activar"}
+            </button>
+          )}
           <button
             onClick={() => openDetail(a)}
             disabled={isUpdating}
@@ -218,11 +231,11 @@ export default function AlumnosTable({
   const isIndeterminate = selectedInFiltered > 0 && selectedInFiltered < totalFiltered;
 
   return (
-    <div className="overflow-x-auto bg-white border rounded-2xl shadow-sm" role="region" aria-label="Tabla de alumnos">
+    <div className="overflow-x-auto bg-white border border-gray-200 rounded-2xl shadow-sm" role="region" aria-label="Tabla de alumnos">
       {/* Región aria-live para cambios de estado */}
       <div ref={estadoLiveRef} aria-live="polite" aria-atomic="true" className="sr-only" />
       <table className="w-full text-[13px] text-left border-collapse" role="table">
-        <thead className="bg-gradient-to-b from-gray-50 to-gray-100 text-gray-600 text-[11px] uppercase tracking-wide sticky top-0 z-10 shadow-sm" role="rowgroup">
+        <thead className="bg-gradient-to-b from-gray-50 to-gray-100 text-gray-600 text-[11px] uppercase tracking-wide sticky top-0 z-10 shadow-sm border-b border-gray-200" role="rowgroup">
           <tr role="row">
             <th scope="col" className="px-3 py-2 align-middle w-[36px]">
               <input

@@ -1,25 +1,23 @@
 // src/api/dashboard.js
-
-import axios from "axios";
-const API = "http://localhost:4000";
+import { http } from './http';
 
 export const getDashboardStats = (programaId) =>
-  axios.get(`${API}/dashboard/stats`, {
+  http.get(`/dashboard/stats`, {
     params: programaId ? { programa_id: programaId } : {},
   });
 
 export const getProximoEvento = (programaId) =>
-  axios.get(`${API}/dashboard/proximo-evento`, {
+  http.get(`/dashboard/proximo-evento`, {
     params: programaId ? { programa_id: programaId } : {},
   });
 
 export const getEventosMes = (year, month, programaId) =>
-  axios.get(`${API}/dashboard/eventos-mes`, {
+  http.get(`/dashboard/eventos-mes`, {
     params: { year, month, programa_id: programaId || null },
   });
 
 // Próximos cumpleaños (por defecto 30 días)
 export const getCumpleaniosProximos = (days = 30, programaId) =>
-  axios.get(`${API}/dashboard/cumpleanios-proximos`, {
+  http.get(`/dashboard/cumpleanios-proximos`, {
     params: { days, programa_id: programaId || null },
   });

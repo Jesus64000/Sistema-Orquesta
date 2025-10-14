@@ -4,7 +4,7 @@ import db from '../../db.js';
 import { requirePermission } from '../../helpers/permissions.js';
 
 // Listar representantes
-router.get('/', async (req, res) => {
+router.get('/', requirePermission('representantes:read'), async (req, res) => {
   try {
   const [rows] = await db.query('SELECT * FROM representante');
     res.json(rows);
@@ -14,7 +14,7 @@ router.get('/', async (req, res) => {
 });
 
 // Crear representante
-router.post('/', requirePermission('representantes:write'), async (req, res) => {
+router.post('/', requirePermission('representantes:create'), async (req, res) => {
   const { nombre, telefono } = req.body;
   try {
   await db.query('INSERT INTO representante (nombre, telefono) VALUES (?, ?)', [nombre, telefono]);
@@ -25,7 +25,7 @@ router.post('/', requirePermission('representantes:write'), async (req, res) => 
 });
 
 // Editar representante
-router.put('/:id', requirePermission('representantes:write'), async (req, res) => {
+router.put('/:id', requirePermission('representantes:update'), async (req, res) => {
   const { nombre, telefono } = req.body;
   try {
   await db.query('UPDATE representante SET nombre=?, telefono=? WHERE id_representante=?', [nombre, telefono, req.params.id]);
@@ -36,7 +36,7 @@ router.put('/:id', requirePermission('representantes:write'), async (req, res) =
 });
 
 // Eliminar representante
-router.delete('/:id', requirePermission('representantes:write'), async (req, res) => {
+router.delete('/:id', requirePermission('representantes:delete'), async (req, res) => {
   try {
   await db.query('DELETE FROM representante WHERE id_representante=?', [req.params.id]);
     res.json({ success: true });

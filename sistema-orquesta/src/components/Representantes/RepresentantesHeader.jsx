@@ -40,14 +40,16 @@ export default function RepresentantesHeader({ onCreate, selected = [], onExport
               )}
             </>
           )}
-          <button
-            type="button"
-            onClick={onCreate}
-            className="inline-flex items-center gap-2 h-10 px-5 rounded-full bg-yellow-400 hover:bg-yellow-500 text-gray-900 text-sm font-semibold shadow-sm border border-yellow-500"
-          >
-            <Plus className="h-4 w-4" />
-            Nuevo representante
-          </button>
+          {onCreate && (
+            <button
+              type="button"
+              onClick={onCreate}
+              className="inline-flex items-center gap-2 h-10 px-5 rounded-full bg-yellow-400 hover:bg-yellow-500 text-gray-900 text-sm font-semibold shadow-sm border border-yellow-500"
+            >
+              <Plus className="h-4 w-4" />
+              Nuevo representante
+            </button>
+          )}
         </div>
       </div>
     </div>

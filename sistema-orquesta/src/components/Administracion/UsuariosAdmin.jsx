@@ -2,8 +2,9 @@
 import React, { useEffect, useState } from "react";
 import ConfirmDialog from "../ConfirmDialog";
 import Button from "../ui/Button";
-import { getUsuarios, createUsuario, updateUsuario, deleteUsuario } from "../../api/administracion/usuarios";
+import { getUsuarios, createUsuario, deleteUsuario } from "../../api/administracion/usuarios";
 import { getRoles } from "../../api/administracion/roles";
+import UsuarioEditModal from "./UsuarioEditModal";
 
 // Validación de email simple
 function validarEmail(email) {
@@ -17,7 +18,9 @@ export default function UsuariosAdmin() {
   const [usuarios, setUsuarios] = useState([]);
   const [roles, setRoles] = useState([]);
   const [form, setForm] = useState({ nombre: "", email: "", id_rol: "" });
-  const [editId, setEditId] = useState(null);
+  // Modal de edición completa
+  const [editOpen, setEditOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -75,34 +78,26 @@ export default function UsuariosAdmin() {
       return;
     }
     // Evitar duplicados (nombre o email)
-    const existe = usuarios.some(u =>
-      (u.email === form.email && u.id_usuario !== editId)
-    );
+    const existe = usuarios.some(u => u.email === form.email);
     if (existe) {
       setError("Ya existe un usuario con ese email.");
       return;
     }
     setLoading(true);
     try {
-      if (editId) {
-        await updateUsuario(editId, form);
-        setSuccess("Usuario actualizado correctamente.");
-      } else {
-        await createUsuario(form);
-        setSuccess("Usuario creado correctamente.");
-      }
+      await createUsuario(form);
+      setSuccess("Usuario creado correctamente.");
       setForm({ nombre: "", email: "", id_rol: "" });
-      setEditId(null);
       fetchUsuarios();
     } catch (err) {
-      setError("Error al guardar: " + (err?.response?.data?.message || ""));
+      setError("Error al crear: " + (err?.response?.data?.message || ""));
     }
     setLoading(false);
   };
 
   const handleEdit = (u) => {
-    setForm({ nombre: u.nombre, email: u.email, id_rol: u.id_rol });
-    setEditId(u.id_usuario);
+    setEditTarget(u);
+    setEditOpen(true);
   };
 
   // Abre el diálogo de confirmación
@@ -132,7 +127,7 @@ export default function UsuariosAdmin() {
   return (
     <div>
       <h2 className="text-xl font-bold mb-4">Usuarios</h2>
-      <form onSubmit={handleSubmit} className="mb-6 flex flex-col md:flex-row gap-2 items-end">
+  <form onSubmit={handleSubmit} className="mb-2 flex flex-col md:flex-row gap-2 items-end">
         <div>
           <label className="block text-xs text-yellow-500 font-semibold mb-1">Nombre</label>
           <input name="nombre" value={form.nombre} onChange={handleChange} required className="border rounded px-3 py-1 w-48" />
@@ -145,18 +140,19 @@ export default function UsuariosAdmin() {
           <label className="block text-xs text-yellow-500 font-semibold mb-1">Rol</label>
           <select name="id_rol" value={form.id_rol} onChange={handleChange} required className="border rounded px-3 py-1 w-40">
             <option value="">Seleccione</option>
-            {roles.map((r) => (
-              <option key={r.id_rol} value={r.id_rol}>{r.nombre}</option>
-            ))}
+            {roles.map((r) => {
+              const nivel = (r && r.permisos && typeof r.permisos.$nivel === 'number') ? r.permisos.$nivel : 2;
+              return (
+                <option key={r.id_rol} value={r.id_rol}>{r.nombre} {`(nivel ${nivel})`}</option>
+              );
+            })}
           </select>
         </div>
         <Button type="submit" variant="primary" loading={loading} disabled={loading}>
-          {editId ? "Actualizar" : "Agregar"}
+          Agregar
         </Button>
-        {editId && (
-          <Button type="button" variant="ghost" size="sm" onClick={() => { setEditId(null); setForm({ nombre: "", email: "", id_rol: "" }); setError(""); setSuccess(""); }}>Cancelar</Button>
-        )}
       </form>
+      <p className="text-[11px] text-gray-600 mb-4">El nivel proviene del rol: 1=Acceso a Administración (según permisos), 2=Sin Administración.</p>
       {error && <div className="text-red-500 mb-2">{error}</div>}
       {success && <div className="text-green-600 mb-2">{success}</div>}
       <div className="overflow-x-auto">
@@ -198,6 +194,15 @@ export default function UsuariosAdmin() {
             )}
           </tbody>
         </table>
+        {editOpen && (
+          <UsuarioEditModal
+            open={editOpen}
+            onClose={() => { setEditOpen(false); setEditTarget(null); }}
+            usuario={editTarget}
+            roles={roles}
+            onSaved={() => { setEditOpen(false); setEditTarget(null); fetchUsuarios(); }}
+          />
+        )}
       </div>
     </div>
   );

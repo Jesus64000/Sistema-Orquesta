@@ -10,10 +10,34 @@ export const permissionsCatalog = {
   roles: ["read","create","update","delete"],
   usuarios: ["read","create","update","delete"],
   dashboard: ["read"],
+  reportes: ["read"],
 };
+
+function tokensArrayToObject(permsArr) {
+  // Convierte ['alumnos:read','usuarios:*','*'] a objeto por recurso
+  const obj = {};
+  if (!Array.isArray(permsArr)) return obj;
+  const tokens = permsArr.map(p => String(p || '').toLowerCase());
+  if (tokens.includes('*')) {
+    // Acceso total: todos los recursos '*'
+    for (const res of Object.keys(permissionsCatalog)) obj[res] = ['*'];
+    return obj;
+  }
+  for (const t of tokens) {
+    const [res, act] = t.split(':');
+    if (!res) continue;
+    if (!obj[res]) obj[res] = [];
+    if (act) {
+      if (!obj[res].includes(act)) obj[res].push(act);
+    }
+  }
+  return obj;
+}
 
 // Expande un recurso que tenga '*' a todas las acciones del catálogo.
 export function expandWildcardPermissions(perms) {
+  // Acepta tanto objeto como array de tokens
+  if (Array.isArray(perms)) perms = tokensArrayToObject(perms);
   const result = {};
   for (const [resource, actions] of Object.entries(perms || {})) {
     if (!Array.isArray(actions)) continue;

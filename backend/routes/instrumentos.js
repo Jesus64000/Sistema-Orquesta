@@ -15,7 +15,7 @@ router.param('id', (req, res, next, val) => {
 });
 
 // GET /instrumentos
-router.get('/', async (_req, res) => {
+router.get('/', requirePermission('instrumentos:read'), async (_req, res) => {
   try {
     const [rows] = await pool.query(`
       SELECT i.*, c.nombre as categoria_nombre, e.nombre as estado_nombre
@@ -31,7 +31,7 @@ router.get('/', async (_req, res) => {
 });
 
 // GET /instrumentos/:id
-router.get('/:id', async (req, res) => {
+router.get('/:id', requirePermission('instrumentos:read'), async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -75,7 +75,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /instrumentos
-router.post('/', requirePermission('instrumentos:write'), async (req, res) => {
+router.post('/', requirePermission('instrumentos:create'), async (req, res) => {
   try {
     const {
       nombre,
@@ -130,7 +130,7 @@ router.post('/', requirePermission('instrumentos:write'), async (req, res) => {
 });
 
 // PUT /instrumentos/:id
-router.put('/:id', requirePermission('instrumentos:write'), async (req, res) => {
+router.put('/:id', requirePermission('instrumentos:update'), async (req, res) => {
   try {
     const { id } = req.params;
     const { nombre, id_categoria, numero_serie, id_estado, fecha_adquisicion, ubicacion } = req.body;
@@ -181,7 +181,7 @@ router.put('/:id', requirePermission('instrumentos:write'), async (req, res) => 
 });
 
 // DELETE /instrumentos/:id
-router.delete('/:id', requirePermission('instrumentos:write'), async (req, res) => {
+router.delete('/:id', requirePermission('instrumentos:delete'), async (req, res) => {
   const { id } = req.params;
   try {
     // 1) Borrar asignaciones del instrumento
@@ -204,7 +204,7 @@ router.delete('/:id', requirePermission('instrumentos:write'), async (req, res) 
 });
 
 // GET /instrumentos/:id/historial
-router.get('/:id/historial', async (req, res) => {
+router.get('/:id/historial', requirePermission('instrumentos:read'), async (req, res) => {
   try {
     const { id } = req.params;
     const [rows] = await pool.query(
@@ -224,7 +224,7 @@ router.get('/:id/historial', async (req, res) => {
 });
 
 // POST /instrumentos/:id/historial
-router.post('/:id/historial', requirePermission('instrumentos:write'), async (req, res) => {
+router.post('/:id/historial', requirePermission('instrumentos:update'), async (req, res) => {
   try {
     const { id } = req.params; // id_instrumento
     const { tipo = 'OTRO', descripcion = '', usuario = 'sistema', id_alumno = null } = req.body;
@@ -243,7 +243,7 @@ router.post('/:id/historial', requirePermission('instrumentos:write'), async (re
 });
 
 // POST /instrumentos/export-masivo { ids: number[], format: 'csv'|'xlsx'|'pdf' }
-router.post('/export-masivo', async (req, res) => {
+router.post('/export-masivo', requirePermission('instrumentos:read'), async (req, res) => {
   try {
     const { ids = [], format = 'csv' } = req.body;
     if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: 'ids array requerido en body' });
@@ -448,7 +448,7 @@ router.post('/export-masivo', async (req, res) => {
 });
 
 // POST /instrumentos/export { ids?: number[], format: 'csv'|'xlsx'|'pdf' }
-router.post('/export', async (req, res) => {
+router.post('/export', requirePermission('instrumentos:read'), async (req, res) => {
   try {
     const { ids = [], format = 'csv' } = req.body;
 

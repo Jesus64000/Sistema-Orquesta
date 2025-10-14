@@ -1,8 +1,8 @@
 // src/api/administracion/roles.js
-import axios from "axios";
-const API = "http://localhost:4000/administracion/roles";
+import { http } from "../http";
+const API = "/administracion/roles";
 
-export const getRoles = () => axios.get(API);
-export const createRol = (data) => axios.post(API, data);
-export const updateRol = (id, data) => axios.put(`${API}/${id}`, data);
-export const deleteRol = (id) => axios.delete(`${API}/${id}`);
+export const getRoles = () => http.get(API);
+export const createRol = (data) => http.post(API, data);
+export const updateRol = (id, data) => http.put(`${API}/${id}`, data);
+export const deleteRol = (id) => http.delete(`${API}/${id}`);

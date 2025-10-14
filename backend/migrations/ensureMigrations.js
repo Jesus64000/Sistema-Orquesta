@@ -80,6 +80,33 @@ export async function ensureMigrations(pool) {
         );
       }
     }
+
+    // Añadir columna nivel_acceso si falta
+    try {
+      const [colNivel] = await pool.query("SHOW COLUMNS FROM usuario LIKE 'nivel_acceso'");
+      if (colNivel.length === 0) {
+        console.log('[migracion] Añadiendo columna nivel_acceso a usuario');
+        await pool.query('ALTER TABLE usuario ADD COLUMN nivel_acceso TINYINT NULL AFTER id_rol');
+      }
+      // Backfill si está vacía: usar $nivel del rol si existe, else heurística rol nombre
+      console.log('[migracion] Backfill nivel_acceso nulos');
+      // 1. Desde JSON $nivel
+      await pool.query(`UPDATE usuario u
+        LEFT JOIN rol r ON u.id_rol = r.id_rol
+        SET u.nivel_acceso = CAST(JSON_UNQUOTE(JSON_EXTRACT(r.permisos, '$."$nivel"')) AS SIGNED)
+        WHERE u.nivel_acceso IS NULL
+          AND r.permisos IS NOT NULL
+          AND JSON_EXTRACT(r.permisos, '$."$nivel"') IS NOT NULL`);
+      // 2. Heurística admin
+      await pool.query(`UPDATE usuario u
+        LEFT JOIN rol r ON u.id_rol = r.id_rol
+        SET u.nivel_acceso = 0
+        WHERE u.nivel_acceso IS NULL AND r.nombre LIKE '%admin%'`);
+      // 3. Resto: asignar 2 (básico) si sigue null
+      await pool.query('UPDATE usuario SET nivel_acceso = 2 WHERE nivel_acceso IS NULL');
+    } catch (err) {
+      console.error('Error añadiendo/backfilling nivel_acceso:', err.message);
+    }
     // 1. Verificar columna estado en Evento
   const [cols] = await pool.query("SHOW COLUMNS FROM evento LIKE 'estado'");
     if (cols.length === 0) {

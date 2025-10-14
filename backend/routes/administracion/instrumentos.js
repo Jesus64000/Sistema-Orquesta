@@ -4,7 +4,7 @@ import db from '../../db.js';
 import { requirePermission } from '../../helpers/permissions.js';
 
 // Listar instrumentos
-router.get('/', async (req, res) => {
+router.get('/', requirePermission('instrumentos:read'), async (req, res) => {
   try {
     const [rows] = await db.query(`
       SELECT i.*, c.nombre as categoria_nombre
@@ -18,7 +18,7 @@ router.get('/', async (req, res) => {
 });
 
 // Crear instrumento
-router.post('/', requirePermission('instrumentos:write'), async (req, res) => {
+router.post('/', requirePermission('instrumentos:create'), async (req, res) => {
   const { nombre, id_categoria, estado } = req.body;
   try {
   await db.query('INSERT INTO instrumento (nombre, id_categoria, id_estado) VALUES (?, ?, ?)', [nombre, id_categoria, estado]);
@@ -29,7 +29,7 @@ router.post('/', requirePermission('instrumentos:write'), async (req, res) => {
 });
 
 // Editar instrumento
-router.put('/:id', requirePermission('instrumentos:write'), async (req, res) => {
+router.put('/:id', requirePermission('instrumentos:update'), async (req, res) => {
   const { nombre, id_categoria, estado } = req.body;
   try {
   await db.query('UPDATE instrumento SET nombre=?, id_categoria=?, id_estado=? WHERE id_instrumento=?', [nombre, id_categoria, estado, req.params.id]);
@@ -40,7 +40,7 @@ router.put('/:id', requirePermission('instrumentos:write'), async (req, res) => 
 });
 
 // Eliminar instrumento
-router.delete('/:id', requirePermission('instrumentos:write'), async (req, res) => {
+router.delete('/:id', requirePermission('instrumentos:delete'), async (req, res) => {
   try {
   await db.query('DELETE FROM instrumento WHERE id_instrumento=?', [req.params.id]);
     res.json({ success: true });

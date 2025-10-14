@@ -6,7 +6,7 @@ import { requirePermission } from '../../helpers/permissions.js';
 const router = Router();
 
 // GET /administracion/programas
-router.get('/', async (_req, res) => {
+router.get('/', requirePermission('programas:read'), async (_req, res) => {
   try {
   const [rows] = await pool.query('SELECT * FROM programa ORDER BY nombre ASC');
     res.json(rows);
@@ -16,7 +16,7 @@ router.get('/', async (_req, res) => {
 });
 
 // POST /administracion/programas
-router.post('/', requirePermission('programas:write'), async (req, res) => {
+router.post('/', requirePermission('programas:create'), async (req, res) => {
   try {
     const { nombre, descripcion = null } = req.body;
     if (!nombre) return res.status(400).json({ error: 'nombre es requerido' });
@@ -32,7 +32,7 @@ router.post('/', requirePermission('programas:write'), async (req, res) => {
 });
 
 // PUT /administracion/programas/:id
-router.put('/:id', requirePermission('programas:write'), async (req, res) => {
+router.put('/:id', requirePermission('programas:update'), async (req, res) => {
   try {
     const { id } = req.params;
     const { nombre, descripcion = null } = req.body;
@@ -51,7 +51,7 @@ router.put('/:id', requirePermission('programas:write'), async (req, res) => {
 });
 
 // DELETE /administracion/programas/:id
-router.delete('/:id', requirePermission('programas:write'), async (req, res) => {
+router.delete('/:id', requirePermission('programas:delete'), async (req, res) => {
   try {
     const { id } = req.params;
   const [result] = await pool.query('DELETE FROM programa WHERE id_programa = ?', [id]);

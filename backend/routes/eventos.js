@@ -39,7 +39,7 @@ export const EVENTO_ESTADOS = ['PROGRAMADO','EN_CURSO','FINALIZADO','CANCELADO']
 // ALTER TABLE evento ADD COLUMN estado ENUM('PROGRAMADO','EN_CURSO','FINALIZADO','CANCELADO') NOT NULL DEFAULT 'PROGRAMADO' AFTER id_programa;
 
 // POST /eventos
-router.post('/', requirePermission('eventos:write'), async (req, res) => {
+router.post('/', requirePermission('eventos:create'), async (req, res) => {
   try {
     const { titulo, descripcion, fecha_evento, hora_evento, lugar, id_programa = null, estado = 'PROGRAMADO' } = req.body;
 
@@ -94,7 +94,7 @@ router.post('/', requirePermission('eventos:write'), async (req, res) => {
 //   creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 //   FOREIGN KEY (id_evento) REFERENCES Evento(id_evento) ON DELETE CASCADE
 // );
-router.put('/:id', requirePermission('eventos:write'), async (req, res) => {
+router.put('/:id', requirePermission('eventos:update'), async (req, res) => {
   const connLabel = 'PUT /eventos/:id';
   try {
     const { id } = req.params;
@@ -181,7 +181,7 @@ router.put('/:id', requirePermission('eventos:write'), async (req, res) => {
 
 
 // DELETE /eventos/:id
-router.delete('/:id', requirePermission('eventos:write'), async (req, res) => {
+router.delete('/:id', requirePermission('eventos:delete'), async (req, res) => {
   try {
     const { id } = req.params;
   const [result] = await pool.query('DELETE FROM evento WHERE id_evento=?', [id]);
@@ -197,7 +197,7 @@ router.delete('/:id', requirePermission('eventos:write'), async (req, res) => {
 });
 
 // GET /eventos/futuros (con filtro opcional por programa_id)
-router.get('/futuros', async (req, res) => {
+router.get('/futuros', requirePermission('eventos:read'), async (req, res) => {
   try {
     await autoFinalizePastEvents();
     const { programa_id } = req.query;
@@ -232,7 +232,7 @@ router.get('/futuros', async (req, res) => {
 });
 
 // GET /eventos/pasados (con filtro opcional por programa_id)
-router.get('/pasados', async (req, res) => {
+router.get('/pasados', requirePermission('eventos:read'), async (req, res) => {
   try {
     await autoFinalizePastEvents();
     const { programa_id } = req.query;
@@ -266,7 +266,7 @@ router.get('/pasados', async (req, res) => {
 });
 
 // (Opcional) GET /eventos/futuros2 - mantiene compatibilidad si ya lo usas
-router.get('/futuros2', async (_req, res) => {
+router.get('/futuros2', requirePermission('eventos:read'), async (_req, res) => {
   try {
     await autoFinalizePastEvents();
     const [rows] = await pool.query(
@@ -292,7 +292,7 @@ router.get('/futuros2', async (_req, res) => {
 
 
 // GET /eventos/suggest?q=term&limit=8  (búsqueda predictiva)
-router.get('/suggest', async (req, res) => {
+router.get('/suggest', requirePermission('eventos:read'), async (req, res) => {
   try {
     await autoFinalizePastEvents();
     const { q = '', limit = 8 } = req.query;
@@ -322,7 +322,7 @@ router.get('/suggest', async (req, res) => {
 });
 
 // GET /eventos/:id/historial  (lista de cambios)
-router.get('/:id/historial', async (req, res) => {
+router.get('/:id/historial', requirePermission('eventos:read'), async (req, res) => {
   try {
     const { id } = req.params;
     const [rows] = await pool.query(
@@ -346,7 +346,7 @@ router.get('/:id/historial', async (req, res) => {
 });
 
 // GET /eventos/:id
-router.get('/:id', async (req, res) => {
+router.get('/:id', requirePermission('eventos:read'), async (req, res) => {
   try {
     await autoFinalizePastEvents();
     const { id } = req.params;
@@ -378,7 +378,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // GET /eventos (con filtros opcionales: programa_id y search)
-router.get('/', async (req, res) => {
+router.get('/', requirePermission('eventos:read'), async (req, res) => {
   try {
     await autoFinalizePastEvents();
     const { programa_id, search } = req.query;
@@ -425,7 +425,7 @@ router.get('/', async (req, res) => {
 });
 
 // POST /eventos/export { ids?: number[], format?: 'csv'|'xlsx'|'pdf', search?: string }
-router.post('/export', async (req, res) => {
+router.post('/export', requirePermission('eventos:read'), async (req, res) => {
   try {
     await autoFinalizePastEvents();
     const { ids = [], format = 'csv', search = '' } = req.body || {};

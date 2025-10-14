@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useCallback, useDeferredValue, useRef } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { getRepresentantes, deleteRepresentante, getRepresentante, exportRepresentantes } from '../api/representantes';
 import Modal from '../components/Modal';
 import ExportModal from '../components/ExportModal';
@@ -12,6 +13,11 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import DataStates from '../components/ui/DataStates';
 
 export default function Representantes() {
+  const { tienePermiso } = useAuth();
+  const canRead = tienePermiso('representantes','read');
+  const canCreate = tienePermiso('representantes','create');
+  const canUpdate = tienePermiso('representantes','update');
+  const canDelete = tienePermiso('representantes','delete');
   const [representantes, setRepresentantes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false); // nuevo control error
@@ -41,14 +47,16 @@ export default function Representantes() {
     try {
       setLoading(true);
       setLoadError(false);
-      const res = await getRepresentantes();
-      const data = res?.data || res; // soporte por si API retorna directamente array
-      setRepresentantes(Array.isArray(data) ? data : []);
+      if (!canRead) { setRepresentantes([]); return; }
+  const res = await getRepresentantes();
+  if (res?.data?._denied) { setRepresentantes([]); return; }
+  const data = res?.data || res; // soporte por si API retorna directamente array
+  setRepresentantes(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error(err);
       setLoadError(true);
     } finally { setLoading(false); }
-  }, []);
+  }, [canRead]);
 
   useEffect(()=>{ load(); },[load]);
 
@@ -119,7 +127,7 @@ export default function Representantes() {
   return (
     <div className="space-y-6">
       <div aria-live="polite" aria-atomic="true" ref={resultsLiveRef} className="sr-only" />
-  <RepresentantesHeader onCreate={openCreate} selected={selected} onExport={()=>setExportOpen(true)} />
+  <RepresentantesHeader onCreate={canCreate ? openCreate : undefined} selected={selected} onExport={selected.length>0 && (canRead /* export usa read en back */) ? ()=>setExportOpen(true) : undefined} />
       <div className="flex flex-wrap items-center justify-between gap-4">
         <RepresentantesFilters value={query} onChange={setQuery} />
         <div className="text-xs text-gray-500">{filteredCount} resultado(s){selected.length>0 && ` · ${selected.length} seleccionados`}</div>
@@ -148,8 +156,8 @@ export default function Representantes() {
         <RepresentantesTable
           data={pageData}
           loading={false}
-          onEdit={openEdit}
-          onDelete={requestDelete}
+          onEdit={canUpdate ? openEdit : undefined}
+          onDelete={canDelete ? requestDelete : undefined}
           onView={openView}
           selectedIds={selected}
           onToggleSelectAll={toggleSelectAll}

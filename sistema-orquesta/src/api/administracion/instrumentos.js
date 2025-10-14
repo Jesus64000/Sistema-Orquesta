@@ -1,8 +1,8 @@
 // src/api/administracion/instrumentos.js
-import axios from "axios";
-const API = "http://localhost:4000/administracion/instrumentos";
+import { http } from "../http";
+const API = "/administracion/instrumentos";
 
-export const getInstrumentos = () => axios.get(API);
-export const createInstrumento = (data) => axios.post(API, data);
-export const updateInstrumento = (id, data) => axios.put(`${API}/${id}`, data);
-export const deleteInstrumento = (id) => axios.delete(`${API}/${id}`);
+export const getInstrumentos = () => http.get(API);
+export const createInstrumento = (data) => http.post(API, data);
+export const updateInstrumento = (id, data) => http.put(`${API}/${id}`, data);
+export const deleteInstrumento = (id) => http.delete(`${API}/${id}`);

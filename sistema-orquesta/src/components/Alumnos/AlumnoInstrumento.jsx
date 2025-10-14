@@ -1,5 +1,6 @@
 // src/components/Alumno/AlumnoInstrumento.jsx
 import { useEffect, useState } from "react";
+import { http } from "../../api/http";
 import toast from "react-hot-toast";
 import { getAlumnoInstrumento } from "../../api/alumnos";
 
@@ -37,11 +38,9 @@ export default function AlumnoInstrumento({ idAlumno }) {
           <button
             onClick={async () => {
               try {
-                const res = await fetch(
-                  `http://localhost:4000/alumnos/${idAlumno}/instrumento`,
-                  { method: "DELETE", headers: { "Content-Type": "application/json" } }
+                await http.delete(
+                  `/alumnos/${idAlumno}/instrumento`
                 );
-                if (!res.ok) throw new Error();
                 toast.success("Instrumento devuelto");
                 setInstrumento(null); // 🔄 refrescar UI
               } catch {

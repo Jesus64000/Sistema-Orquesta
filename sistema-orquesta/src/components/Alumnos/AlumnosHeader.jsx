@@ -26,41 +26,47 @@ export default function AlumnosHeader({ selected = [], onExport, onCreate, onOpe
         <div className="flex items-center gap-2 flex-wrap">
           {count > 0 && (
             <>
-              <Button
-                type="button"
-                onClick={onExport}
-                variant="success"
-                size="md"
-                aria-label="Exportar alumnos seleccionados"
-                className="gap-2"
-              >
-                <Download className="h-4 w-4" />
-                Exportar
-              </Button>
-              <Button
-                type="button"
-                onClick={onOpenActions}
-                variant="dark"
-                size="md"
-                aria-label="Abrir acciones masivas"
-                className="gap-2"
-              >
-                <Layers className="h-4 w-4" />
-                Acciones
-              </Button>
+              {onExport && (
+                <Button
+                  type="button"
+                  onClick={onExport}
+                  variant="success"
+                  size="md"
+                  aria-label="Exportar alumnos seleccionados"
+                  className="gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  Exportar
+                </Button>
+              )}
+              {onOpenActions && (
+                <Button
+                  type="button"
+                  onClick={onOpenActions}
+                  variant="dark"
+                  size="md"
+                  aria-label="Abrir acciones masivas"
+                  className="gap-2"
+                >
+                  <Layers className="h-4 w-4" />
+                  Acciones
+                </Button>
+              )}
             </>
           )}
-          <Button
-            type="button"
-            onClick={onCreate}
-            variant="primary"
-            size="md"
-            aria-label="Agregar nuevo alumno"
-            className="gap-2"
-          >
-            <UserPlus className="h-4 w-4" />
-            Agregar Alumno
-          </Button>
+          {onCreate && (
+            <Button
+              type="button"
+              onClick={onCreate}
+              variant="primary"
+              size="md"
+              aria-label="Agregar nuevo alumno"
+              className="gap-2"
+            >
+              <UserPlus className="h-4 w-4" />
+              Agregar Alumno
+            </Button>
+          )}
         </div>
       </div>
     </div>

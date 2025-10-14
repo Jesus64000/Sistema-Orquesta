@@ -80,14 +80,16 @@ export default function RepresentantesTable({ data, loading, onEdit, onDelete, o
                 <td className="px-3 py-2 text-gray-600 text-center">{r.alumnos_count ?? 0}</td>
                 <td className="px-3 py-2">
                   <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => onEdit(r)}
-                      className="p-1.5 rounded-lg border bg-blue-50 text-blue-600 hover:bg-blue-100 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
-                      title="Editar"
-                      aria-label={`Editar ${r.nombre}`}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </button>
+                    {onEdit && (
+                      <button
+                        onClick={() => onEdit(r)}
+                        className="p-1.5 rounded-lg border bg-blue-50 text-blue-600 hover:bg-blue-100 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
+                        title="Editar"
+                        aria-label={`Editar ${r.nombre}`}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                    )}
                     <button
                       onClick={() => onView(r)}
                       className="p-1.5 rounded-lg border bg-yellow-50 text-yellow-700 hover:bg-yellow-100 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:ring-offset-1"
@@ -96,14 +98,16 @@ export default function RepresentantesTable({ data, loading, onEdit, onDelete, o
                     >
                       <Eye className="h-4 w-4" />
                     </button>
-                    <button
-                      onClick={() => onDelete(r)}
-                      className="p-1.5 rounded-lg border bg-red-50 text-red-600 hover:bg-red-100 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-1"
-                      title="Eliminar"
-                      aria-label={`Eliminar ${r.nombre}`}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    {onDelete && (
+                      <button
+                        onClick={() => onDelete(r)}
+                        className="p-1.5 rounded-lg border bg-red-50 text-red-600 hover:bg-red-100 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-1"
+                        title="Eliminar"
+                        aria-label={`Eliminar ${r.nombre}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>

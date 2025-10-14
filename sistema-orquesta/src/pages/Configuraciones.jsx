@@ -1,229 +1,134 @@
-// sistema-orquesta/src/pages/Configuraciones.jsx
+// Página de ajustes personales del usuario
 import { useEffect, useState } from "react";
-import {
-  getUsuarios,
-  createUsuario,
-  updateUsuario,
-  deleteUsuario,
-} from "../api/configuraciones";
-import { Settings, Search, Edit, Trash2, PlusCircle } from "lucide-react";
+import { Settings, Lock, User, Eye } from "lucide-react";
 import Button from "../components/ui/Button";
 import toast from "react-hot-toast";
+import { useAuth } from "../context/AuthContext";
+import { updatePerfil, changePassword } from "../api/usuarios";
 
 export default function Configuraciones() {
-  const [usuarios, setUsuarios] = useState([]);
-  const [search, setSearch] = useState("");
-  const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({
-    nombre: "",
-    email: "",
-    rol: "Admin",
-    password: "",
-  });
-  const [editing, setEditing] = useState(null);
+  const { user, refresh } = useAuth();
+  const [perfil, setPerfil] = useState({ nombre: "", email: "" });
+  const [clave, setClave] = useState({ actual: "", nueva: "", repetir: "" });
+  const [savingPerfil, setSavingPerfil] = useState(false);
+  const [savingClave, setSavingClave] = useState(false);
 
   useEffect(() => {
-    loadUsuarios();
-  }, []);
+    if (user) {
+      setPerfil({ nombre: user.nombre || "", email: user.email || "" });
+    }
+  }, [user]);
 
-  const loadUsuarios = async () => {
+  const guardarPerfil = async (e) => {
+    e?.preventDefault?.();
+    setSavingPerfil(true);
     try {
-      const res = await getUsuarios();
-      setUsuarios(res.data);
-    } catch {
-      toast.error("Error cargando usuarios");
+      await updatePerfil({ nombre: perfil.nombre, email: perfil.email });
+      toast.success("Perfil actualizado");
+      await refresh?.({ force: true });
+    } catch (err) {
+      toast.error(err?.response?.data?.error || "Error al actualizar perfil");
+    } finally {
+      setSavingPerfil(false);
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const cambiarClave = async (e) => {
+    e?.preventDefault?.();
+    if (!clave.actual?.trim()) { toast.error('Ingresa tu contraseña actual'); return; }
+    if (!clave.nueva || clave.nueva !== clave.repetir) {
+      toast.error("Las contraseñas no coinciden");
+      return;
+    }
+    setSavingClave(true);
     try {
-      if (editing) {
-        await updateUsuario(editing.id_usuario, formData);
-        toast.success("Usuario actualizado correctamente");
-      } else {
-        await createUsuario(formData);
-        toast.success("Usuario creado correctamente");
-      }
-      setFormData({ nombre: "", email: "", rol: "Admin", password: "" });
-      setEditing(null);
-      setShowForm(false);
-      loadUsuarios();
-    } catch {
-      toast.error("Error guardando usuario");
+      await changePassword({ actual: clave.actual, nueva: clave.nueva });
+      toast.success("Contraseña actualizada");
+      setClave({ actual: "", nueva: "", repetir: "" });
+    } catch (err) {
+      toast.error(err?.response?.data?.error || "Error al cambiar contraseña");
+    } finally {
+      setSavingClave(false);
     }
   };
-
-  const handleEdit = (usuario) => {
-    setFormData({ ...usuario, password: "" });
-    setEditing(usuario);
-    setShowForm(true);
-  };
-
-  const handleDelete = async (id) => {
-    if (!confirm("¿Seguro que deseas eliminar este usuario?")) return;
-    try {
-      await deleteUsuario(id);
-      toast.success("Usuario eliminado correctamente");
-      loadUsuarios();
-    } catch {
-      toast.error("Error eliminando usuario");
-    }
-  };
-
-  const filtered = usuarios.filter(
-    (u) =>
-      u.nombre.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase())
-  );
 
   return (
-    <div className="space-y-6">
-      {/* Encabezado */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Settings className="h-6 w-6" />
-          Configuraciones
+          <Settings className="h-6 w-6" /> Configuración de la cuenta
         </h1>
-        <Button
-          type="button"
-          variant="primary"
-          onClick={() => { setShowForm(true); setEditing(null); }}
-        >
-          <PlusCircle className="h-4 w-4" />
-          Crear Usuario
-        </Button>
       </div>
 
-      {/* Buscador */}
-      <div className="flex items-center gap-2 px-3 py-2 border rounded-lg bg-white shadow-sm w-full sm:w-80">
-        <Search className="h-4 w-4 text-gray-500" />
-        <input
-          type="text"
-          placeholder="Buscar usuario..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="flex-1 outline-none text-sm"
-        />
-      </div>
+      {/* Perfil */}
+      <section className="bg-white border rounded-2xl shadow-sm p-5">
+        <h2 className="text-lg font-semibold flex items-center gap-2 mb-3"><User className="h-5 w-5"/> Perfil</h2>
+        <form onSubmit={guardarPerfil} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs text-gray-600 mb-1">Nombre</label>
+            <input className="w-full border rounded px-3 py-2" value={perfil.nombre} onChange={(e)=>setPerfil(p=>({...p, nombre: e.target.value}))} required />
+          </div>
+          <div>
+            <label className="block text-xs text-gray-600 mb-1">Email</label>
+            <input type="email" className="w-full border rounded px-3 py-2" value={perfil.email} onChange={(e)=>setPerfil(p=>({...p, email: e.target.value}))} required />
+          </div>
+          <div className="md:col-span-2 flex justify-end">
+            <Button type="submit" variant="primary" disabled={savingPerfil}>{savingPerfil? 'Guardando…':'Guardar cambios'}</Button>
+          </div>
+        </form>
+      </section>
 
-      {/* Tabla */}
-      <div className="overflow-x-auto bg-white border rounded-2xl shadow-sm">
-        <table className="w-full text-sm text-left border-collapse">
-          <thead>
-            <tr className="bg-gray-100 text-gray-600">
-              <th className="px-4 py-2 border-b">Nombre</th>
-              <th className="px-4 py-2 border-b">Email</th>
-              <th className="px-4 py-2 border-b">Rol</th>
-              <th className="px-4 py-2 border-b">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((u) => (
-              <tr key={u.id_usuario} className="hover:bg-gray-50">
-                <td className="px-4 py-2 border-b">{u.nombre}</td>
-                <td className="px-4 py-2 border-b">{u.email}</td>
-                <td className="px-4 py-2 border-b">{u.rol}</td>
-                <td className="px-4 py-2 border-b flex gap-2">
-                  <button
-                    onClick={() => handleEdit(u)}
-                    className="p-1 rounded bg-blue-100 text-blue-600 hover:bg-blue-200"
-                    aria-label={`Editar usuario ${u.nombre}`}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(u.id_usuario)}
-                    className="p-1 rounded bg-red-100 text-red-600 hover:bg-red-200"
-                    aria-label={`Eliminar usuario ${u.nombre}`}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {filtered.length === 0 && (
-              <tr>
-                <td colSpan="4" className="text-center py-4 text-gray-500">
-                  No se encontraron usuarios
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      {/* Contraseña */}
+      <section className="bg-white border rounded-2xl shadow-sm p-5">
+        <h2 className="text-lg font-semibold flex items-center gap-2 mb-3"><Lock className="h-5 w-5"/> Seguridad</h2>
+        <form onSubmit={cambiarClave} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-xs text-gray-600 mb-1">Contraseña actual</label>
+            <input type="password" className="w-full border rounded px-3 py-2" value={clave.actual} onChange={(e)=>setClave(s=>({...s, actual: e.target.value}))} required />
+          </div>
+          <div>
+            <label className="block text-xs text-gray-600 mb-1">Nueva contraseña</label>
+            <input type="password" className="w-full border rounded px-3 py-2" value={clave.nueva} onChange={(e)=>setClave(s=>({...s, nueva: e.target.value}))} required />
+          </div>
+          <div>
+            <label className="block text-xs text-gray-600 mb-1">Repetir contraseña</label>
+            <input type="password" className="w-full border rounded px-3 py-2" value={clave.repetir} onChange={(e)=>setClave(s=>({...s, repetir: e.target.value}))} required />
+          </div>
+          <div className="md:col-span-4 flex justify-end">
+            <Button type="submit" variant="secondary" disabled={savingClave}>{savingClave? 'Guardando…':'Actualizar contraseña'}</Button>
+          </div>
+        </form>
+      </section>
 
-      {/* Modal */}
-      {showForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-2xl shadow-lg w-full max-w-lg">
-            <h2 className="text-xl font-semibold mb-4">
-              {editing ? "Editar Usuario" : "Crear Usuario"}
-            </h2>
-            <form onSubmit={handleSubmit} className="space-y-3">
-              <input
-                type="text"
-                placeholder="Nombre"
-                value={formData.nombre}
-                onChange={(e) =>
-                  setFormData({ ...formData, nombre: e.target.value })
-                }
-                className="w-full p-2 border rounded-lg"
-                required
-              />
-              <input
-                type="email"
-                placeholder="Email"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-                className="w-full p-2 border rounded-lg"
-                required
-              />
-              <select
-                value={formData.rol}
-                onChange={(e) =>
-                  setFormData({ ...formData, rol: e.target.value })
-                }
-                className="w-full p-2 border rounded-lg"
-              >
-                <option>Admin</option>
-                <option>Consultor</option>
-              </select>
-              {!editing && (
-                <input
-                  type="password"
-                  placeholder="Contraseña"
-                  value={formData.password}
-                  onChange={(e) =>
-                    setFormData({ ...formData, password: e.target.value })
-                  }
-                  className="w-full p-2 border rounded-lg"
-                  required
-                />
-              )}
-              <div className="flex justify-end gap-2 mt-4">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowForm(false)}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  type="submit"
-                  variant="primary"
-                  size="sm"
-                >
-                  Guardar
-                </Button>
-              </div>
-            </form>
+      {/* Apariencia */}
+      <section className="bg-white border rounded-2xl shadow-sm p-5">
+        <h2 className="text-lg font-semibold flex items-center gap-2 mb-3"><Eye className="h-5 w-5"/> Apariencia</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-xs text-gray-600 mb-1">Tema</label>
+            <select className="w-full border rounded px-3 py-2" defaultValue={localStorage.getItem('ui_theme') || 'system'} onChange={(e)=>{ localStorage.setItem('ui_theme', e.target.value); document.documentElement.dataset.theme = e.target.value; }}>
+              <option value="light">Claro</option>
+              <option value="dark">Oscuro</option>
+              <option value="system">Sistema</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs text-gray-600 mb-1">Contraste</label>
+            <select className="w-full border rounded px-3 py-2" defaultValue={localStorage.getItem('ui_contrast') || 'normal'} onChange={(e)=>{ localStorage.setItem('ui_contrast', e.target.value); document.documentElement.dataset.contrast = e.target.value; }}>
+              <option value="normal">Normal</option>
+              <option value="high">Alto</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs text-gray-600 mb-1">Tamaño de fuente</label>
+            <select className="w-full border rounded px-3 py-2" defaultValue={localStorage.getItem('ui_font') || 'md'} onChange={(e)=>{ localStorage.setItem('ui_font', e.target.value); document.documentElement.dataset.font = e.target.value; }}>
+              <option value="sm">Pequeña</option>
+              <option value="md">Mediana</option>
+              <option value="lg">Grande</option>
+            </select>
           </div>
         </div>
-      )}
+      </section>
     </div>
   );
 }

@@ -17,6 +17,7 @@ import InstrumentosFilters from "../components/Instrumentos/InstrumentosFilters"
 import InstrumentosTable from "../components/Instrumentos/InstrumentosTable";
 import InfoDialog from "../components/InfoDialog";
 import InstrumentosPagination from "../components/Instrumentos/InstrumentosPagination";
+import { http } from "../api/http";
 import InstrumentosBulkActionsModal from "../components/Instrumentos/InstrumentosBulkActionsModal";
 import Modal from "../components/Modal";
 import ExportModal from "../components/ExportModal.jsx";
@@ -240,8 +241,8 @@ export default function Instrumentos() {
           }}
           openDetail={async (id) => {
             try {
-              const res = await fetch(`http://localhost:4000/instrumentos/${id}`);
-              const data = await res.json();
+              const res = await http.get(`/instrumentos/${id}`);
+              const data = res.data;
               setViewDetail({ ...data, asignado: data.asignado || null });
             } catch (err) {
               console.error(err);

@@ -1,6 +1,6 @@
 // sistema-orquesta/src/components/Alumno/ToggleAlumnoEstado.jsx
 import React, { useState } from "react";
-import axios from "axios";
+import { http } from "../../api/http";
 import toast from "react-hot-toast";
 import { getAlumnoInstrumento } from "../../api/alumnos";
 import ConfirmDialog from "../ConfirmDialog";
@@ -45,8 +45,8 @@ export default function ToggleAlumnoEstado({ alumnoId, estadoActual, onSuccess, 
     const destino = estadoActual === "Activo" ? "Inactivo" : "Activo";
     try {
       setLoading(true);
-      await axios.put(
-        `http://localhost:4000/alumnos/${alumnoId}/estado`,
+      await http.put(
+        `/alumnos/${alumnoId}/estado`,
         { estado: destino, usuario: "sistema" }
       );
       // El backend devuelve { message: "Estado actualizado" } actualmente, por lo que asumimos el destino

@@ -1,13 +1,140 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Button from "../ui/Button";
 import { getRoles, createRol, updateRol, deleteRol } from "../../api/administracion/roles";
+import RolEditModal from "./RolEditModal";
 
 export default function RolesAdmin() {
   const [roles, setRoles] = useState([]);
-  const [form, setForm] = useState({ nombre: "", permisos: "" });
-  const [editId, setEditId] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState(null); // rol o null
+  const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [query, setQuery] = useState("");
+
+  // Catálogo y labels locales (mantener alineado con PermisosEditor y backend)
+  const catalog = useMemo(() => ({
+    alumnos: ["read","create","update","delete","export"],
+    eventos: ["read","create","update","delete","finalize","cancel"],
+    instrumentos: ["read","create","update","delete"],
+    programas: ["read","create","update","delete"],
+    representantes: ["read","create","update","delete"],
+    roles: ["read","create","update","delete"],
+    usuarios: ["read","create","update","delete"],
+    reportes: ["read"],
+  }), []);
+
+  const actionLabels = {
+    read: 'Leer',
+    create: 'Crear',
+    update: 'Editar',
+    delete: 'Desactivar/Eliminar',
+    export: 'Exportar',
+    finalize: 'Finalizar',
+    cancel: 'Cancelar',
+  };
+
+  const normalizeActions = (actions) => {
+    if (actions === '*' ) return ['*'];
+    if (Array.isArray(actions)) return actions;
+    if (actions == null) return [];
+    if (typeof actions === 'object') return [];
+    const s = String(actions).trim();
+    if (!s) return [];
+    return [s];
+  };
+
+  const inferPreset = (resource, actions = []) => {
+    const arr = normalizeActions(actions);
+    if (!arr || arr.length === 0) return 'none';
+    if (arr.includes('*')) return 'all';
+    const set = new Set(arr);
+    const isReadOnly = set.size === 1 && set.has('read');
+    if (isReadOnly) return 'read';
+    const editSet = new Set(['read','create','update']);
+    const onlyEdit = Array.from(set).every(a => editSet.has(a)) && set.size === editSet.size;
+    if (onlyEdit) return 'edit';
+    return 'custom';
+  };
+
+  const presetBadge = (preset) => {
+    switch (preset) {
+      case 'none': return <span className="px-2 py-0.5 text-[11px] rounded bg-gray-200 text-gray-700">Sin acceso</span>;
+      case 'read': return <span className="px-2 py-0.5 text-[11px] rounded bg-blue-100 text-blue-700">Solo lectura</span>;
+      case 'edit': return <span className="px-2 py-0.5 text-[11px] rounded bg-amber-100 text-amber-700">Editar</span>;
+      case 'all': return <span className="px-2 py-0.5 text-[11px] rounded bg-green-100 text-green-700">Acceso total</span>;
+      default: return null;
+    }
+  };
+
+  const renderPermissionsCell = (permisos) => {
+    // Parse seguro (puede venir como string desde API)
+    let p = permisos;
+    if (typeof p === 'string') {
+      try { p = JSON.parse(p || '{}'); } catch { p = {}; }
+    }
+    if (Array.isArray(p)) {
+      if (p.includes('*')) {
+        // Mostrar una sola etiqueta de acceso total
+        return (
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium capitalize text-gray-700">todos:</span>
+            {presetBadge('all')}
+          </div>
+        );
+      }
+      // convertir tokens a objeto por recurso
+      const obj = {};
+      if (!p.includes('*')) {
+        for (const t of p) {
+          const [res, actRaw] = String(t||'').toLowerCase().split(':');
+          if (!res) continue;
+          obj[res] = obj[res] || [];
+          if (!actRaw) continue;
+          if (actRaw === 'write') {
+            for (const a of ['read','create','update']) {
+              if (!obj[res].includes(a)) obj[res].push(a);
+            }
+          } else {
+            if (!obj[res].includes(actRaw)) obj[res].push(actRaw);
+          }
+        }
+      }
+      p = obj;
+    }
+    p = p && typeof p === 'object' ? p : {};
+
+  // Unir catálogo + claves reales presentes para mostrar también recursos desconocidos (ej. 'asistencia')
+  const resources = Array.from(new Set([...Object.keys(catalog), ...Object.keys(p || {})]));
+    const chips = [];
+    for (const res of resources) {
+      const acts = p[res] || [];
+      const preset = inferPreset(res, acts);
+      if (preset !== 'custom') {
+        if (preset === 'none') continue; // no mostrar recursos sin acceso para compactar
+        chips.push(
+          <div key={res} className="flex items-center gap-2">
+            <span className="text-xs font-medium capitalize text-gray-700">{res}:</span>
+            {presetBadge(preset)}
+          </div>
+        );
+      } else {
+        // custom: listar acciones marcadas
+        const items = normalizeActions(acts).filter(a => a !== '*').map(a => (
+          <span key={a} className="px-1.5 py-0.5 text-[11px] rounded border bg-white">{actionLabels[a] || a}</span>
+        ));
+        if (items.length === 0) continue;
+        chips.push(
+          <div key={res} className="flex items-center gap-2">
+            <span className="text-xs font-medium capitalize text-gray-700">{res}:</span>
+            <div className="flex flex-wrap gap-1.5">{items}</div>
+          </div>
+        );
+      }
+    }
+    if (chips.length === 0) return <span className="text-xs text-gray-400">Sin permisos</span>;
+    return <div className="grid gap-1.5" style={{gridTemplateColumns:'repeat(1, minmax(0, 1fr))'}}>{chips}</div>;
+  };
 
   const fetchRoles = async () => {
     setLoading(true);
@@ -25,31 +152,28 @@ export default function RolesAdmin() {
     fetchRoles();
   }, []);
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      if (editId) {
-        await updateRol(editId, form);
-      } else {
-        await createRol(form);
-      }
-      setForm({ nombre: "", permisos: "" });
-      setEditId(null);
-      fetchRoles();
-    } catch {
-      setError("Error al guardar");
-    }
-    setLoading(false);
-  };
-
+  const handleOpenNew = () => { setEditing(null); setModalOpen(true); };
   const handleEdit = (r) => {
-    setForm({ nombre: r.nombre, permisos: r.permisos || "" });
-    setEditId(r.id_rol);
+    if (String(r.nombre).toLowerCase() === 'admin' || String(r.nombre).toLowerCase() === 'administrador') {
+      return; // no editable
+    }
+    setEditing(r); setModalOpen(true);
+  };
+  const handleClose = () => { setModalOpen(false); setEditing(null); };
+
+  const handleSave = async ({ nombre, permisos }) => {
+    setSaving(true);
+    try {
+      if (editing?.id_rol) await updateRol(editing.id_rol, { nombre, permisos });
+      else await createRol({ nombre, permisos });
+      await fetchRoles();
+      setModalOpen(false);
+      setEditing(null);
+    } catch {
+      setError('Error al guardar');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDelete = async (id) => {
@@ -64,23 +188,27 @@ export default function RolesAdmin() {
     setLoading(false);
   };
 
+  const filteredRoles = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return roles;
+    return (roles || []).filter(r => (r?.nombre || '').toLowerCase().includes(q));
+  }, [roles, query]);
+
   return (
     <div>
-      <h2 className="text-xl font-bold mb-4">Roles y Permisos</h2>
-      <form onSubmit={handleSubmit} className="mb-6 flex flex-col md:flex-row gap-2 items-end">
-        <div>
-          <label className="block text-xs text-yellow-500 font-semibold mb-1">Nombre</label>
-          <input name="nombre" value={form.nombre} onChange={handleChange} required className="border rounded px-3 py-1 w-48" />
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-xl font-bold">Roles</h2>
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={query}
+            onChange={(e)=>setQuery(e.target.value)}
+            placeholder="Buscar por nombre…"
+            className="border rounded px-3 py-1.5 text-sm w-56"
+          />
+          <Button type="button" variant="primary" onClick={handleOpenNew}>+ Nuevo rol</Button>
         </div>
-        <div>
-          <label className="block text-xs text-yellow-500 font-semibold mb-1">Permisos</label>
-          <input name="permisos" value={form.permisos} onChange={handleChange} className="border rounded px-3 py-1 w-64" placeholder="Ej: crear,editar,eliminar" />
-        </div>
-        <Button type="submit" variant="primary" loading={loading} disabled={loading}>{editId ? "Actualizar" : "Agregar"}</Button>
-        {editId && (
-          <Button type="button" variant="ghost" size="sm" onClick={() => { setEditId(null); setForm({ nombre: "", permisos: "" }); }}>Cancelar</Button>
-        )}
-      </form>
+      </div>
       {error && <div className="text-red-500 mb-2">{error}</div>}
       <div className="overflow-x-auto">
         <table className="w-full text-sm border-collapse">
@@ -94,16 +222,26 @@ export default function RolesAdmin() {
           <tbody>
             {loading ? (
               <tr><td colSpan={3} className="text-center py-4">Cargando...</td></tr>
-            ) : !Array.isArray(roles) || roles.length === 0 ? (
+            ) : !Array.isArray(filteredRoles) || filteredRoles.length === 0 ? (
               <tr><td colSpan={3} className="text-center py-4 text-gray-500">No hay roles</td></tr>
             ) : (
-              roles.map((r) => (
+              filteredRoles.map((r) => (
                 <tr key={r.id_rol}>
                   <td className="px-4 py-2 border-b">{r.nombre}</td>
-                  <td className="px-4 py-2 border-b">{r.permisos}</td>
+                  <td className="px-4 py-2 border-b align-top">
+                    {renderPermissionsCell(r.permisos)}
+                  </td>
                   <td className="px-4 py-2 border-b">
-                    <button onClick={() => handleEdit(r)} className="text-yellow-600 font-semibold mr-2 hover:underline">Editar</button>
-                    <button onClick={() => handleDelete(r.id_rol)} className="text-red-600 font-semibold hover:underline">Eliminar</button>
+                    <button
+                      onClick={() => handleEdit(r)}
+                      className={`font-semibold mr-2 ${ (String(r.nombre).toLowerCase()==='admin' || String(r.nombre).toLowerCase()==='administrador') ? 'text-gray-400 cursor-not-allowed' : 'text-yellow-600 hover:underline'}`}
+                      disabled={String(r.nombre).toLowerCase()==='admin' || String(r.nombre).toLowerCase()==='administrador'}
+                    >Editar</button>
+                    <button
+                      onClick={() => handleDelete(r.id_rol)}
+                      className={`font-semibold ${ (String(r.nombre).toLowerCase()==='admin' || String(r.nombre).toLowerCase()==='administrador') ? 'text-gray-400 cursor-not-allowed' : 'text-red-600 hover:underline'}`}
+                      disabled={String(r.nombre).toLowerCase()==='admin' || String(r.nombre).toLowerCase()==='administrador'}
+                    >Eliminar</button>
                   </td>
                 </tr>
               ))
@@ -111,6 +249,13 @@ export default function RolesAdmin() {
           </tbody>
         </table>
       </div>
+      <RolEditModal
+        open={modalOpen}
+        initialData={editing}
+        onClose={handleClose}
+        onSave={handleSave}
+        saving={saving}
+      />
     </div>
   );
 }

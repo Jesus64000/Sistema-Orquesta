@@ -1,5 +1,6 @@
 // src/components/InstrumentoAsignacion.jsx
 import { useEffect, useState } from "react";
+import { http } from "../../api/http";
 import toast from "react-hot-toast";
 
 export default function InstrumentoAsignacion({ instrumento }) {
@@ -11,8 +12,8 @@ export default function InstrumentoAsignacion({ instrumento }) {
   const loadAsignacion = async () => {
     try {
       // Traer el detalle del instrumento, que incluye el alumno asignado completo
-      const res = await fetch(`http://localhost:4000/instrumentos/${instrumento.id_instrumento}`);
-      const data = await res.json();
+  const res = await http.get(`/instrumentos/${instrumento.id_instrumento}`);
+  const data = res.data;
       setAsignado(data.asignado || null);
     } catch (err) {
       console.error("Error cargando asignación:", err);
@@ -23,9 +24,8 @@ export default function InstrumentoAsignacion({ instrumento }) {
   // 🔄 Cargar lista de alumnos
   const loadAlumnos = async () => {
     try {
-      const res = await fetch("http://localhost:4000/alumnos");
-      if (!res.ok) throw new Error("Error cargando alumnos");
-      const data = await res.json();
+  const res = await http.get(`/alumnos`);
+  const data = res.data;
       setAlumnos(data);
     } catch {
       setAlumnos([]);
@@ -48,15 +48,10 @@ export default function InstrumentoAsignacion({ instrumento }) {
     }
 
     try {
-      const res = await fetch(
-        `http://localhost:4000/alumnos/${alumnoId}/instrumento`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id_instrumento: instrumento.id_instrumento }),
-        }
+      await http.post(
+        `/alumnos/${alumnoId}/instrumento`,
+        { id_instrumento: instrumento.id_instrumento }
       );
-      if (!res.ok) throw new Error("Error en asignación");
 
       toast.success("Instrumento asignado correctamente");
 
@@ -73,11 +68,9 @@ export default function InstrumentoAsignacion({ instrumento }) {
     if (!asignado?.id_alumno) return toast.error("No hay asignación activa");
 
     try {
-      const res = await fetch(
-        `http://localhost:4000/alumnos/${asignado.id_alumno}/instrumento`,
-        { method: "DELETE" }
+      await http.delete(
+        `/alumnos/${asignado.id_alumno}/instrumento`
       );
-      if (!res.ok) throw new Error("Error al devolver el instrumento");
 
       toast.success("Instrumento devuelto correctamente");
 

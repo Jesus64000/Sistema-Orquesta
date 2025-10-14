@@ -8,7 +8,7 @@ import { requirePermission } from '../helpers/permissions.js';
 const router = Router();
 
 // GET /representantes  (opcional ?q= para búsqueda)
-router.get('/', async (req, res) => {
+router.get('/', requirePermission('representantes:read'), async (req, res) => {
   try {
     const { q } = req.query || {};
     let sql = `SELECT r.id_representante,
@@ -42,7 +42,7 @@ router.get('/', async (req, res) => {
 });
 
 // GET /representantes/:id  (incluye alumnos asociados)
-router.get('/:id', async (req, res) => {
+router.get('/:id', requirePermission('representantes:read'), async (req, res) => {
   try {
     const { id } = req.params;
   const [[row]] = await pool.query(`SELECT r.id_representante, r.nombre, r.apellido, r.ci, r.telefono, r.telefono_movil, r.email, r.id_parentesco, p.nombre AS parentesco_nombre, r.activo, r.creado_en, r.actualizado_en FROM representante r LEFT JOIN parentesco p ON r.id_parentesco=p.id_parentesco WHERE r.id_representante = ?`, [id]);
@@ -57,7 +57,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /representantes
-router.post('/', requirePermission('representantes:write'), async (req, res) => {
+router.post('/', requirePermission('representantes:create'), async (req, res) => {
   try {
     const { nombre, apellido = null, ci = null, telefono = null, telefono_movil = null, email, id_parentesco = null, activo = 1 } = req.body;
     if (!nombre || !email) {
@@ -72,7 +72,7 @@ router.post('/', requirePermission('representantes:write'), async (req, res) => 
 });
 
 // PUT /representantes/:id
-router.put('/:id', requirePermission('representantes:write'), async (req, res) => {
+router.put('/:id', requirePermission('representantes:update'), async (req, res) => {
   try {
     const { id } = req.params;
     const { nombre, apellido = null, ci = null, telefono = null, telefono_movil = null, email, id_parentesco = null, activo } = req.body;
@@ -95,7 +95,7 @@ router.put('/:id', requirePermission('representantes:write'), async (req, res) =
 });
 
 // DELETE /representantes/:id
-router.delete('/:id', requirePermission('representantes:write'), async (req, res) => {
+router.delete('/:id', requirePermission('representantes:delete'), async (req, res) => {
   try {
     const { id } = req.params;
   const [result] = await pool.query('DELETE FROM representante WHERE id_representante = ?', [id]);
@@ -108,7 +108,7 @@ router.delete('/:id', requirePermission('representantes:write'), async (req, res
 });
 
 // POST /representantes/export { ids?: number[], format?: 'csv'|'xlsx'|'pdf', search?: string }
-router.post('/export', async (req, res) => {
+router.post('/export', requirePermission('representantes:read'), async (req, res) => {
   try {
     const { ids = [], format = 'csv', search = '' } = req.body || {};
     let sql = `SELECT r.id_representante, r.nombre, r.apellido,

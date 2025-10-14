@@ -1,27 +1,25 @@
 // src/api/eventos.js
-import axios from "axios";
-
-const API = "http://localhost:4000";
+import { http } from './http';
 
 export const EVENTO_ESTADOS = ['PROGRAMADO','EN_CURSO','FINALIZADO','CANCELADO'];
 
 // Obtener eventos (con filtros opcionales)
 export const getEventos = async (params = {}) => {
-  const res = await axios.get(`${API}/eventos`, { params });
+  const res = await http.get(`/eventos`, { params });
   return res.data;
 };
 
 // Búsqueda predictiva
 export const suggestEventos = async (q, limit = 8) => {
   if (!q || q.trim().length < 2) return [];
-  const res = await axios.get(`${API}/eventos/suggest`, { params: { q, limit } });
+  const res = await http.get(`/eventos/suggest`, { params: { q, limit } });
   return res.data;
 };
 
 // Obtener historial de un evento
 export const getEventoHistorial = async (id_evento) => {
   if (!id_evento) return [];
-  const res = await axios.get(`${API}/eventos/${id_evento}/historial`);
+  const res = await http.get(`/eventos/${id_evento}/historial`);
   return res.data;
 };
 
@@ -29,40 +27,40 @@ export const getEventoHistorial = async (id_evento) => {
 export const createEvento = async (data) => {
   const payload = { ...data };
   if (!payload.estado) payload.estado = 'PROGRAMADO';
-  const res = await axios.post(`${API}/eventos`, payload);
+  const res = await http.post(`/eventos`, payload);
   return res.data;
 };
 
 // Editar evento (permitir cambiar estado)
 export const updateEvento = async (id, data) => {
-  const res = await axios.put(`${API}/eventos/${id}`, data);
+  const res = await http.put(`/eventos/${id}`, data);
   return res.data;
 };
 
 // Eliminar evento
 export const deleteEvento = async (id) => {
-  const res = await axios.delete(`${API}/eventos/${id}`);
+  const res = await http.delete(`/eventos/${id}`);
   return res.data;
 };
 
 // ✅ Eventos futuros y pasados con API base
 export const getEventosFuturos = async (programaId) => {
-  const res = await axios.get(`${API}/eventos/futuros`, {
+  const res = await http.get(`/eventos/futuros`, {
     params: programaId ? { programa_id: programaId } : {},
   });
   return res.data;
 };
 
 export const getEventosPasados = async () => {
-  const res = await axios.get(`${API}/eventos/pasados`);
+  const res = await http.get(`/eventos/pasados`);
   return res.data;
 };
 
 // Exportar eventos (ids opcionales, formato 'csv' default)
 export const exportEventos = async ({ ids = [], format = 'csv', search = '' } = {}) => {
   const expectsBlob = ['csv','xlsx','excel','pdf'].includes(format);
-  const res = await axios.post(
-    `${API}/eventos/export`,
+  const res = await http.post(
+    `/eventos/export`,
     { ids, format, search },
     { responseType: expectsBlob ? 'blob' : 'json' }
   );

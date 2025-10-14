@@ -1,8 +1,8 @@
 // src/api/administracion/programas.js
-import axios from "axios";
-const API = "http://localhost:4000/administracion/programas";
+import { http } from "../http";
+const API = "/administracion/programas";
 
-export const getProgramas = () => axios.get(API);
-export const createPrograma = (data) => axios.post(API, data);
-export const updatePrograma = (id, data) => axios.put(`${API}/${id}`, data);
-export const deletePrograma = (id) => axios.delete(`${API}/${id}`);
+export const getProgramas = () => http.get(API);
+export const createPrograma = (data) => http.post(API, data);
+export const updatePrograma = (id, data) => http.put(`${API}/${id}`, data);
+export const deletePrograma = (id) => http.delete(`${API}/${id}`);

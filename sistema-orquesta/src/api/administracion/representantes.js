@@ -1,8 +1,8 @@
 // src/api/administracion/representantes.js
-import axios from "axios";
-const API = "http://localhost:4000/administracion/representantes";
+import { http } from "../http";
+const API = "/administracion/representantes";
 
-export const getRepresentantes = () => axios.get(API);
-export const createRepresentante = (data) => axios.post(API, data);
-export const updateRepresentante = (id, data) => axios.put(`${API}/${id}`, data);
-export const deleteRepresentante = (id) => axios.delete(`${API}/${id}`);
+export const getRepresentantes = () => http.get(API);
+export const createRepresentante = (data) => http.post(API, data);
+export const updateRepresentante = (id, data) => http.put(`${API}/${id}`, data);
+export const deleteRepresentante = (id) => http.delete(`${API}/${id}`);

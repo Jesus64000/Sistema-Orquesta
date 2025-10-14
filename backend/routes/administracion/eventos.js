@@ -4,7 +4,7 @@ import db from '../../db.js';
 import { requirePermission } from '../../helpers/permissions.js';
 
 // Listar eventos
-router.get('/', async (req, res) => {
+router.get('/', requirePermission('eventos:read'), async (req, res) => {
   try {
   const [rows] = await db.query('SELECT * FROM evento');
     res.json(rows);
@@ -14,7 +14,7 @@ router.get('/', async (req, res) => {
 });
 
 // Crear evento
-router.post('/', requirePermission('eventos:write'), async (req, res) => {
+router.post('/', requirePermission('eventos:create'), async (req, res) => {
   const { nombre, fecha, programa, instrumento } = req.body;
   try {
   await db.query('INSERT INTO evento (titulo, fecha_evento, id_programa, lugar) VALUES (?, ?, ?, ?)', [nombre, fecha, programa, instrumento]);
@@ -25,7 +25,7 @@ router.post('/', requirePermission('eventos:write'), async (req, res) => {
 });
 
 // Editar evento
-router.put('/:id', requirePermission('eventos:write'), async (req, res) => {
+router.put('/:id', requirePermission('eventos:update'), async (req, res) => {
   const { nombre, fecha, programa, instrumento } = req.body;
   try {
   await db.query('UPDATE evento SET titulo=?, fecha_evento=?, id_programa=?, lugar=? WHERE id_evento=?', [nombre, fecha, programa, instrumento, req.params.id]);
@@ -36,7 +36,7 @@ router.put('/:id', requirePermission('eventos:write'), async (req, res) => {
 });
 
 // Eliminar evento
-router.delete('/:id', requirePermission('eventos:write'), async (req, res) => {
+router.delete('/:id', requirePermission('eventos:delete'), async (req, res) => {
   try {
   await db.query('DELETE FROM evento WHERE id_evento=?', [req.params.id]);
     res.json({ success: true });

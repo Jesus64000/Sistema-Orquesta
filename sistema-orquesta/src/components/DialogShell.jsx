@@ -54,14 +54,16 @@ export default function DialogShell({
       }
       openCount += 1;
       document.body.classList.add("overflow-hidden");
-      // Marcar root como aria-hidden (el dialog va via portal fuera de root)
+      // Mover foco al panel primero para evitar que un hijo del root quede enfocado
+      try { panelRef.current?.focus?.(); } catch { /* noop */ }
+      // Luego ocultar el root (y hacerlo inerte) para lectores de pantalla y navegación
       if (openCount === 1) {
         const root = document.getElementById("root");
-        if (root) root.setAttribute("aria-hidden", "true");
+        if (root) {
+          try { root.setAttribute("aria-hidden", "true"); } catch { /* noop */ }
+          try { root.setAttribute("inert", ""); } catch { /* noop */ }
+        }
       }
-      setTimeout(() => {
-        try { panelRef.current?.focus?.(); } catch { /* noop */ }
-      }, 0);
     }
     return () => {
       if (open) {
@@ -69,7 +71,10 @@ export default function DialogShell({
         if (openCount === 0) {
           document.body.classList.remove("overflow-hidden");
           const root = document.getElementById("root");
-          if (root) root.removeAttribute("aria-hidden");
+          if (root) {
+            try { root.removeAttribute("aria-hidden"); } catch { /* noop */ }
+            try { root.removeAttribute("inert"); } catch { /* noop */ }
+          }
           // Restaurar foco al último elemento activo si sigue en el documento
             if (lastActiveElement && document.contains(lastActiveElement)) {
               try { lastActiveElement.focus(); } catch { /* noop */ }

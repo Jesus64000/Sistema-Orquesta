@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 07-10-2025 a las 18:11:25
+-- Tiempo de generación: 14-10-2025 a las 16:10:09
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.0.30
 
@@ -13,12 +13,12 @@ SET time_zone = "+00:00";
 
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARAC7TER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Base de datos: `db_orquesta`
+-- Base de datos: `prueba_db`
 --
 
 -- --------------------------------------------------------
@@ -60,7 +60,8 @@ INSERT INTO `alumno` (`id_alumno`, `nombre`, `fecha_nacimiento`, `genero`, `tele
 (15, 'Nuevo alumno 5467', '1999-04-25', 'Masculino', '04245678746', NULL, 'Activo', '2025-09-26 16:08:02', '2025-09-26 16:08:02', NULL),
 (16, 'Nuevo', '2014-04-24', 'Femenino', '', 1, 'Activo', '2025-09-27 02:24:57', '2025-09-27 02:24:57', NULL),
 (17, 'alumno Preuba nsadasdads', '2017-06-14', 'Masculino', '04246120867', NULL, 'Activo', '2025-10-01 12:24:49', '2025-10-01 12:24:49', NULL),
-(18, 'prueba 6578', '2001-08-24', 'Masculino', '', NULL, 'Activo', '2025-10-01 12:33:14', '2025-10-01 12:33:14', NULL);
+(18, 'prueba 6578', '2001-08-24', 'Masculino', '', NULL, 'Activo', '2025-10-01 12:33:14', '2025-10-01 12:33:14', NULL),
+(19, 'alumno 44523423423415424625243224', '2000-01-02', 'Masculino', '04125674654', NULL, 'Activo', '2025-10-07 18:50:29', '2025-10-07 18:50:29', NULL);
 
 -- --------------------------------------------------------
 
@@ -458,7 +459,8 @@ INSERT INTO `alumno_historial` (`id_historial`, `id_alumno`, `tipo`, `descripcio
 (352, 14, 'ACTUALIZACION', 'Alumno actualizado. Programas ahora: 3', 'sistema', '2025-09-28 18:47:55'),
 (353, 14, 'ACTUALIZACION', 'Alumno actualizado. Programas ahora: 3', 'sistema', '2025-09-28 18:52:52'),
 (354, 17, 'CREACION', 'Alumno creado y asignado a programas: 1', 'sistema', '2025-10-01 12:24:49'),
-(355, 18, 'CREACION', 'Alumno creado y asignado a programas: 3, 2', 'sistema', '2025-10-01 12:33:14');
+(355, 18, 'CREACION', 'Alumno creado y asignado a programas: 3, 2', 'sistema', '2025-10-01 12:33:14'),
+(356, 19, 'CREACION', 'Alumno creado y asignado a programas: 1', 'sistema', '2025-10-07 18:50:29');
 
 -- --------------------------------------------------------
 
@@ -500,7 +502,8 @@ INSERT INTO `alumno_programa` (`id_alumno_programa`, `id_alumno`, `id_programa`,
 (58, 14, 3, '2025-09-28 18:52:52'),
 (59, 17, 1, '2025-10-01 12:24:49'),
 (60, 18, 3, '2025-10-01 12:33:14'),
-(61, 18, 2, '2025-10-01 12:33:14');
+(61, 18, 2, '2025-10-01 12:33:14'),
+(62, 19, 1, '2025-10-07 18:50:29');
 
 -- --------------------------------------------------------
 
@@ -824,6 +827,60 @@ INSERT INTO `representante` (`id_representante`, `nombre`, `apellido`, `ci`, `te
 (4, 'sss', 'asasas', '2313123', NULL, '0424564564', 'sdasd@ganm.com', 5, 1, '2025-09-28 18:19:44', '2025-09-28 18:19:44', NULL, NULL),
 (5, 'Repre 4', 'Asd', 'V-4512454', NULL, '04246521057', 'correo@gmail.com', NULL, 1, '2025-10-01 12:23:31', '2025-10-01 12:23:31', NULL, NULL);
 
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `rol`
+--
+
+CREATE TABLE `rol` (
+  `id_rol` int(11) NOT NULL,
+  `nombre` varchar(50) NOT NULL,
+  `permisos` text DEFAULT NULL,
+  `creado_en` timestamp NULL DEFAULT current_timestamp(),
+  `actualizado_en` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `rol`
+--
+
+INSERT INTO `rol` (`id_rol`, `nombre`, `permisos`, `creado_en`, `actualizado_en`) VALUES
+(1, 'administrador', '[\"*\"]', '2025-10-07 18:09:03', '2025-10-07 18:09:03'),
+(2, 'supervisor', '{\"alumnos\":[\"*\"],\"instrumentos\":[\"*\"],\"eventos\":[\"*\"],\"representantes\":[\"*\"],\"programas\":[\"*\"],\"roles\":[\"read\"],\"usuarios\":[\"*\"],\"reportes\":[\"*\"],\"$nivel\":1}', '2025-10-07 18:09:03', '2025-10-13 23:38:40'),
+(3, 'profesor', '{\"asistencia\":[\"read\",\"create\",\"update\"],\"dashboard\":[\"*\"],\"eventos\":[\"read\"],\"alumnos\":[\"read\",\"create\",\"update\"],\"instrumentos\":[\"read\",\"create\",\"update\"],\"representantes\":[\"read\",\"create\",\"update\"],\"programas\":[\"read\"],\"$nivel\":2}', '2025-10-07 18:09:03', '2025-10-13 20:09:25'),
+(4, 'mastes', '[\"alumnos:read\",\"instrumentos:read\",\"eventos:read\"]', '2025-10-07 18:09:03', '2025-10-07 18:09:03'),
+(5, 'coordinador', '{\"eventos\":[\"read\"],\"dashboard\":[\"read\"],\"instrumentos\":[\"read\"]}', '2025-10-07 18:16:06', '2025-10-13 00:45:57');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `usuario`
+--
+
+CREATE TABLE `usuario` (
+  `id_usuario` int(11) NOT NULL,
+  `nombre` varchar(100) NOT NULL,
+  `email` varchar(120) NOT NULL,
+  `password_hash` varchar(255) NOT NULL,
+  `id_rol` int(11) DEFAULT NULL,
+  `activo` tinyint(1) NOT NULL DEFAULT 1,
+  `creado_en` timestamp NULL DEFAULT current_timestamp(),
+  `actualizado_en` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `usuario`
+--
+
+INSERT INTO `usuario` (`id_usuario`, `nombre`, `email`, `password_hash`, `id_rol`, `activo`, `creado_en`, `actualizado_en`) VALUES
+(1, 'Admin Sistema', 'admin@local', '$2b$10$TfrKcLMofbyuGxZReMtGcuGsrOX6U9YrNnG3S6EHF4IdknzbjQzbu', 1, 1, '2025-10-07 18:09:03', '2025-10-11 21:03:18'),
+(2, 'María Test', 'maria@test.local', '$2b$10$zDFrw4yBsPePZ5euopoYDu/LVkCw7VBJVgwapO/uFntZ0V3MypcmO', 2, 1, '2025-10-07 18:17:49', '2025-10-11 21:03:40'),
+(3, 'Juan Admin', 'juan@local', 'abc123', 1, 1, '2025-10-07 18:19:15', '2025-10-07 18:19:15'),
+(4, 'Supervisor Demo', 'supervisor@local', 'supervisor', 2, 1, '2025-10-07 18:46:04', '2025-10-07 18:46:04'),
+(5, 'Profesor Demo', 'profesor@local', '$2b$10$x7jKadl762uyiVDcGqi1eeusMpDyvMLZMblJEEbRDYdjMLnT49Djm', 3, 1, '2025-10-07 18:46:04', '2025-10-14 14:02:59'),
+(6, 'Mastes Demo', 'mastes@local', 'mastes', 4, 1, '2025-10-07 18:46:04', '2025-10-07 18:46:04');
+
 --
 -- Índices para tablas volcadas
 --
@@ -952,6 +1009,21 @@ ALTER TABLE `representante`
   ADD KEY `fk_representante_parentesco` (`id_parentesco`);
 
 --
+-- Indices de la tabla `rol`
+--
+ALTER TABLE `rol`
+  ADD PRIMARY KEY (`id_rol`),
+  ADD UNIQUE KEY `uq_rol_nombre` (`nombre`);
+
+--
+-- Indices de la tabla `usuario`
+--
+ALTER TABLE `usuario`
+  ADD PRIMARY KEY (`id_usuario`),
+  ADD UNIQUE KEY `uq_usuario_email` (`email`),
+  ADD KEY `fk_usuario_rol` (`id_rol`);
+
+--
 -- AUTO_INCREMENT de las tablas volcadas
 --
 
@@ -959,7 +1031,7 @@ ALTER TABLE `representante`
 -- AUTO_INCREMENT de la tabla `alumno`
 --
 ALTER TABLE `alumno`
-  MODIFY `id_alumno` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `id_alumno` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
 
 --
 -- AUTO_INCREMENT de la tabla `alumno_asistencia`
@@ -977,13 +1049,13 @@ ALTER TABLE `alumno_documento`
 -- AUTO_INCREMENT de la tabla `alumno_historial`
 --
 ALTER TABLE `alumno_historial`
-  MODIFY `id_historial` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=356;
+  MODIFY `id_historial` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=357;
 
 --
 -- AUTO_INCREMENT de la tabla `alumno_programa`
 --
 ALTER TABLE `alumno_programa`
-  MODIFY `id_alumno_programa` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=62;
+  MODIFY `id_alumno_programa` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=63;
 
 --
 -- AUTO_INCREMENT de la tabla `alumno_representante`
@@ -1056,6 +1128,18 @@ ALTER TABLE `programa`
 --
 ALTER TABLE `representante`
   MODIFY `id_representante` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+
+--
+-- AUTO_INCREMENT de la tabla `rol`
+--
+ALTER TABLE `rol`
+  MODIFY `id_rol` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+
+--
+-- AUTO_INCREMENT de la tabla `usuario`
+--
+ALTER TABLE `usuario`
+  MODIFY `id_usuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- Restricciones para tablas volcadas
@@ -1139,6 +1223,12 @@ ALTER TABLE `movimiento_inventario`
 --
 ALTER TABLE `representante`
   ADD CONSTRAINT `fk_representante_parentesco` FOREIGN KEY (`id_parentesco`) REFERENCES `parentesco` (`id_parentesco`) ON DELETE SET NULL;
+
+--
+-- Filtros para la tabla `usuario`
+--
+ALTER TABLE `usuario`
+  ADD CONSTRAINT `fk_usuario_rol` FOREIGN KEY (`id_rol`) REFERENCES `rol` (`id_rol`) ON DELETE SET NULL;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

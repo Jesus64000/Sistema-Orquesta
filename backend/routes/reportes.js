@@ -1,12 +1,13 @@
 import { Router } from 'express';
 import pool from '../db.js';
+import { requirePermission } from '../helpers/permissions.js';
 
 const router = Router();
 
 // -------------------- ALUMNOS --------------------
 
 // Total de alumnos
-router.get('/alumnos-total', async (req, res) => {
+router.get('/alumnos-total', requirePermission('reportes:read'), async (req, res) => {
   try {
   const [rows] = await pool.query(`SELECT COUNT(*) AS total FROM alumno`);
     res.json(rows[0]);
@@ -17,7 +18,7 @@ router.get('/alumnos-total', async (req, res) => {
 });
 
 // Alumnos activos
-router.get('/alumnos-activos', async (req, res) => {
+router.get('/alumnos-activos', requirePermission('reportes:read'), async (req, res) => {
   try {
   const [rows] = await pool.query(`SELECT COUNT(*) AS total FROM alumno WHERE estado='Activo'`);
     res.json(rows[0]);
@@ -28,7 +29,7 @@ router.get('/alumnos-activos', async (req, res) => {
 });
 
 // Alumnos inactivos
-router.get('/alumnos-inactivos', async (req, res) => {
+router.get('/alumnos-inactivos', requirePermission('reportes:read'), async (req, res) => {
   try {
     const [rows] = await pool.query(`
       SELECT COUNT(*) AS total 
@@ -43,7 +44,7 @@ router.get('/alumnos-inactivos', async (req, res) => {
 });
 
 // Alumnos por programa
-router.get('/alumnos-por-programa', async (req, res) => {
+router.get('/alumnos-por-programa', requirePermission('reportes:read'), async (req, res) => {
   try {
     const [rows] = await pool.query(`
       SELECT p.id_programa, p.nombre AS programa, COUNT(DISTINCT ap.id_alumno) AS cantidad
@@ -60,7 +61,7 @@ router.get('/alumnos-por-programa', async (req, res) => {
 });
 
 // Comparativa alumnos por programa entre dos años
-router.get('/alumnos-por-programa-anio', async (req, res) => {
+router.get('/alumnos-por-programa-anio', requirePermission('reportes:read'), async (req, res) => {
   const { anio1, anio2 } = req.query;
   if (!anio1 || !anio2) return res.status(400).json({ error: 'Faltan años en query' });
 
@@ -82,7 +83,7 @@ router.get('/alumnos-por-programa-anio', async (req, res) => {
 });
 
 // Alumnos por edad
-router.get('/alumnos-por-edad', async (req, res) => {
+router.get('/alumnos-por-edad', requirePermission('reportes:read'), async (req, res) => {
   const { programa } = req.query;
   try {
     let query = `
@@ -114,7 +115,7 @@ router.get('/alumnos-por-edad', async (req, res) => {
 });
 
 // Alumnos por género
-router.get('/alumnos-por-genero', async (req, res) => {
+router.get('/alumnos-por-genero', requirePermission('reportes:read'), async (req, res) => {
   const { programa } = req.query;
   try {
     let query = `
@@ -141,7 +142,7 @@ router.get('/alumnos-por-genero', async (req, res) => {
 // -------------------- INSTRUMENTOS --------------------
 
 // Total de instrumentos
-router.get('/instrumentos-total', async (req, res) => {
+router.get('/instrumentos-total', requirePermission('reportes:read'), async (req, res) => {
   try {
   const [rows] = await pool.query(`SELECT COUNT(*) AS total FROM instrumento`);
     res.json(rows[0]);
@@ -153,7 +154,7 @@ router.get('/instrumentos-total', async (req, res) => {
 
 // Instrumentos por estado
 // Permite filtrar por uno o varios id_estado: /reportes/instrumentos-por-estado?id_estado=1,2
-router.get('/instrumentos-por-estado', async (req, res) => {
+router.get('/instrumentos-por-estado', requirePermission('reportes:read'), async (req, res) => {
   try {
     let where = [];
     let params = [];
@@ -189,7 +190,7 @@ router.get('/instrumentos-por-estado', async (req, res) => {
 
 // Instrumentos por categoría
 // Permite filtrar por uno o varios id_categoria: /reportes/instrumentos-por-categoria?id_categoria=1,2
-router.get('/instrumentos-por-categoria', async (req, res) => {
+router.get('/instrumentos-por-categoria', requirePermission('reportes:read'), async (req, res) => {
   try {
     let where = [];
     let params = [];
@@ -224,7 +225,7 @@ router.get('/instrumentos-por-categoria', async (req, res) => {
 });
 
 // Instrumentos más utilizados / top 5 asignados
-router.get('/instrumentos-top-asignados', async (req, res) => {
+router.get('/instrumentos-top-asignados', requirePermission('reportes:read'), async (req, res) => {
   try {
     const [rows] = await pool.query(`
       SELECT i.id_instrumento, i.nombre, COUNT(ai.id_asignacion) AS veces_asignado
@@ -244,7 +245,7 @@ router.get('/instrumentos-top-asignados', async (req, res) => {
 // -------------------- REPRESENTANTES --------------------
 
 // Total de representantes
-router.get('/representantes-total', async (req, res) => {
+router.get('/representantes-total', requirePermission('reportes:read'), async (req, res) => {
   try {
   const [rows] = await pool.query(`SELECT COUNT(*) AS total FROM representante`);
     res.json(rows[0]);
@@ -255,7 +256,7 @@ router.get('/representantes-total', async (req, res) => {
 });
 
 // Representantes por cantidad de alumnos asociados
-router.get('/representantes-por-alumnos', async (req, res) => {
+router.get('/representantes-por-alumnos', requirePermission('reportes:read'), async (req, res) => {
   try {
     const [rows] = await pool.query(`
       SELECT r.id_representante, r.nombre, COUNT(a.id_alumno) AS cantidad_alumnos
@@ -273,7 +274,7 @@ router.get('/representantes-por-alumnos', async (req, res) => {
 // -------------------- EVENTOS --------------------
 
 // Total de eventos
-router.get('/eventos-total', async (req, res) => {
+router.get('/eventos-total', requirePermission('reportes:read'), async (req, res) => {
   try {
   const [rows] = await pool.query(`SELECT COUNT(*) AS total FROM evento`);
     res.json(rows[0]);
@@ -284,7 +285,7 @@ router.get('/eventos-total', async (req, res) => {
 });
 
 // Eventos por mes (para gráficos de tendencia)
-router.get('/eventos-por-mes', async (req, res) => {
+router.get('/eventos-por-mes', requirePermission('reportes:read'), async (req, res) => {
   try {
     const [rows] = await pool.query(`
       SELECT DATE_FORMAT(fecha_evento, '%Y-%m') AS mes, COUNT(*) AS cantidad
@@ -301,7 +302,7 @@ router.get('/eventos-por-mes', async (req, res) => {
 // -------------------- USUARIOS --------------------
 
 // Total de usuarios
-router.get('/usuarios-total', async (req, res) => {
+router.get('/usuarios-total', requirePermission('reportes:read'), async (req, res) => {
   try {
   const [rows] = await pool.query(`SELECT COUNT(*) AS total FROM usuario`);
     res.json(rows[0]);
@@ -312,7 +313,7 @@ router.get('/usuarios-total', async (req, res) => {
 });
 
 // Usuarios por rol
-router.get('/usuarios-por-rol', async (req, res) => {
+router.get('/usuarios-por-rol', requirePermission('reportes:read'), async (req, res) => {
   try {
     const [rows] = await pool.query(`
       SELECT COALESCE(r.nombre,'(sin rol)') AS rol, COUNT(u.id_usuario) AS cantidad

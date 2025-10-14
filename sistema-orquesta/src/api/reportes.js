@@ -1,51 +1,51 @@
-import axios from "axios";
+import { http } from './http';
 
-const API_URL = "http://localhost:4000/reportes";
+const API_BASE = "/reportes";
 
 // -------------------- ALUMNOS --------------------
-export const getAlumnosTotal = () => axios.get(`${API_URL}/alumnos-total`);
-export const getAlumnosActivos = () => axios.get(`${API_URL}/alumnos-activos`);
-export const getAlumnosInactivos = () => axios.get(`${API_URL}/alumnos-inactivos`);
-export const getAlumnosPorPrograma = () => axios.get(`${API_URL}/alumnos-por-programa`);
+export const getAlumnosTotal = () => http.get(`${API_BASE}/alumnos-total`);
+export const getAlumnosActivos = () => http.get(`${API_BASE}/alumnos-activos`);
+export const getAlumnosInactivos = () => http.get(`${API_BASE}/alumnos-inactivos`);
+export const getAlumnosPorPrograma = () => http.get(`${API_BASE}/alumnos-por-programa`);
 export const getAlumnosPorEdad = (programa) =>
   programa && programa !== "todos"
-    ? axios.get(`${API_URL}/alumnos-por-edad`, { params: { programa } })
-    : axios.get(`${API_URL}/alumnos-por-edad`);
+  ? http.get(`${API_BASE}/alumnos-por-edad`, { params: { programa } })
+  : http.get(`${API_BASE}/alumnos-por-edad`);
 export const getAlumnosPorGenero = (programa) =>
   programa && programa !== "todos"
-    ? axios.get(`${API_URL}/alumnos-por-genero`, { params: { programa } })
-    : axios.get(`${API_URL}/alumnos-por-genero`);
+  ? http.get(`${API_BASE}/alumnos-por-genero`, { params: { programa } })
+  : http.get(`${API_BASE}/alumnos-por-genero`);
 
 // -------------------- INSTRUMENTOS --------------------
-export const getInstrumentosTotal = () => axios.get(`${API_URL}/instrumentos-total`);
+export const getInstrumentosTotal = () => http.get(`${API_BASE}/instrumentos-total`);
 export const getInstrumentosPorEstado = (id_estado, id_categoria) => {
   const params = {};
   if (id_estado && id_estado !== "todos") params.id_estado = id_estado;
   if (id_categoria && id_categoria !== "todos") params.id_categoria = id_categoria;
-  return axios.get(`${API_URL}/instrumentos-por-estado`, Object.keys(params).length ? { params } : undefined);
+  return http.get(`${API_BASE}/instrumentos-por-estado`, Object.keys(params).length ? { params } : undefined);
 };
 export const getInstrumentosPorCategoria = (id_categoria, id_estado) => {
   const params = {};
   if (id_categoria && id_categoria !== "todos") params.id_categoria = id_categoria;
   if (id_estado && id_estado !== "todos") params.id_estado = id_estado;
-  return axios.get(`${API_URL}/instrumentos-por-categoria`, Object.keys(params).length ? { params } : undefined);
+  return http.get(`${API_BASE}/instrumentos-por-categoria`, Object.keys(params).length ? { params } : undefined);
 };
-export const getInstrumentosTopAsignados = () => axios.get(`${API_URL}/instrumentos-top-asignados`);
+export const getInstrumentosTopAsignados = () => http.get(`${API_BASE}/instrumentos-top-asignados`);
 
 // -------------------- REPRESENTANTES --------------------
-export const getRepresentantesTotal = () => axios.get(`${API_URL}/representantes-total`);
-export const getRepresentantesPorAlumnos = () => axios.get(`${API_URL}/representantes-por-alumnos`);
+export const getRepresentantesTotal = () => http.get(`${API_BASE}/representantes-total`);
+export const getRepresentantesPorAlumnos = () => http.get(`${API_BASE}/representantes-por-alumnos`);
 
 // -------------------- EVENTOS --------------------
-export const getEventosTotal = () => axios.get(`${API_URL}/eventos-total`);
-export const getEventosPorMes = () => axios.get(`${API_URL}/eventos-por-mes`);
+export const getEventosTotal = () => http.get(`${API_BASE}/eventos-total`);
+export const getEventosPorMes = () => http.get(`${API_BASE}/eventos-por-mes`);
 
 // -------------------- USUARIOS --------------------
-export const getUsuariosTotal = () => axios.get(`${API_URL}/usuarios-total`);
-export const getUsuariosPorRol = () => axios.get(`${API_URL}/usuarios-por-rol`);
+export const getUsuariosTotal = () => http.get(`${API_BASE}/usuarios-total`);
+export const getUsuariosPorRol = () => http.get(`${API_BASE}/usuarios-por-rol`);
 
 // Comparativa alumnos por programa entre dos años
 export const getAlumnosPorProgramaAnio = (anio1, anio2) =>
-  axios.get(`${API_URL}/alumnos-por-programa-anio`, {
+  http.get(`${API_BASE}/alumnos-por-programa-anio`, {
     params: { anio1, anio2 }
   });

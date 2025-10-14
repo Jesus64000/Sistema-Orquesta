@@ -1,8 +1,7 @@
 // src/api/programas.js
 // Consultas relacionadas con Programas
 
-import axios from "axios";
-const API = "http://localhost:4000";
+import { http } from './http';
 
 // Listar programas
-export const getProgramas = () => axios.get(`${API}/programas`);
+export const getProgramas = () => http.get(`/programas`);

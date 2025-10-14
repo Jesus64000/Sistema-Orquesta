@@ -20,14 +20,17 @@ export function AuthProvider({ children }) {
   const [initializing, setInitializing] = useState(true); // Restaurando sesión inicial
   const refreshLock = useRef(false);
   const pendingRefreshResolvers = useRef([]);
+  const tokenRef = useRef(token);
 
   const saveToken = useCallback((jwt) => {
     if (jwt) {
       localStorage.setItem(STORAGE_KEY, jwt);
       setToken(jwt);
+      tokenRef.current = jwt;
     } else {
       localStorage.removeItem(STORAGE_KEY);
       setToken(null);
+      tokenRef.current = null;
     }
   }, []);
 
@@ -36,17 +39,28 @@ export function AuthProvider({ children }) {
       setUser(null);
       return;
     }
-    // Asegurar estructura consistente
+    // Normalizar permisos: aceptar array plano o derivar de effectivePerms { recurso: [acciones] }
+    let permisosPlanos = [];
+    if (Array.isArray(data.permisos)) {
+      permisosPlanos = data.permisos;
+    } else if (data.effectivePerms && typeof data.effectivePerms === 'object') {
+      for (const recurso of Object.keys(data.effectivePerms)) {
+        const acciones = Array.isArray(data.effectivePerms[recurso]) ? data.effectivePerms[recurso] : [];
+        for (const accion of acciones) permisosPlanos.push(`${recurso}:${accion}`);
+      }
+    }
     setUser({
-      id: data.id,
+      id: data.id || data.id_usuario || data.user_id,
       nombre: data.nombre || data.name || data.usuario || '',
       rol: data.rol || data.role || null,
-      permisos: Array.isArray(data.permisos) ? data.permisos : [],
+      nivel_acceso: typeof data.nivel_acceso === 'number' ? data.nivel_acceso : undefined,
+      permisos: permisosPlanos,
     });
   }, []);
 
   const fetchMe = useCallback(async (opts = {}) => {
-    if (!token) {
+    const currentToken = tokenRef.current;
+    if (!currentToken) {
       applySession(null);
       return null;
     }
@@ -57,17 +71,22 @@ export function AuthProvider({ children }) {
     refreshLock.current = true;
     try {
       const res = await fetch('/auth/me', {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${currentToken}` },
       });
       if (res.ok) {
         const json = await res.json();
-        applySession(json.user || json);
+        // Evitar rehidratar sesión si el token cambió (p.ej. tras logout)
+        if (currentToken === tokenRef.current) {
+          applySession(json.user || json);
+        }
         return json.user || json;
       } else {
         if (res.status === 401) {
           // Token expirado / inválido
-            saveToken(null);
-            applySession(null);
+            if (currentToken === tokenRef.current) {
+              saveToken(null);
+              applySession(null);
+            }
         }
         return null;
       }
@@ -79,7 +98,7 @@ export function AuthProvider({ children }) {
       // Resolver las esperas acumuladas
       pendingRefreshResolvers.current.splice(0).forEach((r) => r(user));
     }
-  }, [token, applySession, saveToken, user]);
+  }, [applySession, saveToken, user]);
 
   const login = useCallback(async (email, password) => {
     setLoading(true);
@@ -113,6 +132,7 @@ export function AuthProvider({ children }) {
         id: data.user.id_usuario,
         nombre: data.user.nombre,
         rol: data.user.rol,
+        nivel_acceso: data.user.nivel_acceso,
         permisos: plainPerms,
       });
       return { ok: true };
@@ -148,7 +168,8 @@ export function AuthProvider({ children }) {
   // Restaurar sesión inicial
   useEffect(() => {
     (async () => {
-      if (token) {
+      tokenRef.current = token;
+      if (tokenRef.current) {
         await fetchMe();
       }
       setInitializing(false);

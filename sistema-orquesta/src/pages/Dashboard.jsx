@@ -1,5 +1,6 @@
 // sistema-orquesta/src/pages/Dashboard.jsx
 import { useEffect, useMemo, useState, useCallback } from "react";
+import { useAuth } from "../context/AuthContext";
 import {
   PlusCircle, Wrench, ClipboardList, MapPin, Clock,
   ChevronLeft, ChevronRight, UserCheck, UserPlus, Hourglass, Briefcase, Filter, Calendar as CalendarIcon
@@ -237,6 +238,10 @@ const MonthCalendar = ({ year, monthIndex, eventos = [] }) => {
 
 // === Dashboard ===
 export default function Dashboard() {
+  const { tienePermiso } = useAuth();
+  const canCreateAlumno = tienePermiso('alumnos','create');
+  const canCreateInstrumento = tienePermiso('instrumentos','create');
+  const canCreateEvento = tienePermiso('eventos','create');
   const [programFilter, setProgramFilter] = useState("");
   const [stats, setStats] = useState({});
   const [proximoEvento, setProximoEvento] = useState(null);
@@ -260,21 +265,21 @@ export default function Dashboard() {
     try {
       setLoadingStats(true);
       const resStats = await getDashboardStats(programFilter || null);
-      setStats(resStats.data || {});
+      setStats(resStats?.data?._denied ? {} : (resStats.data || {}));
       setLoadingStats(false);
 
       setLoadingEvento(true);
-      const resEvento = await getProximoEvento(programFilter || null);
-      setProximoEvento(resEvento.data || null);
+  const resEvento = await getProximoEvento(programFilter || null);
+  setProximoEvento(resEvento?.data?._denied ? null : (resEvento.data || null));
       setLoadingEvento(false);
 
   // Eventos siempre globales (no filtrados por programa)
   const eventos = await getEventosFuturos();
-      setEventosFuturos(Array.isArray(eventos) ? eventos : []);
+    setEventosFuturos(eventos?._denied ? [] : (Array.isArray(eventos) ? eventos : []));
 
       setCumples((prev) => ({ ...prev, loading: true }));
-      const resCum = await getCumpleaniosProximos(30, programFilter || null);
-      setCumples({ loading: false, rows: resCum.data || [], error: null });
+  const resCum = await getCumpleaniosProximos(30, programFilter || null);
+  setCumples({ loading: false, rows: resCum?.data?._denied ? [] : (resCum.data || []), error: null });
     } catch (err) {
   // error ya reflejado en estados de carga/errores
       setLoadingStats(false);
@@ -283,18 +288,19 @@ export default function Dashboard() {
     }
   }, [programFilter]);
 
+  const { token, initializing } = useAuth();
   useEffect(() => {
     loadDashboard();
     const fetchProgramas = async () => {
       try {
         const res = await getProgramas();
-        setProgramas(res.data);
+        setProgramas(res?.data?._denied ? [] : (res.data || []));
       } catch (err) {
-        console.error("Error cargando programas:", err);
+        if (token) console.error("Error cargando programas:", err);
       }
     };
-    fetchProgramas();
-  }, [loadDashboard]);
+    if (!initializing && token) fetchProgramas();
+  }, [loadDashboard, token, initializing]);
 
   return (
     <div>
@@ -327,9 +333,9 @@ export default function Dashboard() {
           <Card>
             <p className="text-sm font-medium mb-3">Acciones Rápidas</p>
             <div className="flex gap-2 flex-wrap">
-              <QuickAction icon={PlusCircle} label="Agregar Alumno" onClick={() => setOpenModal("alumno")} />
-              <QuickAction icon={Wrench} label="Registrar Instrumento" onClick={() => setOpenModal("instrumento")} />
-              <QuickAction icon={ClipboardList} label="Crear Evento" onClick={() => setOpenModal("evento")} />
+              {canCreateAlumno && (<QuickAction icon={PlusCircle} label="Agregar Alumno" onClick={() => setOpenModal("alumno")} />)}
+              {canCreateInstrumento && (<QuickAction icon={Wrench} label="Registrar Instrumento" onClick={() => setOpenModal("instrumento")} />)}
+              {canCreateEvento && (<QuickAction icon={ClipboardList} label="Crear Evento" onClick={() => setOpenModal("evento")} />)}
             </div>
           </Card>
 

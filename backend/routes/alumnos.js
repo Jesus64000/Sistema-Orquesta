@@ -19,7 +19,7 @@ router.param('id', (req, res, next, val) => {
 });
 
 // Listar alumnos con filtros opcionales: ?search=&estado=&programa_id=&edad_min=&edad_max=
-router.get('/', async (req, res) => {
+router.get('/', requirePermission('alumnos:read'), async (req, res) => {
   try {
     const { search, estado, programa_id, edad_min, edad_max } = req.query;
 
@@ -96,7 +96,7 @@ router.get('/', async (req, res) => {
 });
 
 // Detalle alumno con programas y representante
-router.get('/:id', async (req, res) => {
+router.get('/:id', requirePermission('alumnos:read'), async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -152,7 +152,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Crear alumno (acepta programa_ids array)
-router.post('/', requirePermission('alumnos:write'), async (req, res) => {
+router.post('/', requirePermission('alumnos:create'), async (req, res) => {
   try {
     const {
       nombre,
@@ -233,7 +233,7 @@ router.post('/', requirePermission('alumnos:write'), async (req, res) => {
 });
 
 // Actualizar alumno (+ reemplazar programas si viene programa_ids)
-router.put('/:id', requirePermission('alumnos:write'), async (req, res) => {
+router.put('/:id', requirePermission('alumnos:update'), async (req, res) => {
   try {
     const { id } = req.params; // ← Línea añadida para extraer el id
     const {
@@ -312,7 +312,7 @@ router.put('/:id', requirePermission('alumnos:write'), async (req, res) => {
 });
 
 // PUT /alumnos/:id/desactivar
-router.put('/:id/desactivar', requirePermission('alumnos:write'), async (req, res) => {
+router.put('/:id/desactivar', requirePermission('alumnos:update'), async (req, res) => {
   const { id } = req.params;
   const { instrumentosDevueltos } = req.body;
 
@@ -353,7 +353,7 @@ router.put('/:id/desactivar', requirePermission('alumnos:write'), async (req, re
 
 
 // Eliminar alumno
-router.delete('/:id', requirePermission('alumnos:write'), async (req, res) => {
+router.delete('/:id', requirePermission('alumnos:delete'), async (req, res) => {
 const { id } = req.params;
 
   try {
@@ -379,7 +379,7 @@ const { id } = req.params;
 });
 
 // Cambio rápido de estado
-router.put('/:id/estado', requirePermission('alumnos:write'), async (req, res) => {
+router.put('/:id/estado', requirePermission('alumnos:update'), async (req, res) => {
   try {
     const { id } = req.params;
     const { estado, usuario = "sistema" } = req.body;
@@ -395,7 +395,7 @@ router.put('/:id/estado', requirePermission('alumnos:write'), async (req, res) =
 });
 
 // Acciones masivas: cambiar estado
-router.put('/estado-masivo', requirePermission('alumnos:write'), async (req, res) => {
+router.put('/estado-masivo', requirePermission('alumnos:update'), async (req, res) => {
   try {
     const { ids = [], estado, usuario = "sistema" } = req.body;
     if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: "ids array requerido" });
@@ -413,7 +413,7 @@ router.put('/estado-masivo', requirePermission('alumnos:write'), async (req, res
 });
 
 // Export masivo (POST) - body { ids: [...], format: 'csv' }
-router.post('/export-masivo', async (req, res) => {
+router.post('/export-masivo', requirePermission('alumnos:export'), async (req, res) => {
   try {
       const { ids = [], format = "csv" } = req.body;
       if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: "ids array requerido en body" });
@@ -515,7 +515,7 @@ router.post('/export-masivo', async (req, res) => {
 });
 
 // POST /alumnos/export { ids?: number[], format: 'csv'|'xlsx'|'pdf' }
-router.post('/export', async (req, res) => {
+router.post('/export', requirePermission('alumnos:export'), async (req, res) => {
   try {
     const { ids = [], format = 'csv' } = req.body;
 
@@ -732,7 +732,7 @@ router.post('/export', async (req, res) => {
 });
 
 // Importación masiva (CSV o XLSX) - multipart/form-data field: file
-router.post('/import-masivo', requirePermission('alumnos:write'), upload.single('file'), async (req, res) => {
+router.post('/import-masivo', requirePermission('alumnos:update'), upload.single('file'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: "Archivo requerido (field 'file')" });
 
@@ -803,7 +803,7 @@ router.post('/import-masivo', requirePermission('alumnos:write'), upload.single(
 
 // Acciones masivas: agregar o quitar programa a un conjunto de alumnos
 // body: { ids: number[], id_programa: number, action: 'add' | 'remove' }
-router.post('/programa-masivo', requirePermission('alumnos:write'), async (req, res) => {
+router.post('/programa-masivo', requirePermission('alumnos:update'), async (req, res) => {
   try {
     const { ids = [], id_programa, action = 'add' } = req.body;
     if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: 'ids array requerido' });
@@ -826,7 +826,7 @@ router.post('/programa-masivo', requirePermission('alumnos:write'), async (req, 
 });
 
 // Desactivación masiva de alumnos (soft delete: estado = 'Inactivo')
-router.post('/desactivar-masivo', requirePermission('alumnos:write'), async (req, res) => {
+router.post('/desactivar-masivo', requirePermission('alumnos:update'), async (req, res) => {
   try {
     const { ids = [], usuario = 'sistema' } = req.body;
     if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: 'ids array requerido' });
@@ -855,7 +855,7 @@ router.post('/desactivar-masivo', requirePermission('alumnos:write'), async (req
 });
 
 // Verificación previa de desactivación masiva: retorna lista de alumnos con instrumento activo
-router.post('/verificar-desactivacion', async (req, res) => {
+router.post('/verificar-desactivacion', requirePermission('alumnos:read'), async (req, res) => {
   try {
     const { ids = [] } = req.body;
     if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: 'ids array requerido' });
@@ -875,7 +875,7 @@ router.post('/verificar-desactivacion', async (req, res) => {
 });
 
 // Obtener historial de alumno
-router.get('/:id/historial', async (req, res) => {
+router.get('/:id/historial', requirePermission('alumnos:read'), async (req, res) => {
   try {
     const { id } = req.params;
     const [rows] = await pool.query(
@@ -893,7 +893,7 @@ router.get('/:id/historial', async (req, res) => {
 });
 
 // Registrar historial (POST)
-router.post('/:id/historial', requirePermission('alumnos:write'), async (req, res) => {
+router.post('/:id/historial', requirePermission('alumnos:update'), async (req, res) => {
   try {
     const { id } = req.params;
     const { tipo = "OTRO", descripcion = "", usuario = "sistema" } = req.body;
@@ -906,7 +906,7 @@ router.post('/:id/historial', requirePermission('alumnos:write'), async (req, re
 });
 
 // Nota interna
-router.put('/:id/nota', requirePermission('alumnos:write'), async (req, res) => {
+router.put('/:id/nota', requirePermission('alumnos:update'), async (req, res) => {
   try {
     const { id } = req.params;
     const { nota = "", usuario = "sistema" } = req.body;
@@ -920,7 +920,7 @@ router.put('/:id/nota', requirePermission('alumnos:write'), async (req, res) => 
 });
 
 // Obtener instrumento asignado activo
-router.get('/:id/instrumento', async (req, res) => {
+router.get('/:id/instrumento', requirePermission('alumnos:read'), async (req, res) => {
   try {
     const { id } = req.params;
     const [rows] = await pool.query(
@@ -948,7 +948,7 @@ router.get('/:id/instrumento', async (req, res) => {
 });
 
 // Asignar instrumento a alumno
-router.post('/:id/instrumento', requirePermission('alumnos:write'), async (req, res) => {
+router.post('/:id/instrumento', requirePermission('alumnos:update'), async (req, res) => {
   try {
       const { id } = req.params;
       const { id_instrumento, usuario = "sistema" } = req.body;
@@ -998,7 +998,7 @@ router.post('/:id/instrumento', requirePermission('alumnos:write'), async (req, 
 });
 
 // Devolver/quitar instrumento asignado
-router.delete('/:id/instrumento', requirePermission('alumnos:write'), async (req, res) => {
+router.delete('/:id/instrumento', requirePermission('alumnos:update'), async (req, res) => {
   try {
     const { id } = req.params;
     const usuario = req.body?.usuario || "sistema";
@@ -1043,7 +1043,7 @@ router.delete('/:id/instrumento', requirePermission('alumnos:write'), async (req
 });
 
 // DELETE /alumnos/:id/instrumento (o PUT para devolver)
-router.put('/:id/instrumento/devolver', requirePermission('alumnos:write'), async (req, res) => {
+router.put('/:id/instrumento/devolver', requirePermission('alumnos:update'), async (req, res) => {
   const { id } = req.params;
   const { id_instrumento } = req.body; // El instrumento que se devuelve
 
@@ -1089,7 +1089,7 @@ router.put('/:id/instrumento/devolver', requirePermission('alumnos:write'), asyn
 // Documentos de alumno (upload)
 
 // POST /alumnos/:id/documentos (multipart/form-data) -> file + tipo
-router.post('/:id/documento', requirePermission('alumnos:write'), upload.single('file'), async (req, res) => {
+router.post('/:id/documento', requirePermission('alumnos:update'), upload.single('file'), async (req, res) => {
 try {
     const { id } = req.params;
     const { tipo = "otro", usuario = "sistema" } = req.body;
@@ -1106,7 +1106,7 @@ try {
 });
 
 // GET documentos
-router.get('/:id/documentos', async (req, res) => {
+router.get('/:id/documentos', requirePermission('alumnos:read'), async (req, res) => {
   try {
     const { id } = req.params;
   const [rows] = await pool.query(`SELECT id_documento, tipo, archivo_url, creado_en FROM alumno_documento WHERE id_alumno = ? ORDER BY creado_en DESC`, [id]);
@@ -1119,7 +1119,7 @@ router.get('/:id/documentos', async (req, res) => {
 
 // ASISTENCIA a eventos por alumno
 // POST /alumnos/:id/asistencia  { id_evento, asistio: true/false, usuario }
-router.post('/:id/asistencia', requirePermission('alumnos:write'), async (req, res) => {
+router.post('/:id/asistencia', requirePermission('alumnos:update'), async (req, res) => {
    try {
     const { id } = req.params;
     const { id_evento, asistio = true, usuario = "sistema" } = req.body;
@@ -1132,7 +1132,7 @@ router.post('/:id/asistencia', requirePermission('alumnos:write'), async (req, r
     console.error("Error en POST /alumnos/:id/asistencia", err);
 // ================= REPRESENTANTES MULTIPLES (PIVOT) =================
 // GET /alumnos/:id/representantes  -> lista todos los vínculos
-router.get('/:id/representantes', async (req, res) => {
+router.get('/:id/representantes', requirePermission('alumnos:read'), async (req, res) => {
   try {
     const { id } = req.params;
     const [rows] = await pool.query(`
@@ -1153,7 +1153,7 @@ router.get('/:id/representantes', async (req, res) => {
 });
 
 // POST /alumnos/:id/representantes { id_representante, id_parentesco, principal }
-router.post('/:id/representantes', requirePermission('alumnos:write'), async (req, res) => {
+router.post('/:id/representantes', requirePermission('alumnos:update'), async (req, res) => {
   try {
     const { id } = req.params; // alumno
     const { id_representante, id_parentesco = null, principal = 0, usuario = 'sistema' } = req.body;
@@ -1202,7 +1202,7 @@ router.post('/:id/representantes', requirePermission('alumnos:write'), async (re
 });
 
 // PUT /alumnos/:id/representantes/:relId  { id_parentesco?, principal? }
-router.put('/:id/representantes/:relId', requirePermission('alumnos:write'), async (req, res) => {
+router.put('/:id/representantes/:relId', requirePermission('alumnos:update'), async (req, res) => {
   try {
     const { id, relId } = req.params; // alumno id y relación pivot id
     const { id_parentesco = null, principal = null, usuario = 'sistema' } = req.body;
@@ -1234,7 +1234,7 @@ router.put('/:id/representantes/:relId', requirePermission('alumnos:write'), asy
 });
 
 // DELETE /alumnos/:id/representantes/:relId  -> elimina vínculo
-router.delete('/:id/representantes/:relId', requirePermission('alumnos:write'), async (req, res) => {
+router.delete('/:id/representantes/:relId', requirePermission('alumnos:update'), async (req, res) => {
   try {
     const { id, relId } = req.params;
     const { usuario = 'sistema' } = req.body || {};
@@ -1253,7 +1253,7 @@ router.delete('/:id/representantes/:relId', requirePermission('alumnos:write'), 
   }
 });
 
-router.get('/:id/asistencias', async (req, res) => {
+router.get('/:id/asistencias', requirePermission('alumnos:read'), async (req, res) => {
   try {
   const { id } = req.params;
   const [rows] = await pool.query(`SELECT id_asistencia, id_evento, asistio, usuario, creado_en FROM alumno_asistencia WHERE id_alumno = ? ORDER BY creado_en DESC`, [id]);

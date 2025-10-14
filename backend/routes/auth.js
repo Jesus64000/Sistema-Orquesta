@@ -9,24 +9,43 @@ import db from '../db.js';
 import bcrypt from 'bcrypt';
 import { mergeRoleAndUserExtras } from '../permissionsCatalog.js';
 import { signToken } from '../middleware/auth.js';
+import { rateLimit } from '../middleware/rateLimit.js';
 
 const router = Router();
+
+// Rate limit específico para login: 5 intentos por 15 minutos por IP
+const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, maxAttempts: 5, keyGenerator: (req) => `${req.ip}:auth/login` });
 
 // Utilidad: detectar si hash es bcrypt
 function isBcryptHash(str = '') {
   return str.startsWith('$2a$') || str.startsWith('$2b$') || str.startsWith('$2y$');
 }
 
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
   const { email, password } = req.body || {};
   if (!email || !password) {
     return res.status(400).json({ error: { code: 'MISSING_FIELDS', message: 'Email y contraseña requeridos' } });
   }
   try {
-    const [[row]] = await db.query(`SELECT u.id_usuario, u.nombre, u.email, u.password_hash, u.id_rol, u.permisos_extra, u.permisos_denegados,
-      r.nombre AS rol_nombre, r.permisos AS rol_permisos
-      FROM Usuario u LEFT JOIN Rol r ON u.id_rol = r.id_rol WHERE LOWER(u.email) = LOWER(?) LIMIT 1`, [email]);
-    if (!row) return res.status(401).json({ error: { code: 'USER_NOT_FOUND', message: 'Usuario no encontrado' } });
+    let row;
+    try {
+      const [[r]] = await db.query(`SELECT u.id_usuario, u.nombre, u.email, u.password_hash, u.id_rol, u.activo, COALESCE(u.must_change_password,0) as must_change_password, u.nivel_acceso,
+        r.nombre AS rol_nombre, r.permisos AS rol_permisos
+        FROM usuario u LEFT JOIN rol r ON u.id_rol = r.id_rol WHERE LOWER(u.email) = LOWER(?) LIMIT 1`, [email]);
+      row = r;
+    } catch (e) {
+      // Fallback si las columnas nuevo esquema no existen
+      if (String(e?.code) === 'ER_BAD_FIELD_ERROR' || /Unknown column/i.test(String(e?.message))) {
+        const [[r]] = await db.query(`SELECT u.id_usuario, u.nombre, u.email, u.password_hash, u.id_rol,
+          r.nombre AS rol_nombre, r.permisos AS rol_permisos
+          FROM usuario u LEFT JOIN rol r ON u.id_rol = r.id_rol WHERE LOWER(u.email) = LOWER(?) LIMIT 1`, [email]);
+        row = { ...r, activo: 1, must_change_password: 0, nivel_acceso: null };
+      } else {
+        throw e;
+      }
+    }
+  if (!row) return res.status(401).json({ error: { code: 'USER_NOT_FOUND', message: 'Usuario no encontrado' } });
+  if (row.activo === 0) return res.status(403).json({ error: { code: 'USER_INACTIVE', message: 'Cuenta inactiva' } });
 
     let passwordOk = false;
     if (row.password_hash) {
@@ -47,14 +66,22 @@ router.post('/login', async (req, res) => {
     if (!passwordOk) return res.status(401).json({ error: { code: 'INVALID_PASSWORD', message: 'Contraseña incorrecta' } });
 
     // Preparar permisos efectivos
-    let rolPerms = {}; try { rolPerms = JSON.parse(row.rol_permisos || '{}'); } catch {}
-    let extras = {}; try { extras = JSON.parse(row.permisos_extra || '{}'); } catch {}
+  let rolPerms = {}; try { rolPerms = JSON.parse(row.rol_permisos || '{}'); } catch {}
+  let extras = {}; // columnas de extras pueden no existir aún
     const effectivePerms = mergeRoleAndUserExtras(rolPerms, extras);
+    // Prioridad: columna usuario.nivel_acceso si existe y no null; luego $nivel de rol; finalmente heurística por nombre rol
+    const nivelAcceso = (row.nivel_acceso !== undefined && row.nivel_acceso !== null)
+      ? row.nivel_acceso
+      : (typeof rolPerms?.$nivel === 'number'
+        ? rolPerms.$nivel
+        : ((row.rol_nombre || '').toLowerCase().includes('admin') ? 0 : 2));
 
-    // Actualizar last_login (best effort)
-    try { await db.query('UPDATE Usuario SET last_login=NOW() WHERE id_usuario=?', [row.id_usuario]); } catch {}
+    // Actualizar last_login (best effort, tolerante a ausencia de columna)
+    try { await db.query('UPDATE usuario SET last_login=NOW() WHERE id_usuario=?', [row.id_usuario]); } catch { /* noop */ }
 
     const token = signToken({ id_usuario: row.id_usuario, rol: { nombre: row.rol_nombre } });
+    // Reiniciar contador de rate limit si está disponible, ya que el intento fue exitoso
+    try { req.rateLimit?.reset?.(); } catch {}
     return res.json({
       token,
       token_type: 'Bearer',
@@ -64,7 +91,9 @@ router.post('/login', async (req, res) => {
         nombre: row.nombre,
         email: row.email,
         rol: { id_rol: row.id_rol, nombre: row.rol_nombre },
-        effectivePerms
+        effectivePerms,
+        nivel_acceso: nivelAcceso,
+        must_change_password: row.must_change_password === 1
       }
     });
   } catch (e) {
