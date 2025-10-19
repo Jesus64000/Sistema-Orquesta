@@ -140,18 +140,18 @@ export default function EventoForm({ data, onCancel, onSaved }) {
         {/* Resumen global eliminado: errores visibles en línea */}
 
         {/* Fieldset Datos base */}
-        <fieldset className="border rounded-xl p-4 bg-gradient-to-b from-white to-gray-50 space-y-5">
-          <legend className="px-2 text-sm font-semibold text-gray-700">Datos del evento</legend>
+        <fieldset className="border rounded-xl p-4 card-90 space-y-5">
+          <legend className="px-2 text-sm font-semibold text-app">Datos del evento</legend>
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-1">
-              <label htmlFor="evento-estado" className="text-xs font-medium text-gray-600 uppercase tracking-wide">Estado *</label>
+              <label htmlFor="evento-estado" className="text-xs font-medium muted uppercase tracking-wide">Estado *</label>
               <select
                 id="evento-estado"
                 name="estado"
                 value={form.estado}
                 onChange={handleChange}
                 onBlur={() => submitted && runValidation('field')}
-                className={`w-full p-2 border rounded-lg text-sm ${fieldError('estado') ? 'border-red-400 focus:ring-red-300' : 'border-gray-300 focus:ring-yellow-300'} focus:outline-none focus:ring-2`}
+                className={`w-full p-2 border rounded-lg text-sm card ${fieldError('estado') ? 'border-red-400 focus:ring-red-300' : 'border focus:ring-yellow-300'} focus:outline-none focus:ring-2`}
                 aria-invalid={!!fieldError('estado')}
                 aria-describedby={fieldError('estado') ? 'error-estado' : undefined}
               >
@@ -163,7 +163,7 @@ export default function EventoForm({ data, onCancel, onSaved }) {
               {fieldError('estado') && <span id="error-estado" className="text-xs text-red-600">{fieldError('estado')}</span>}
             </div>
             <div className="flex flex-col gap-1">
-              <label htmlFor="evento-titulo" className="text-xs font-medium text-gray-600 uppercase tracking-wide">Título *</label>
+              <label htmlFor="evento-titulo" className="text-xs font-medium muted uppercase tracking-wide">Título *</label>
               <input
                 id="evento-titulo"
                 name="titulo"
@@ -171,7 +171,7 @@ export default function EventoForm({ data, onCancel, onSaved }) {
                 value={form.titulo}
                 onChange={handleChange}
                 onBlur={() => submitted && runValidation('field')}
-                className={`w-full p-2 border rounded-lg text-sm ${fieldError('titulo') ? 'border-red-400 focus:ring-red-300' : 'border-gray-300 focus:ring-yellow-300'} focus:outline-none focus:ring-2`}
+                className={`w-full p-2 border rounded-lg text-sm card ${fieldError('titulo') ? 'border-red-400 focus:ring-red-300' : 'border focus:ring-yellow-300'} focus:outline-none focus:ring-2`}
                 aria-invalid={!!fieldError('titulo')}
                 aria-describedby={fieldError('titulo') ? 'error-titulo' : undefined}
                 ref={fieldError('titulo') ? firstErrorRef : null}
@@ -180,7 +180,8 @@ export default function EventoForm({ data, onCancel, onSaved }) {
               {fieldError('titulo') && <span id="error-titulo" className="text-xs text-red-600">{fieldError('titulo')}</span>}
             </div>
             <div className="flex flex-col gap-1">
-              <label htmlFor="evento-fecha" className="text-xs font-medium text-gray-600 uppercase tracking-wide">Fecha *</label>
+              <label htmlFor="evento-fecha" className="text-xs font-medium muted uppercase tracking-wide">Fecha *</label>
+              <div className="relative">
               <input
                 id="evento-fecha"
                 name="fecha_evento"
@@ -188,14 +189,21 @@ export default function EventoForm({ data, onCancel, onSaved }) {
                 value={form.fecha_evento}
                 onChange={handleChange}
                 onBlur={() => submitted && runValidation('field')}
-                className={`w-full p-2 border rounded-lg text-sm ${fieldError('fecha_evento') ? 'border-red-400 focus:ring-red-300' : 'border-gray-300 focus:ring-yellow-300'} focus:outline-none focus:ring-2`}
+                className={`w-full p-2 pr-10 border rounded-lg text-sm card ${fieldError('fecha_evento') ? 'border-red-400 focus:ring-red-300' : 'border focus:ring-yellow-300'} focus:outline-none focus:ring-2`}
                 aria-invalid={!!fieldError('fecha_evento')}
                 aria-describedby={fieldError('fecha_evento') ? 'error-fecha_evento' : undefined}
               />
+              <button type="button" onClick={() => { const el = document.getElementById('evento-fecha'); if (el) { if (el._flatpickr) { el._flatpickr.open(); } else if (typeof el.showPicker === 'function') { el.showPicker(); } else { el.focus(); } } }} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-app p-1" aria-label="Abrir calendario">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" strokeWidth="1.5" />
+                  <path d="M16 2v4M8 2v4" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+              </div>
               {fieldError('fecha_evento') && <span id="error-fecha_evento" className="text-xs text-red-600">{fieldError('fecha_evento')}</span>}
             </div>
             <div className="flex flex-col gap-1">
-              <label htmlFor="evento-hora" className="text-xs font-medium text-gray-600 uppercase tracking-wide">Hora *</label>
+              <label htmlFor="evento-hora" className="text-xs font-medium muted uppercase tracking-wide">Hora *</label>
               <input
                 id="evento-hora"
                 name="hora_evento"
@@ -203,14 +211,14 @@ export default function EventoForm({ data, onCancel, onSaved }) {
                 value={form.hora_evento}
                 onChange={handleChange}
                 onBlur={() => submitted && runValidation('field')}
-                className={`w-full p-2 border rounded-lg text-sm ${fieldError('hora_evento') ? 'border-red-400 focus:ring-red-300' : 'border-gray-300 focus:ring-yellow-300'} focus:outline-none focus:ring-2`}
+                className={`w-full p-2 border rounded-lg text-sm ${fieldError('hora_evento') ? 'border-red-400 focus:ring-red-300' : 'border focus:ring-yellow-300'} focus:outline-none focus:ring-2`}
                 aria-invalid={!!fieldError('hora_evento')}
                 aria-describedby={fieldError('hora_evento') ? 'error-hora_evento' : undefined}
               />
               {fieldError('hora_evento') && <span id="error-hora_evento" className="text-xs text-red-600">{fieldError('hora_evento')}</span>}
             </div>
             <div className="flex flex-col gap-1">
-              <label htmlFor="evento-lugar" className="text-xs font-medium text-gray-600 uppercase tracking-wide">Lugar *</label>
+              <label htmlFor="evento-lugar" className="text-xs font-medium muted uppercase tracking-wide">Lugar *</label>
               <input
                 id="evento-lugar"
                 name="lugar"
@@ -218,7 +226,7 @@ export default function EventoForm({ data, onCancel, onSaved }) {
                 value={form.lugar}
                 onChange={handleChange}
                 onBlur={() => submitted && runValidation('field')}
-                className={`w-full p-2 border rounded-lg text-sm ${fieldError('lugar') ? 'border-red-400 focus:ring-red-300' : 'border-gray-300 focus:ring-yellow-300'} focus:outline-none focus:ring-2`}
+                className={`w-full p-2 border rounded-lg text-sm ${fieldError('lugar') ? 'border-red-400 focus:ring-red-300' : 'border focus:ring-yellow-300'} focus:outline-none focus:ring-2`}
                 aria-invalid={!!fieldError('lugar')}
                 aria-describedby={fieldError('lugar') ? 'error-lugar' : undefined}
                 placeholder="Auditorio Principal"
@@ -226,7 +234,7 @@ export default function EventoForm({ data, onCancel, onSaved }) {
               {fieldError('lugar') && <span id="error-lugar" className="text-xs text-red-600">{fieldError('lugar')}</span>}
             </div>
             <div className="flex flex-col gap-1">
-              <label htmlFor="evento-descripcion" className="text-xs font-medium text-gray-600 uppercase tracking-wide">Descripción</label>
+              <label htmlFor="evento-descripcion" className="text-xs font-medium muted uppercase tracking-wide">Descripción</label>
               <textarea
                 id="evento-descripcion"
                 name="descripcion"
@@ -234,7 +242,7 @@ export default function EventoForm({ data, onCancel, onSaved }) {
                 value={form.descripcion}
                 onChange={handleChange}
                 onBlur={() => submitted && runValidation('field')}
-                className="w-full p-2 border rounded-lg text-sm border-gray-300 focus:outline-none focus:ring-2 focus:ring-yellow-300"
+                className="w-full p-2 border rounded-lg text-sm card focus:outline-none focus:ring-2 focus:ring-yellow-300"
                 placeholder="Notas adicionales, invitados, repertorio..."
               />
             </div>
@@ -243,7 +251,7 @@ export default function EventoForm({ data, onCancel, onSaved }) {
 
         {/* Botones */}
         <div className="flex justify-between items-center pt-2">
-          <span className="text-[11px] text-gray-500">{isDirty ? 'Cambios sin guardar' : 'Sin cambios'}</span>
+          <span className="text-[11px] muted">{isDirty ? 'Cambios sin guardar' : 'Sin cambios'}</span>
           <div className="flex gap-3">
             <Button type="button" variant="neutral" size="sm" onClick={requestCancel}>Cancelar</Button>
             <Button type="submit" variant="primary" size="sm" loading={saving} disabled={saving}>{data ? 'Actualizar' : 'Crear'}</Button>

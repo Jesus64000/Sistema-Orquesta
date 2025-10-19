@@ -28,7 +28,7 @@ export default function AlumnoInstrumento({ idAlumno }) {
     <div className="space-y-3">
       <h4 className="font-semibold">Instrumento Asignado</h4>
       {instrumento ? (
-        <div className="p-3 border rounded-lg bg-gray-50">
+        <div className="p-3 rounded card-90 border shadow-sm">
           <p><span className="font-medium">Nombre:</span> {instrumento.nombre}</p>
           <p><span className="font-medium">Categoría:</span> {instrumento.categoria}</p>
           <p><span className="font-medium">N° Serie:</span> {instrumento.numero_serie}</p>
@@ -53,7 +53,7 @@ export default function AlumnoInstrumento({ idAlumno }) {
           </button>
         </div>
       ) : (
-        <p className="text-sm text-gray-500">Sin instrumento asignado</p>
+        <p className="text-sm muted">Sin instrumento asignado</p>
       )}
     </div>
   );

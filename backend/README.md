@@ -108,55 +108,190 @@ app.listen(3000, () => console.log('API escuchando en http://localhost:3000'));
   - `fetchProgramasPorAlumnos(idsAlumnos)`
   - `fetchAlumnosWithPrograms({ search, estado, programa_id, ids })`
 - `helpers/historial.js`:
-  - `registrarHistorial(id_alumno, tipo, descripcion, usuario)`
-  - `registrarHistorialInstrumento(id_instrumento, tipo, descripcion, usuario)`
-- `routes/*`: controladores Express organizados por recurso.
+  # Sistema Orquesta — Backend
 
-## Endpoints principales
-El prefijo base depende de cómo montes las rutas en `index.js`. A continuación se asume sin `/api` y con el mismo nombre del recurso:
+  API REST para gestión de alumnos, programas, representantes, instrumentos y eventos.
 
-- Alumnos: `GET /alumnos`, `GET /alumnos/:id`, `POST /alumnos`, `PUT /alumnos/:id`, `PUT /alumnos/:id/desactivar`, etc.
-- Programas: `GET /programas`, `POST /programas`, `PUT /programas/:id`, `DELETE /programas/:id`
-- Representantes: `GET /representantes`, `GET /representantes/:id`, `POST /representantes`, `PUT /representantes/:id`, `DELETE /representantes/:id`
-- Instrumentos: `GET /instrumentos`, `GET /instrumentos/:id`, `POST /instrumentos`, `PUT /instrumentos/:id`, `DELETE /instrumentos/:id`, `GET /instrumentos/:id/historial`, `POST /instrumentos/:id/historial`
-- Eventos: `GET /eventos`, `PUT /eventos/:id`, `DELETE /eventos/:id`, `GET /eventos/futuros`, `GET /eventos/futuros2`
-- Reportes: `GET /reportes/alumnos-por-programa`, `GET /reportes/instrumentos-por-estado`
-- Dashboard: `GET /dashboard/stats`, `GET /dashboard/proximo-evento`, `GET /dashboard/eventos-futuros`, `GET /dashboard/eventos-mes?year=YYYY&month=MM`
+  ## Tecnologías
 
-## Ejemplos (PowerShell/curl)
-- Listar programas:
-```powershell
-curl http://localhost:3000/programas
-```
-- Crear representante:
-```powershell
-curl -X POST http://localhost:3000/representantes `
-  -H "Content-Type: application/json" `
-  -d '{ "nombre":"Juan", "telefono":"555-123", "email":"juan@correo.com" }'
-```
-- Eventos futuros por programa:
-```powershell
-curl "http://localhost:3000/eventos/futuros?programa_id=1"
-```
+  - Node.js (ESM)
+  - Express
+  - MySQL (mysql2/promise)
+  - Multer (subida de archivos)
 
-## Errores comunes y solución
-- app is not defined: usa `Router` en archivos de `routes/` y exporta `export default router`.
-- The requested module ... does not provide an export named ...:
-  - Asegura que el helper exporta con nombre y que importas con llaves.
-- ESM: si falla `import`, verifica `"type": "module"` en `package.json`.
+  ## Requisitos mínimos
 
-## Seguridad
-- Pendiente: hashear passwords en `routes/usuarios.js` (bcrypt).
-- Validar inputs y usar parámetros `?` en queries (ya se hace en el código).
+  - Node.js 18+ (recomendado 20+)
+  - MySQL 8.x o compatible
 
-## Troubleshooting
-- Ver logs de Node:
-```powershell
-node .\index.js
-```
-- Probar conexión a DB desde `db.js` (hacer un `SELECT 1`).
-- Confirmar que las tablas existen: `Alumno`, `Programa`, `Representante`, `Instrumento`, `Evento`,
-  relaciones `alumno_programa`, y tablas de historial `Alumno_Historial`, `Instrumento_Historial`.
+  ## Instalación y ejecución (rápida)
 
----
-Cualquier ajuste de prefijos o nuevas rutas, recuerda montarlas en `index.js` y no repetir el prefijo dentro del archivo de ruta.
+  1. Abrir la carpeta `backend`:
+
+  ```powershell
+  cd F:\sistema-orquesta\backend
+  ```
+
+  2. Instalar dependencias:
+
+  ```powershell
+  npm install
+  ```
+
+  3. Crear un archivo `.env` con las variables necesarias (ver sección "Variables de entorno").
+
+  4. Asegúrate de la carpeta de uploads existe (o será creada por `uploads.config.js`):
+
+  ```
+  F:\sistema-orquesta\backend\uploads\
+  ```
+
+  5. Levantar el servidor (por defecto puerto 4000):
+
+  ```powershell
+  npm start
+  ```
+
+  > El servidor hace un `SELECT 1` al inicio para verificar la conexión a la base de datos y ejecuta migraciones definidas salvo que `MIGRATIONS=off`.
+
+  ## Variables de entorno sugeridas
+
+  Define estas variables en `.env` (NO comitear el `.env`):
+
+  - DB_HOST (ej. localhost)
+  - DB_USER
+  - DB_PASS
+  - DB_NAME
+  - DB_PORT (opcional)
+  - JWT_SECRET (obligatorio en producción)
+  - PORT (por defecto 4000)
+  - MIGRATIONS (on|off)
+  - TRUST_PROXY (0|1)
+  - ALLOW_DEV_USER (1 para permitir carga de usuario dev en desarrollo)
+
+  Ejemplo `.env`:
+
+  ```
+  DB_HOST=localhost
+  DB_USER=root
+  DB_PASS=
+  DB_NAME=sistema_orquesta
+  JWT_SECRET=clave_segura_local
+  PORT=4000
+  MIGRATIONS=on
+  TRUST_PROXY=0
+  ALLOW_DEV_USER=1
+  ```
+
+  ## Estructura principal
+
+  ```
+  backend/
+    ├─ db.js                # Pool MySQL (exporta default = pool)
+    ├─ index.js             # Arranque: chequear BD, correr migraciones y levantar app
+    ├─ app.js               # Configuración de Express y montaje de rutas
+    ├─ uploads.config.js    # Configuración de multer y destinos de subida
+    ├─ middleware/          # auth, rateLimit, requirePermiso, etc.
+    ├─ routes/              # Rutas por recurso
+    ├─ helpers/             # Lógica de negocio reutilizable
+    ├─ migrations/          # Scripts de migración/seed
+    └─ tests/               # Tests unitarios/integración (node --test)
+  ```
+
+  ## Convenciones y notas de desarrollo
+
+  - ESM: el proyecto usa import/export y `
+  ESM: el proyecto usa import/export y `"type": "module"` en `package.json`.
+
+  ### Contraseñas
+
+  - El sistema utiliza `bcrypt` para comparar/hashear contraseñas en login y cambio de contraseña.
+  - Atención: hay un `TODO` en `routes/usuarios.js` para asegurar que la creación de usuarios siempre hashee las contraseñas. Revisar y corregir antes de producción.
+
+  ## Endpoints principales (resumen)
+
+  Nota: los endpoints están montados desde `app.js` y se asumen sin prefijo `/api`. Ajusta según tu montaje.
+
+  - Auth
+    - POST /auth/login  — login (email, password) -> { token, user }
+    - GET  /auth/me     — información del usuario autenticado
+
+  - Usuarios
+    - GET    /usuarios
+    - POST   /usuarios
+    - PUT    /usuarios/:id
+    - DELETE /usuarios/:id
+    - PUT    /usuarios/:id/activo
+    - POST   /usuarios/:id/reset-password
+    - PUT    /usuarios/me
+    - PUT    /usuarios/me/password
+
+  - Alumnos, Programas, Instrumentos, Representantes, Eventos, Reportes, Dashboard
+    - CRUD y endpoints específicos en `routes/` (ver archivos). Ejemplos: `/alumnos`, `/programas`, `/instrumentos`, `/eventos`, `/reportes`.
+
+  ## Ejemplos (curl / PowerShell)
+
+  - Login:
+
+  ```bash
+  curl -X POST http://localhost:4000/auth/login \
+    -H "Content-Type: application/json" \
+    -d '{"email":"admin@local","password":"secret"}'
+  ```
+
+  - Obtener sesión (usar token devuelto):
+
+  ```bash
+  curl http://localhost:4000/auth/me -H "Authorization: Bearer <TOKEN>"
+  ```
+
+  - Listar programas:
+
+  ```bash
+  curl http://localhost:4000/programas
+  ```
+
+  ## Migraciones
+
+  - Las migraciones/seed inicial están en `migrations/`.
+  - `index.js` ejecuta `ensureMigrations` al inicio salvo que `MIGRATIONS=off`.
+
+  Si necesitas correr migraciones manualmente, revisa `migrations/ensureMigrations.js` y los archivos dentro de `migrations/`.
+
+  ## Tests
+
+  - Ejecutar tests del backend:
+
+  ```powershell
+  cd backend
+  npm test
+  ```
+
+  Los tests usan el runner embebido `node --test`. Asegúrate de no correr pruebas contra la BD de producción.
+
+  ## Seguridad y despliegue
+
+  - No dejar `ALLOW_DEV_USER` activo en producción.
+  - Asegurar `JWT_SECRET` fuerte y rotación periódica si aplica.
+  - Usar HTTPS en producción y configurar `TRUST_PROXY=1` si la app está detrás de proxy/load balancer.
+  - Para despliegues en múltiples instancias, reemplazar `rateLimit` en memoria por un backend compartido (Redis).
+
+  ## Troubleshooting
+
+  - Error conectando a DB: confirmar variables de entorno o credenciales en `db.js`.
+  - Error "Unknown column": posible desalineación entre migraciones y código; revisar `migrations/`.
+  - Problemas con ESM: confirmar `"type": "module"` en `package.json` y que Node.js sea versión compatible.
+
+  ## Contribuciones
+
+  - Abrir issues para bugs y features.
+  - Crear ramas por feature/fix y abrir PR con descripción y tests.
+
+  ---
+
+  Si quieres, puedo:
+
+  - aplicar el fix inmediato para hashear contraseñas en `routes/usuarios.js`.
+  - crear un `backend/.env.example` con variables de entorno sugeridas.
+
+  Indica si continúo con esos cambios.

@@ -23,10 +23,10 @@ export default function InstrumentoHistorial({ idInstrumento }) {
     if (idInstrumento) loadHistorial();
   }, [idInstrumento]);
 
-  if (loading) return <p className="text-sm text-gray-500">Cargando historial...</p>;
+  if (loading) return <p className="text-sm muted">Cargando historial...</p>;
 
   if (!historial.length) {
-    return <p className="text-sm text-gray-400">Sin historial registrado</p>;
+    return <p className="text-sm muted">Sin historial registrado</p>;
   }
 
   return (
@@ -34,19 +34,19 @@ export default function InstrumentoHistorial({ idInstrumento }) {
       {historial.map((h) => (
         <div
           key={h.id_historial}
-          className="p-3 border rounded-lg bg-gray-50 text-sm"
+          className="p-3 border rounded-lg card-90 text-sm"
         >
-          <div className="flex justify-between">
+          <div className="flex justify-between text-app">
             <span className="font-medium">{h.tipo}</span>
             {h.nombre_alumno && (
-            <p className="text-xs text-gray-500">Alumno: {h.nombre_alumno}</p>
+            <p className="text-xs muted">Alumno: {h.nombre_alumno}</p>
             )}
-            <span className="text-xs text-gray-400">
+            <span className="text-xs muted">
               {new Date(h.creado_en).toLocaleString()}
             </span>
           </div>
-          <p className="text-gray-600">{h.descripcion}</p>
-          <p className="text-xs text-gray-400">Por: {h.usuario}</p>
+          <p className="text-app">{h.descripcion}</p>
+          <p className="text-xs muted">Por: {h.usuario}</p>
         </div>
       ))}
     </div>

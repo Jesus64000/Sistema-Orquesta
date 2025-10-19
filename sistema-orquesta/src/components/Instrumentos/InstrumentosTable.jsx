@@ -29,7 +29,7 @@ const SortableTH = ({ label, col, sortBy, sortDir, onToggle }) => {
       role="columnheader"
     >
       <div className="flex items-center gap-1">
-        <span className="group-hover:text-gray-900">{label}</span>
+        <span className="group-hover:text-app">{label}</span>
         {sortBy === col && (sortDir === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />)}
       </div>
     </th>
@@ -38,17 +38,17 @@ const SortableTH = ({ label, col, sortBy, sortDir, onToggle }) => {
 
 const InstrumentoRow = memo(function InstrumentoRow({ i, isSelected, toggleSelect, openEdit, setConfirm, openDetail }) {
   return (
-    <tr className={`transition ${isSelected ? 'bg-yellow-50' : 'hover:bg-gray-50'}`}> 
+    <tr className={`transition cursor-default text-app ${isSelected ? 'bg-yellow-50' : 'hover:card-90'} border-b last:border-b-0`}> 
       <td className="px-3 py-2 align-middle">
         <input
           type="checkbox"
           checked={isSelected}
           onChange={() => toggleSelect(i.id_instrumento)}
-          className="h-4 w-4 rounded border-gray-300 text-yellow-500 focus:ring-yellow-300"
+          className="h-4 w-4 rounded border text-yellow-500 focus:ring-yellow-300"
           aria-label={isSelected ? `Quitar selección de ${i.nombre}` : `Seleccionar ${i.nombre}`}
         />
       </td>
-      <td className="px-3 py-2 font-medium text-gray-800">
+      <td className="px-3 py-2 font-medium text-app">
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -59,27 +59,27 @@ const InstrumentoRow = memo(function InstrumentoRow({ i, isSelected, toggleSelec
             {i.nombre}
           </button>
           {i.asignado && i.asignado.nombre && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] bg-blue-50 text-blue-700 border border-blue-200" title={`Asignado a ${i.asignado.nombre}`}>Asignado</span>
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] card-90 text-app border" title={`Asignado a ${i.asignado.nombre}`}>Asignado</span>
           )}
         </div>
       </td>
-      <td className="px-3 py-2 text-gray-600">{i.categoria_nombre}</td>
-      <td className="px-3 py-2 text-gray-600">{i.numero_serie}</td>
+      <td className="px-3 py-2 muted">{i.categoria_nombre}</td>
+      <td className="px-3 py-2 muted">{i.numero_serie}</td>
       <td className="px-3 py-2"><EstadoPill estado={i.estado_nombre} /></td>
       <td className="px-3 py-2">
         {i.asignado && i.asignado.nombre ? (
-          <span className="text-[11px] font-medium text-blue-700">{i.asignado.nombre}</span>
+          <span className="text-[11px] font-medium text-app">{i.asignado.nombre}</span>
         ) : (
-          <span className="text-[11px] text-gray-400 italic">—</span>
+          <span className="text-[11px] muted italic">—</span>
         )}
       </td>
-      <td className="px-3 py-2 text-gray-600 whitespace-nowrap">{i.fecha_adquisicion?.slice(0,10)}</td>
-      <td className="px-3 py-2 text-gray-600">{i.ubicacion}</td>
+      <td className="px-3 py-2 muted whitespace-nowrap">{i.fecha_adquisicion?.slice(0,10)}</td>
+      <td className="px-3 py-2 muted">{i.ubicacion}</td>
       <td className="px-3 py-2">
         <div className="flex items-center gap-1.5">
           <button
             onClick={() => openEdit(i)}
-            className="p-1.5 rounded-lg border bg-blue-50 text-blue-600 hover:bg-blue-100 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
+            className="p-1.5 rounded-lg border card-90 text-app hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
             title="Editar"
             aria-label={`Editar ${i.nombre}`}
           >
@@ -87,7 +87,7 @@ const InstrumentoRow = memo(function InstrumentoRow({ i, isSelected, toggleSelec
           </button>
           <button
             onClick={() => setConfirm({ open: true, id: i.id_instrumento, name: i.nombre })}
-            className="p-1.5 rounded-lg border bg-red-50 text-red-600 hover:bg-red-100 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-1"
+            className="p-1.5 rounded-lg border card-90 text-app hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-1"
             title="Eliminar"
             aria-label={`Eliminar ${i.nombre}`}
           >
@@ -156,10 +156,10 @@ export default function InstrumentosTable({
   };
 
   return (
-    <div className="overflow-x-auto bg-white border rounded-2xl shadow-sm" role="region" aria-label="Tabla de instrumentos">
+  <div className="overflow-x-auto card border rounded-2xl shadow-sm" role="region" aria-label="Tabla de instrumentos">
       <div ref={liveRef} aria-live="polite" className="sr-only" />
       <table className="w-full text-[13px] text-left border-collapse" role="table">
-        <thead className="bg-gradient-to-b from-gray-50 to-gray-100 text-gray-600 text-[11px] uppercase tracking-wide sticky top-0 z-10 shadow-sm" role="rowgroup">
+        <thead className="card-90 muted text-[11px] uppercase tracking-wide sticky top-0 z-10 shadow-sm" role="rowgroup">
           <tr role="row">
             <th className="px-3 py-2 w-[36px]">
               <input
@@ -167,7 +167,7 @@ export default function InstrumentosTable({
                 ref={el => { if (el) el.indeterminate = isIndeterminate; }}
                 checked={allFilteredSelected}
                 onChange={onMasterChange}
-                className="h-4 w-4 rounded border-gray-300 text-yellow-500 focus:ring-yellow-300"
+                className="h-4 w-4 rounded border text-yellow-500 focus:ring-yellow-300"
                 aria-label={allFilteredSelected ? 'Deseleccionar todos los filtrados' : 'Seleccionar todos los filtrados'}
               />
             </th>

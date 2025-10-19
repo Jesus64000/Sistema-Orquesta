@@ -12,6 +12,31 @@ http.interceptors.request.use((config) => {
       config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${token}`;
     }
+    // Evitar respuestas 304 en peticiones GET que dejen res.data vacío
+    try {
+      const method = (config.method || '').toLowerCase();
+      if (method === 'get' || !config.method) {
+        config.headers = config.headers || {};
+        // Forzar no-cache para que el servidor devuelva body en vez de 304
+        config.headers['Cache-Control'] = 'no-cache';
+        config.headers['Pragma'] = 'no-cache';
+      }
+    } catch (err) {
+      void err;
+    }
+    // En desarrollo podemos enviar un user-id simulado para cargar un usuario dev
+    // Esto permite ver datos protegidos sin login manual. Se aplica solo en modo dev.
+    try {
+      if (!token && typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.DEV) {
+        config.headers = config.headers || {};
+        // Usar '1' como id de usuario de desarrollo; ajustar si tu BD tiene otro id
+        config.headers['x-user-id'] = '1';
+        // pequeño log útil en la consola del navegador
+        console.debug('DEV: injecting x-user-id=1 for dev requests');
+      }
+    } catch {
+      // noop
+    }
   } catch {
     // Ignorar errores de acceso a localStorage (por ejemplo en SSR o modo incógnito restringido)
   }

@@ -48,7 +48,11 @@ export const getEventosFuturos = async (programaId) => {
   const res = await http.get(`/eventos/futuros`, {
     params: programaId ? { programa_id: programaId } : {},
   });
-  return res.data;
+  const data = res.data;
+  // Normalizar: la API puede devolver directamente un array o un objeto { value: [...], Count }
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray(data.value)) return data.value;
+  return [];
 };
 
 export const getEventosPasados = async () => {

@@ -46,6 +46,31 @@ export default function DialogShell({
   const localRef = useRef(null);
   const panelRef = initialFocus || localRef;
 
+  // Ensure a global tracker that records when the last mousedown/touchstart
+  // happened inside an element marked with [data-no-close] or a flatpickr calendar.
+  // This helps the overlay ignore accidental downs that should not close dialogs.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (window.__dialogNoCloseInstalled) return;
+    window.__dialogNoCloseInstalled = true;
+    window.__dialogLastNoCloseTime = 0;
+    const onDown = (ev) => {
+      try {
+        const t = ev.target;
+        if (t && t instanceof Element && (t.closest('[data-no-close]') || t.closest('.flatpickr-calendar'))) {
+          window.__dialogLastNoCloseTime = Date.now();
+        } else {
+          // reset to 0 when down is outside
+          window.__dialogLastNoCloseTime = 0;
+        }
+      } catch {
+        /* noop */
+      }
+    };
+    document.addEventListener('mousedown', onDown, true);
+    document.addEventListener('touchstart', onDown, true);
+  }, []);
+
   // Manejo de apertura/cierre: scroll lock + foco inicial + restaurar foco + aria-hidden fondo
   useEffect(() => {
     if (open) {
@@ -126,7 +151,29 @@ export default function DialogShell({
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" aria-hidden="true" onClick={() => onClose?.()} />
+      <div
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        aria-hidden="true"
+        onMouseDown={(e) => {
+          try {
+            // Use elementFromPoint to determine the topmost element at the pointer.
+            const x = e.clientX;
+            const y = e.clientY;
+            const top = (typeof document.elementFromPoint === 'function') ? document.elementFromPoint(x, y) : null;
+            if (top && top instanceof Element) {
+              if (top.closest('.flatpickr-calendar') || top.closest('[data-no-close]')) return;
+            }
+            // Fallback: also check the original event target
+            const t = e.target;
+            if (t && t instanceof Element) {
+              if (t.closest('.flatpickr-calendar') || t.closest('[data-no-close]')) return;
+            }
+          } catch {
+            // noop
+          }
+          onClose?.();
+        }}
+      />
       <div
         ref={panelRef}
         tabIndex={-1}
@@ -135,17 +182,17 @@ export default function DialogShell({
   aria-labelledby={labelId}
   aria-label={!isStringTitle ? (ariaLabel || 'Diálogo') : undefined}
         aria-describedby={ariaDescribedBy}
-  className={`relative w-full ${sizeMap[size] || sizeMap.md} bg-white rounded-2xl shadow-xl border border-gray-200 outline-none min-h-[200px] ${className}`}
+  className={`relative w-full ${sizeMap[size] || sizeMap.md} card rounded-2xl shadow-xl border outline-none min-h-[200px] ${className}`}
       >
         {!hideHeader && (
-          <div className="flex items-center justify-between px-5 py-4 border-b bg-gradient-to-b from-gray-50 to-white">
-            <h3 id={labelId} className="text-base font-semibold text-gray-800">
+          <div className="flex items-center justify-between px-5 py-4 border-b card-90">
+            <h3 id={labelId} className="text-base font-semibold text-app">
               {isStringTitle ? title : title}
             </h3>
             {showClose && (
               <button
                 onClick={() => onClose?.()}
-                className="p-2 rounded-lg hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300"
+                className="p-2 rounded-lg hover:card-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300"
                 aria-label="Cerrar"
               >
                 <X className="h-4 w-4" />

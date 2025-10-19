@@ -170,7 +170,7 @@ export default function CategoriasAdmin() {
         />
         <table className="w-full text-sm border-collapse">
           <thead>
-            <tr className="bg-gray-100">
+            <tr className="table-head">
               <th className="px-4 py-2 border-b text-left">Nombre</th>
               <th className="px-4 py-2 border-b text-left">Descripción</th>
               <th className="px-4 py-2 border-b text-left">Acciones</th>
@@ -178,14 +178,14 @@ export default function CategoriasAdmin() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={3} className="text-center py-4">Cargando...</td></tr>
+              <tr><td colSpan={3} className="text-center py-4 table-empty">Cargando...</td></tr>
             ) : !Array.isArray(categorias) || categorias.length === 0 ? (
-              <tr><td colSpan={3} className="text-center py-4 text-gray-500">No hay categorías</td></tr>
+              <tr><td colSpan={3} className="text-center py-4 table-empty">No hay categorías</td></tr>
             ) : (
               paginatedCategorias.map((c) => (
                 <tr key={c.id_categoria}>
-                  <td className="px-4 py-2 border-b">{c.nombre}</td>
-                  <td className="px-4 py-2 border-b">{c.descripcion}</td>
+                  <td className="px-4 py-2 border-b text-app">{c.nombre}</td>
+                  <td className="px-4 py-2 border-b text-app">{c.descripcion}</td>
                   <td className="px-4 py-2 border-b">
                     <button onClick={() => handleEdit(c)} className="text-yellow-600 font-semibold hover:underline mr-2" aria-label={`Editar categoría ${c.nombre}`}>Editar</button>
                     <button onClick={() => handleDelete(c.id_categoria)} className="text-red-600 font-semibold hover:underline" aria-label={`Eliminar categoría ${c.nombre}`}>Eliminar</button>

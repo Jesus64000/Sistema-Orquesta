@@ -4,7 +4,7 @@ import Pill from "../ui/Pill";
 
 // Program badge reutiliza Pill tono neutral
 const ProgramBadge = ({ children }) => (
-  <Pill tone="neutral" size="xs" className="hover:from-gray-100 hover:to-gray-200 transition">{children}</Pill>
+  <Pill tone="neutral" size="xs" className="transition">{children}</Pill>
 );
 
 // EstadoPill delega al Pill base
@@ -46,12 +46,12 @@ const SortableTH = ({ label, col, sortBy, sortDir, onToggle }) => {
     <th
       scope="col"
       aria-sort={ariaSort}
-      className="px-3 py-2 font-semibold cursor-pointer select-none group text-gray-700"
+      className="px-3 py-2 font-semibold cursor-pointer select-none group muted"
       onClick={() => onToggle(col)}
       role="columnheader"
     >
       <div className="flex items-center gap-1">
-        <span className="group-hover:text-gray-900">{label}</span>
+        <span className="group-hover:text-app">{label}</span>
         {sortBy === col && (sortDir === "asc" ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />)}
       </div>
     </th>
@@ -63,7 +63,7 @@ const AlumnoRow = memo(function AlumnoRow({ a, isSelected, toggleSelect, openDet
   return (
     <tr
       role="row"
-      className={`transition cursor-default ${isSelected ? "bg-yellow-50" : "hover:bg-gray-50"} border-b border-gray-100 last:border-b-0`}
+      className={`transition cursor-default text-app ${isSelected ? "bg-yellow-50" : "hover:card-90"} border-b border last:border-b-0`}
       aria-busy={isUpdating ? "true" : undefined}
     >
       <td className="px-3 py-2 align-middle" role="cell">
@@ -71,11 +71,11 @@ const AlumnoRow = memo(function AlumnoRow({ a, isSelected, toggleSelect, openDet
           type="checkbox"
           checked={isSelected}
           onChange={() => toggleSelect(a.id_alumno)}
-          className="h-4 w-4 rounded border-gray-300 text-yellow-500 focus:ring-yellow-300"
+          className="h-4 w-4 rounded border text-yellow-500 focus:ring-yellow-300"
           aria-label={isSelected ? `Quitar selección de ${a.nombre}` : `Seleccionar ${a.nombre}`}
         />
       </td>
-      <td className="px-3 py-2 font-medium text-gray-800" role="cell">
+      <td className="px-3 py-2 font-medium text-app" role="cell">
         <button
           type="button"
           onClick={() => openDetail(a)}
@@ -85,26 +85,26 @@ const AlumnoRow = memo(function AlumnoRow({ a, isSelected, toggleSelect, openDet
           {a.nombre}
         </button>
       </td>
-      <td className="px-3 py-2 text-gray-600" role="cell">{a.edad} <span className="text-[10px] uppercase tracking-wide text-gray-400">años</span></td>
-      <td className="px-3 py-2 text-gray-600 whitespace-nowrap" role="cell">{a.fecha_nacimiento?.slice(0, 10)}</td>
-      <td className="px-3 py-2 text-gray-600" role="cell">{a.genero}</td>
-      <td className="px-3 py-2 text-gray-600" role="cell">{a.telefono_contacto}</td>
+      <td className="px-3 py-2 muted" role="cell">{a.edad} <span className="text-[10px] uppercase tracking-wide muted">años</span></td>
+      <td className="px-3 py-2 muted whitespace-nowrap" role="cell">{a.fecha_nacimiento?.slice(0, 10)}</td>
+      <td className="px-3 py-2 muted" role="cell">{a.genero}</td>
+      <td className="px-3 py-2 muted" role="cell">{a.telefono_contacto}</td>
       <td className="px-3 py-2" role="cell">
         {a.representante_nombre ? (
           <div className="flex flex-col leading-tight max-w-[180px]">
-            <span className="font-medium text-gray-800">
+            <span className="font-medium text-app">
               {a.representante_nombre}
               {a.parentesco_nombre && (
-                <span className="text-[11px] font-normal text-gray-500"> ({a.parentesco_nombre})</span>
+                <span className="text-[11px] font-normal muted"> ({a.parentesco_nombre})</span>
               )}
             </span>
             {a.representante_telefono_movil && (
-              <span className="text-[11px] text-gray-600">{a.representante_telefono_movil}</span>
+              <span className="text-[11px] muted">{a.representante_telefono_movil}</span>
             )}
             {/* Email removido según requerimiento */}
           </div>
         ) : (
-          <span className="text-[11px] text-gray-400 italic">Sin representante</span>
+          <span className="text-[11px] muted italic">Sin representante</span>
         )}
       </td>
       <td className="px-3 py-2" role="cell">
@@ -129,7 +129,7 @@ const AlumnoRow = memo(function AlumnoRow({ a, isSelected, toggleSelect, openDet
             <ProgramBadge key={p.id_programa}>{p.nombre}</ProgramBadge>
           ))}
           {(!a.programas || a.programas.length === 0) && (
-            <span className="text-[11px] text-gray-400 italic">Sin programas</span>
+            <span className="text-[11px] muted italic">Sin programas</span>
           )}
         </div>
       </td>
@@ -207,7 +207,6 @@ export default function AlumnosTable({
   // Live region para anunciar cambios de estado individuales
   const estadoLiveRef = useRef(null);
   const lastEstadoRef = useRef({});
-
   useEffect(() => {
     // Construir un mapa id->estado actual
     const map = {};
@@ -231,11 +230,11 @@ export default function AlumnosTable({
   const isIndeterminate = selectedInFiltered > 0 && selectedInFiltered < totalFiltered;
 
   return (
-    <div className="overflow-x-auto bg-white border border-gray-200 rounded-2xl shadow-sm" role="region" aria-label="Tabla de alumnos">
+    <div className="overflow-x-auto card rounded-2xl shadow-sm" role="region" aria-label="Tabla de alumnos">
       {/* Región aria-live para cambios de estado */}
       <div ref={estadoLiveRef} aria-live="polite" aria-atomic="true" className="sr-only" />
       <table className="w-full text-[13px] text-left border-collapse" role="table">
-        <thead className="bg-gradient-to-b from-gray-50 to-gray-100 text-gray-600 text-[11px] uppercase tracking-wide sticky top-0 z-10 shadow-sm border-b border-gray-200" role="rowgroup">
+  <thead className="card-90 muted text-[11px] uppercase tracking-wide sticky top-0 z-10 shadow-sm border-b" role="rowgroup">
           <tr role="row">
             <th scope="col" className="px-3 py-2 align-middle w-[36px]">
               <input
@@ -243,7 +242,7 @@ export default function AlumnosTable({
                 ref={el => { if (el) el.indeterminate = isIndeterminate; }}
                 checked={allFilteredSelected}
                 onChange={(e) => toggleSelectAllFiltered(e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300 text-yellow-500 focus:ring-yellow-300"
+                className="h-4 w-4 rounded border text-yellow-500 focus:ring-yellow-300"
                 aria-label={allFilteredSelected ? "Deseleccionar todos" : "Seleccionar todos"}
               />
             </th>

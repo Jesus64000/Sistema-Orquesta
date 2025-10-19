@@ -59,10 +59,10 @@ export default function RolesAdmin() {
 
   const presetBadge = (preset) => {
     switch (preset) {
-      case 'none': return <span className="px-2 py-0.5 text-[11px] rounded bg-gray-200 text-gray-700">Sin acceso</span>;
-      case 'read': return <span className="px-2 py-0.5 text-[11px] rounded bg-blue-100 text-blue-700">Solo lectura</span>;
-      case 'edit': return <span className="px-2 py-0.5 text-[11px] rounded bg-amber-100 text-amber-700">Editar</span>;
-      case 'all': return <span className="px-2 py-0.5 text-[11px] rounded bg-green-100 text-green-700">Acceso total</span>;
+      case 'none': return <span className="px-2 py-0.5 text-[11px] rounded card-90 muted">Sin acceso</span>;
+      case 'read': return <span className="px-2 py-0.5 text-[11px] rounded card-90 text-app">Solo lectura</span>;
+      case 'edit': return <span className="px-2 py-0.5 text-[11px] rounded card-90 text-app">Editar</span>;
+      case 'all': return <span className="px-2 py-0.5 text-[11px] rounded card-90 text-app">Acceso total</span>;
       default: return null;
     }
   };
@@ -110,18 +110,18 @@ export default function RolesAdmin() {
     for (const res of resources) {
       const acts = p[res] || [];
       const preset = inferPreset(res, acts);
-      if (preset !== 'custom') {
+        if (preset !== 'custom') {
         if (preset === 'none') continue; // no mostrar recursos sin acceso para compactar
         chips.push(
           <div key={res} className="flex items-center gap-2">
-            <span className="text-xs font-medium capitalize text-gray-700">{res}:</span>
+            <span className="text-xs font-medium capitalize muted">{res}:</span>
             {presetBadge(preset)}
           </div>
         );
       } else {
         // custom: listar acciones marcadas
         const items = normalizeActions(acts).filter(a => a !== '*').map(a => (
-          <span key={a} className="px-1.5 py-0.5 text-[11px] rounded border bg-white">{actionLabels[a] || a}</span>
+          <span key={a} className="px-1.5 py-0.5 text-[11px] rounded border card">{actionLabels[a] || a}</span>
         ));
         if (items.length === 0) continue;
         chips.push(
@@ -132,7 +132,7 @@ export default function RolesAdmin() {
         );
       }
     }
-    if (chips.length === 0) return <span className="text-xs text-gray-400">Sin permisos</span>;
+  if (chips.length === 0) return <span className="text-xs muted">Sin permisos</span>;
     return <div className="grid gap-1.5" style={{gridTemplateColumns:'repeat(1, minmax(0, 1fr))'}}>{chips}</div>;
   };
 
@@ -204,7 +204,7 @@ export default function RolesAdmin() {
             value={query}
             onChange={(e)=>setQuery(e.target.value)}
             placeholder="Buscar por nombre…"
-            className="border rounded px-3 py-1.5 text-sm w-56"
+            className="border rounded px-3 py-1.5 text-sm w-56 bg-app text-app"
           />
           <Button type="button" variant="primary" onClick={handleOpenNew}>+ Nuevo rol</Button>
         </div>
@@ -213,7 +213,7 @@ export default function RolesAdmin() {
       <div className="overflow-x-auto">
         <table className="w-full text-sm border-collapse">
           <thead>
-            <tr className="bg-gray-100">
+            <tr className="table-head">
               <th className="px-4 py-2 border-b text-left">Nombre</th>
               <th className="px-4 py-2 border-b text-left">Permisos</th>
               <th className="px-4 py-2 border-b text-left">Acciones</th>
@@ -223,23 +223,23 @@ export default function RolesAdmin() {
             {loading ? (
               <tr><td colSpan={3} className="text-center py-4">Cargando...</td></tr>
             ) : !Array.isArray(filteredRoles) || filteredRoles.length === 0 ? (
-              <tr><td colSpan={3} className="text-center py-4 text-gray-500">No hay roles</td></tr>
+              <tr><td colSpan={3} className="text-center py-4 table-empty">No hay roles</td></tr>
             ) : (
               filteredRoles.map((r) => (
                 <tr key={r.id_rol}>
-                  <td className="px-4 py-2 border-b">{r.nombre}</td>
-                  <td className="px-4 py-2 border-b align-top">
+                  <td className="px-4 py-2 border-b text-app">{r.nombre}</td>
+                  <td className="px-4 py-2 border-b align-top text-app">
                     {renderPermissionsCell(r.permisos)}
                   </td>
                   <td className="px-4 py-2 border-b">
                     <button
                       onClick={() => handleEdit(r)}
-                      className={`font-semibold mr-2 ${ (String(r.nombre).toLowerCase()==='admin' || String(r.nombre).toLowerCase()==='administrador') ? 'text-gray-400 cursor-not-allowed' : 'text-yellow-600 hover:underline'}`}
+                      className={`font-semibold mr-2 ${ (String(r.nombre).toLowerCase()==='admin' || String(r.nombre).toLowerCase()==='administrador') ? 'muted cursor-not-allowed' : 'text-app hover:underline'}`}
                       disabled={String(r.nombre).toLowerCase()==='admin' || String(r.nombre).toLowerCase()==='administrador'}
                     >Editar</button>
                     <button
                       onClick={() => handleDelete(r.id_rol)}
-                      className={`font-semibold ${ (String(r.nombre).toLowerCase()==='admin' || String(r.nombre).toLowerCase()==='administrador') ? 'text-gray-400 cursor-not-allowed' : 'text-red-600 hover:underline'}`}
+                      className={`font-semibold ${ (String(r.nombre).toLowerCase()==='admin' || String(r.nombre).toLowerCase()==='administrador') ? 'muted cursor-not-allowed' : 'text-app hover:underline'}`}
                       disabled={String(r.nombre).toLowerCase()==='admin' || String(r.nombre).toLowerCase()==='administrador'}
                     >Eliminar</button>
                   </td>

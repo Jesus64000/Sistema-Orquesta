@@ -16,11 +16,11 @@ const sizes = {
   md: { wrapper: "p-1", option: "px-3 py-1.5 text-sm", radius: "rounded-lg" },
 };
 
-const accents = {
+  const accents = {
   gray: {
-    group: "bg-gray-100 border-gray-200",
-    active: "bg-white text-gray-900 border-gray-200",
-    inactive: "text-gray-600 hover:text-gray-900",
+    group: "card-90 border",
+    active: "card text-app border",
+    inactive: "muted hover:text-app",
     ring: "focus:ring-gray-300",
   },
   yellow: {
@@ -30,20 +30,20 @@ const accents = {
     ring: "focus:ring-yellow-400",
   },
   sky: {
-    group: "bg-sky-50 border-sky-200",
-    active: "bg-white text-gray-900 border-sky-200",
+    group: "card-90 border",
+    active: "card text-app border",
     inactive: "text-sky-700 hover:text-sky-900",
     ring: "focus:ring-sky-400",
   },
   green: {
-    group: "bg-emerald-50 border-emerald-200",
-    active: "bg-white text-gray-900 border-emerald-200",
+    group: "card-90 border",
+    active: "card text-app border",
     inactive: "text-emerald-700 hover:text-emerald-900",
     ring: "focus:ring-emerald-400",
   },
   purple: {
-    group: "bg-violet-50 border-violet-200",
-    active: "bg-white text-gray-900 border-violet-200",
+    group: "card-90 border",
+    active: "card text-app border",
     inactive: "text-violet-700 hover:text-violet-900",
     ring: "focus:ring-violet-400",
   },
@@ -57,7 +57,7 @@ export default function SegmentedDropdown({ options = [], value, onChange, size 
     <div
       role="tablist"
       aria-label="Selector de vista"
-      className={`inline-flex ${S.radius} bg-opacity-60 border shadow-inner ${S.wrapper} ${A.group} ${className}`}
+      className={`inline-flex ${S.radius} ${S.wrapper} ${A.group} ${className}`}
     >
   {options.map((opt) => {
         const active = opt.value === value;

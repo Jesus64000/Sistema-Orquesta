@@ -12,9 +12,7 @@ import { validateInstrumentoForm, calcularAntiguedad } from './utils/instrumento
 
 function formatDateToInput(dateStr) {
   if (!dateStr) return "";
-  // Si ya está en formato yyyy-MM-dd, devolver tal cual
   if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
-  // Si es ISO, convertir
   const d = new Date(dateStr);
   if (isNaN(d)) return "";
   return d.toISOString().slice(0, 10);
@@ -26,6 +24,7 @@ export default function InstrumentoForm({ data, onCancel, onSaved }) {
       ? {
           ...data,
           id_categoria: data.id_categoria || "",
+          id_estado: data.id_estado || "",
           fecha_adquisicion: formatDateToInput(data.fecha_adquisicion),
         }
       : {
@@ -69,14 +68,13 @@ export default function InstrumentoForm({ data, onCancel, onSaved }) {
     fetchEstados();
   }, []);
 
-  // Si data cambia (edición), actualizar el form con la fecha formateada
   useEffect(() => {
     if (data) {
       setForm({
         ...data,
-  id_categoria: data.id_categoria || "",
-  id_estado: data.id_estado || "",
-  fecha_adquisicion: formatDateToInput(data.fecha_adquisicion),
+        id_categoria: data.id_categoria || "",
+        id_estado: data.id_estado || "",
+        fecha_adquisicion: formatDateToInput(data.fecha_adquisicion),
       });
     }
   }, [data]);
@@ -100,7 +98,6 @@ export default function InstrumentoForm({ data, onCancel, onSaved }) {
     const { errors: vErrors, isValid, normalizado } = validateInstrumentoForm(form);
     setErrors(vErrors);
     if (!isValid) {
-      // anunciar y enfocar
       if (errorSummaryRef.current) {
         errorSummaryRef.current.textContent = `Se encontraron ${Object.keys(vErrors).length} errores en el formulario`;
       }
@@ -144,18 +141,18 @@ export default function InstrumentoForm({ data, onCancel, onSaved }) {
       <div ref={errorSummaryRef} aria-live="polite" className="sr-only" />
       <form onSubmit={handleSubmit} className="space-y-6" noValidate>
         {/* Sección Identificación */}
-        <fieldset className="border rounded-xl p-4 bg-gradient-to-b from-white to-gray-50">
-          <legend className="px-2 text-sm font-semibold text-gray-700">Identificación</legend>
+        <fieldset className="border rounded-xl p-4 card-90">
+          <legend className="px-2 text-sm font-semibold text-app">Identificación</legend>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="flex flex-col gap-1">
-              <label htmlFor="nombre" className="text-xs font-medium text-gray-600 uppercase tracking-wide">Nombre *</label>
+              <label htmlFor="nombre" className="text-xs font-medium muted uppercase tracking-wide">Nombre *</label>
               <input
                 id="nombre"
                 name="nombre"
                 type="text"
                 value={form.nombre}
                 onChange={(e) => handleChange("nombre", e.target.value)}
-                className={`w-full p-2 border rounded-lg text-sm ${errors.nombre ? 'border-red-400 focus:ring-red-300' : 'border-gray-300 focus:ring-yellow-300'} focus:outline-none focus:ring-2`}
+                className={`w-full p-2 border rounded-lg text-sm card ${errors.nombre ? 'border-red-400 focus:ring-red-300' : 'border focus:ring-yellow-300'} focus:outline-none focus:ring-2`}
                 aria-invalid={!!errors.nombre}
                 aria-describedby={errors.nombre ? 'error-nombre' : undefined}
                 placeholder="Ej: Violín 3/4"
@@ -163,14 +160,14 @@ export default function InstrumentoForm({ data, onCancel, onSaved }) {
               {errors.nombre && <span id="error-nombre" className="text-xs text-red-600">{errors.nombre}</span>}
             </div>
             <div className="flex flex-col gap-1">
-              <label htmlFor="numero_serie" className="text-xs font-medium text-gray-600 uppercase tracking-wide">Número de serie *</label>
+              <label htmlFor="numero_serie" className="text-xs font-medium muted uppercase tracking-wide">Número de serie *</label>
               <input
                 id="numero_serie"
                 name="numero_serie"
                 type="text"
                 value={form.numero_serie}
                 onChange={(e) => handleChange("numero_serie", e.target.value)}
-                className={`w-full p-2 border rounded-lg text-sm ${errors.numero_serie ? 'border-red-400 focus:ring-red-300' : 'border-gray-300 focus:ring-yellow-300'} focus:outline-none focus:ring-2`}
+                className={`w-full p-2 border rounded-lg text-sm card ${errors.numero_serie ? 'border-red-400 focus:ring-red-300' : 'border focus:ring-yellow-300'} focus:outline-none focus:ring-2`}
                 aria-invalid={!!errors.numero_serie}
                 aria-describedby={errors.numero_serie ? 'error-numero_serie' : undefined}
                 placeholder="Serie..."
@@ -181,17 +178,17 @@ export default function InstrumentoForm({ data, onCancel, onSaved }) {
         </fieldset>
 
         {/* Sección Clasificación */}
-        <fieldset className="border rounded-xl p-4 bg-gradient-to-b from-white to-gray-50">
-          <legend className="px-2 text-sm font-semibold text-gray-700">Clasificación</legend>
+        <fieldset className="border rounded-xl p-4 card-90">
+          <legend className="px-2 text-sm font-semibold text-app">Clasificación</legend>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="flex flex-col gap-1">
-              <label htmlFor="id_categoria" className="text-xs font-medium text-gray-600 uppercase tracking-wide">Categoría *</label>
+              <label htmlFor="id_categoria" className="text-xs font-medium muted uppercase tracking-wide">Categoría *</label>
               <select
                 id="id_categoria"
                 name="id_categoria"
                 value={form.id_categoria}
                 onChange={(e) => handleChange("id_categoria", e.target.value)}
-                className={`w-full p-2 border rounded-lg text-sm ${errors.id_categoria ? 'border-red-400 focus:ring-red-300' : 'border-gray-300 focus:ring-yellow-300'} focus:outline-none focus:ring-2 bg-white`}
+                className={`w-full p-2 border rounded-lg text-sm card ${errors.id_categoria ? 'border-red-400 focus:ring-red-300' : 'border focus:ring-yellow-300'} focus:outline-none focus:ring-2`}
                 aria-invalid={!!errors.id_categoria}
                 aria-describedby={errors.id_categoria ? 'error-id_categoria' : undefined}
               >
@@ -201,13 +198,13 @@ export default function InstrumentoForm({ data, onCancel, onSaved }) {
               {errors.id_categoria && <span id="error-id_categoria" className="text-xs text-red-600">{errors.id_categoria}</span>}
             </div>
             <div className="flex flex-col gap-1">
-              <label htmlFor="id_estado" className="text-xs font-medium text-gray-600 uppercase tracking-wide">Estado *</label>
+              <label htmlFor="id_estado" className="text-xs font-medium muted uppercase tracking-wide">Estado *</label>
               <select
                 id="id_estado"
                 name="id_estado"
                 value={form.id_estado}
                 onChange={(e) => handleChange("id_estado", e.target.value)}
-                className={`w-full p-2 border rounded-lg text-sm ${errors.id_estado ? 'border-red-400 focus:ring-red-300' : 'border-gray-300 focus:ring-yellow-300'} focus:outline-none focus:ring-2 bg-white`}
+                className={`w-full p-2 border rounded-lg text-sm card ${errors.id_estado ? 'border-red-400 focus:ring-red-300' : 'border focus:ring-yellow-300'} focus:outline-none focus:ring-2`}
                 aria-invalid={!!errors.id_estado}
                 aria-describedby={errors.id_estado ? 'error-id_estado' : undefined}
               >
@@ -220,23 +217,29 @@ export default function InstrumentoForm({ data, onCancel, onSaved }) {
         </fieldset>
 
         {/* Sección Estado y Ubicación */}
-        <fieldset className="border rounded-xl p-4 bg-gradient-to-b from-white to-gray-50">
+        <fieldset className="border rounded-xl p-4 card-90">
           <legend className="px-2 text-sm font-semibold text-gray-700">Estado y Ubicación</legend>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="flex flex-col gap-1">
-              <label htmlFor="fecha_adquisicion" className="text-xs font-medium text-gray-600 uppercase tracking-wide">Fecha adquisición</label>
-              <input
-                id="fecha_adquisicion"
-                name="fecha_adquisicion"
-                type="date"
-                value={form.fecha_adquisicion || ''}
-                onChange={(e) => handleChange("fecha_adquisicion", e.target.value)}
-                className={`w-full p-2 border rounded-lg text-sm ${errors.fecha_adquisicion ? 'border-red-400 focus:ring-red-300' : 'border-gray-300 focus:ring-yellow-300'} focus:outline-none focus:ring-2`}
-                aria-invalid={!!errors.fecha_adquisicion}
-                aria-describedby={errors.fecha_adquisicion ? 'error-fecha_adquisicion' : undefined}
-              />
+              <label htmlFor="fecha_adquisicion" className="text-xs font-medium muted uppercase tracking-wide">Fecha adquisición</label>
+              <div className="relative">
+                <input
+                  id="fecha_adquisicion"
+                  name="fecha_adquisicion"
+                  type="date"
+                  value={form.fecha_adquisicion || ''}
+                  onChange={(e) => handleChange('fecha_adquisicion', e.target.value)}
+                  className={`w-full p-2 pr-10 border rounded-lg text-sm card ${errors.fecha_adquisicion ? 'border-red-400 focus:ring-red-300' : 'border focus:ring-yellow-300'} focus:outline-none focus:ring-2`}
+                />
+                <button type="button" onClick={() => { const el = document.querySelector('#fecha_adquisicion'); if (el) { el.showPicker?.() || el.focus(); } }} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-app p-1" aria-label="Abrir calendario">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" strokeWidth="1.5" />
+                    <path d="M16 2v4M8 2v4" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+              </div>
               {errors.fecha_adquisicion && <span id="error-fecha_adquisicion" className="text-xs text-red-600">{errors.fecha_adquisicion}</span>}
-              {antiguedad !== null && <span className="text-[11px] text-gray-500">Antigüedad: {antiguedad} {antiguedad === 1 ? 'año' : 'años'}</span>}
+              {antiguedad !== null && <span className="text-[11px] muted">Antigüedad: {antiguedad} {antiguedad === 1 ? 'año' : 'años'}</span>}
             </div>
             <div className="flex flex-col gap-1">
               <label htmlFor="ubicacion" className="text-xs font-medium text-gray-600 uppercase tracking-wide">Ubicación</label>
@@ -246,7 +249,7 @@ export default function InstrumentoForm({ data, onCancel, onSaved }) {
                 type="text"
                 value={form.ubicacion}
                 onChange={(e) => handleChange("ubicacion", e.target.value)}
-                className={`w-full p-2 border rounded-lg text-sm ${errors.ubicacion ? 'border-red-400 focus:ring-red-300' : 'border-gray-300 focus:ring-yellow-300'} focus:outline-none focus:ring-2`}
+                className={`w-full p-2 border rounded-lg text-sm ${errors.ubicacion ? 'border-red-400 focus:ring-red-300' : 'border focus:ring-yellow-300'} focus:outline-none focus:ring-2`}
                 aria-invalid={!!errors.ubicacion}
                 aria-describedby={errors.ubicacion ? 'error-ubicacion' : undefined}
                 placeholder="Sala 1, Depósito..."
@@ -258,7 +261,7 @@ export default function InstrumentoForm({ data, onCancel, onSaved }) {
 
         {/* Acciones */}
         <div className="flex justify-between items-center pt-2">
-          <span className="text-[11px] text-gray-500">{isDirty ? 'Cambios sin guardar' : 'Sin cambios'}</span>
+          <span className="text-[11px] muted">{isDirty ? 'Cambios sin guardar' : 'Sin cambios'}</span>
           <div className="flex gap-3">
             <Button type="button" variant="neutral" onClick={requestCancel}>Cancelar</Button>
             <Button type="submit" variant="primary" loading={loading} disabled={loading}>{data ? 'Actualizar' : 'Crear'}</Button>

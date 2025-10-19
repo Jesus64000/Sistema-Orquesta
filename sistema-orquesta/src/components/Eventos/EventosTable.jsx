@@ -41,13 +41,13 @@ export default function EventosTable({
   const ThSortable = ({ col, children, className = '' }) => (
     <th
       scope="col"
-      className={`px-3 py-2 border-b bg-white/70 backdrop-blur sticky top-0 z-10 align-middle ${className}`}
+      className={`px-3 py-2 border-b card-90 backdrop-blur sticky top-0 z-10 align-middle ${className}`}
       aria-sort={ariaSort(col)}
     >
       <button
         type="button"
         onClick={() => toggleSort(col)}
-        className="group inline-flex items-center gap-1 text-left font-medium text-gray-600 hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 rounded"
+        className="group inline-flex items-center gap-1 text-left font-medium text-muted hover:text-app focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 rounded"
       >
         <span>{children}</span>
         {sortBy === col && (sortDir === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />)}
@@ -59,11 +59,11 @@ export default function EventosTable({
   );
 
   return (
-    <div className="overflow-x-auto bg-white border rounded-2xl shadow-sm relative">
+    <div className="overflow-x-auto card border rounded-2xl shadow-sm relative">
       <table className="w-full text-sm text-left border-collapse" role="grid">
         <thead>
-          <tr className="text-gray-600">
-            <th className="px-3 py-2 border-b bg-white/70 backdrop-blur sticky top-0 z-10">
+          <tr className="muted">
+            <th className="px-3 py-2 border-b card-90 backdrop-blur sticky top-0 z-10">
               <input
                 type="checkbox"
                 aria-label="Seleccionar todos los eventos de la página"
@@ -76,12 +76,12 @@ export default function EventosTable({
               />
             </th>
             <ThSortable col="titulo">Título</ThSortable>
-            <th className="px-3 py-2 border-b bg-white/70 backdrop-blur sticky top-0 z-10">Descripción</th>
+            <th className="px-3 py-2 border-b card-90 backdrop-blur sticky top-0 z-10">Descripción</th>
             <ThSortable col="fecha_evento" className="w-32">Fecha</ThSortable>
-            <th className="px-3 py-2 border-b bg-white/70 backdrop-blur sticky top-0 z-10 w-24">Hora</th>
-            <th className="px-3 py-2 border-b bg-white/70 backdrop-blur sticky top-0 z-10">Lugar</th>
-            <th className="px-3 py-2 border-b bg-white/70 backdrop-blur sticky top-0 z-10 w-32">Estado</th>
-            <th className="px-3 py-2 border-b bg-white/70 backdrop-blur sticky top-0 z-10 w-32">Acciones</th>
+            <th className="px-3 py-2 border-b card-90 backdrop-blur sticky top-0 z-10 w-24">Hora</th>
+            <th className="px-3 py-2 border-b card-90 backdrop-blur sticky top-0 z-10">Lugar</th>
+            <th className="px-3 py-2 border-b card-90 backdrop-blur sticky top-0 z-10 w-32">Estado</th>
+            <th className="px-3 py-2 border-b card-90 backdrop-blur sticky top-0 z-10 w-32">Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -98,16 +98,16 @@ export default function EventosTable({
                     aria-label={`Seleccionar evento ${ev.titulo}`}
                     checked={checked}
                     onChange={() => toggleSelect(ev.id_evento)}
-                    className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-400"
+                    className="h-4 w-4 rounded border text-emerald-600 focus:ring-emerald-400"
                   />
                 </td>
-                <td className="px-3 py-2 align-middle font-medium text-gray-800">{ev.titulo}</td>
-                <td className="px-3 py-2 align-middle text-gray-600">{ev.descripcion || '-'}</td>
-                <td className="px-3 py-2 align-middle tabular-nums font-mono text-[13px] text-gray-700">{ev.fecha_evento || '-'}</td>
-                <td className="px-3 py-2 align-middle text-gray-700">
+                <td className="px-3 py-2 align-middle font-medium text-app">{ev.titulo}</td>
+                <td className="px-3 py-2 align-middle text-muted">{ev.descripcion || '-'}</td>
+                <td className="px-3 py-2 align-middle tabular-nums font-mono text-[13px] text-muted">{ev.fecha_evento || '-'}</td>
+                <td className="px-3 py-2 align-middle text-muted">
                   {ev.hora_evento ? new Date(`1970-01-01T${ev.hora_evento}`).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: true }) : '-'}
                 </td>
-                <td className="px-3 py-2 align-middle text-gray-700">{ev.lugar}</td>
+                <td className="px-3 py-2 align-middle text-muted">{ev.lugar}</td>
                 <td className="px-3 py-2 align-middle">
                   <EstadoBadge estado={ev.estado} />
                 </td>
@@ -115,21 +115,21 @@ export default function EventosTable({
                   <div className="flex gap-1.5">
                     <button
                       onClick={() => openEdit(ev)}
-                      className="p-1.5 bg-blue-50 text-blue-600 rounded-lg border border-blue-200 hover:bg-blue-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
+                      className="p-1.5 card-90 text-app rounded-lg border hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
                       aria-label={`Editar ${ev.titulo}`}
                     >
                       <Edit className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => setViewDetail(ev)}
-                      className="p-1.5 bg-yellow-50 text-yellow-700 rounded-lg border border-yellow-200 hover:bg-yellow-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300"
+                      className="p-1.5 bg-yellow-100 text-yellow-800 rounded-lg border border-yellow-300 hover:bg-yellow-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300"
                       aria-label={`Ver detalles de ${ev.titulo}`}
                     >
                       <Eye className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => setConfirm({ open: true, id: ev.id_evento, name: ev.titulo })}
-                      className="p-1.5 bg-red-50 text-red-600 rounded-lg border border-red-200 hover:bg-red-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
+                      className="p-1.5 card-90 text-app rounded-lg border hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
                       aria-label={`Eliminar ${ev.titulo}`}
                     >
                       <Trash2 className="h-4 w-4" />

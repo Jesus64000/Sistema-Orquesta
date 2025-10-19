@@ -5,6 +5,7 @@ import Button from "../components/ui/Button";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 import { updatePerfil, changePassword } from "../api/usuarios";
+import themeUtil from "../utils/theme";
 
 export default function Configuraciones() {
   const { user, refresh } = useAuth();
@@ -61,7 +62,7 @@ export default function Configuraciones() {
       </div>
 
       {/* Perfil */}
-      <section className="bg-white border rounded-2xl shadow-sm p-5">
+  <section className="card border rounded-2xl shadow-sm p-5">
         <h2 className="text-lg font-semibold flex items-center gap-2 mb-3"><User className="h-5 w-5"/> Perfil</h2>
         <form onSubmit={guardarPerfil} className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -79,7 +80,7 @@ export default function Configuraciones() {
       </section>
 
       {/* Contraseña */}
-      <section className="bg-white border rounded-2xl shadow-sm p-5">
+  <section className="card border rounded-2xl shadow-sm p-5">
         <h2 className="text-lg font-semibold flex items-center gap-2 mb-3"><Lock className="h-5 w-5"/> Seguridad</h2>
         <form onSubmit={cambiarClave} className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
@@ -101,12 +102,16 @@ export default function Configuraciones() {
       </section>
 
       {/* Apariencia */}
-      <section className="bg-white border rounded-2xl shadow-sm p-5">
+  <section className="card border rounded-2xl shadow-sm p-5">
         <h2 className="text-lg font-semibold flex items-center gap-2 mb-3"><Eye className="h-5 w-5"/> Apariencia</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-xs text-gray-600 mb-1">Tema</label>
-            <select className="w-full border rounded px-3 py-2" defaultValue={localStorage.getItem('ui_theme') || 'system'} onChange={(e)=>{ localStorage.setItem('ui_theme', e.target.value); document.documentElement.dataset.theme = e.target.value; }}>
+            <select
+              className="w-full border rounded px-3 py-2"
+              defaultValue={themeUtil.getStoredTheme() || 'system'}
+              onChange={(e) => { themeUtil.setTheme(e.target.value); }}
+            >
               <option value="light">Claro</option>
               <option value="dark">Oscuro</option>
               <option value="system">Sistema</option>
@@ -114,7 +119,11 @@ export default function Configuraciones() {
           </div>
           <div>
             <label className="block text-xs text-gray-600 mb-1">Contraste</label>
-            <select className="w-full border rounded px-3 py-2" defaultValue={localStorage.getItem('ui_contrast') || 'normal'} onChange={(e)=>{ localStorage.setItem('ui_contrast', e.target.value); document.documentElement.dataset.contrast = e.target.value; }}>
+            <select
+              className="w-full border rounded px-3 py-2"
+              defaultValue={themeUtil.getStoredContrast() || 'normal'}
+              onChange={(e) => { themeUtil.setContrast(e.target.value); }}
+            >
               <option value="normal">Normal</option>
               <option value="high">Alto</option>
             </select>

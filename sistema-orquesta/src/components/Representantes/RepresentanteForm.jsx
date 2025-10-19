@@ -86,14 +86,14 @@ export default function RepresentanteForm({ data, onSaved, onCancel }) {
       <div>
         <div className="flex items-center gap-2 mb-4">
           <span className="w-1.5 h-5 rounded bg-yellow-400" aria-hidden="true" />
-          <h3 className="text-xs font-bold tracking-wide uppercase text-gray-700">Identificación</h3>
+          <h3 className="text-xs font-bold tracking-wide uppercase text-app">Identificación</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-[11px] font-semibold tracking-wide uppercase text-gray-600 mb-1">Nombre *</label>
+          <label className="block text-[11px] font-semibold tracking-wide uppercase muted mb-1">Nombre *</label>
           <input
             placeholder="Ej: Carlos"
-            className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 ${showError('nombre') ? 'border-red-400 ring-red-300 focus:ring-red-400' : 'border-gray-300'}`}
+            className={`w-full card rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 ${showError('nombre') ? 'border-red-400 ring-red-300 focus:ring-red-400' : 'border'}`}
             value={form.nombre}
             onChange={e=>setForm({...form,nombre:e.target.value})}
             onBlur={()=>setTouched(t=>({...t,nombre:true}))}
@@ -103,10 +103,10 @@ export default function RepresentanteForm({ data, onSaved, onCancel }) {
           {showError('nombre') && <p id="err-nombre" className="mt-1 text-xs text-red-600">{errors.nombre}</p>}
         </div>
         <div>
-          <label className="block text-[11px] font-semibold tracking-wide uppercase text-gray-600 mb-1">Apellido</label>
+          <label className="block text-[11px] font-semibold tracking-wide uppercase muted mb-1">Apellido</label>
           <input
             placeholder="Opcional"
-            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            className="w-full card rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
             value={form.apellido}
             onChange={e=>setForm({...form,apellido:e.target.value})}
             onBlur={()=>setTouched(t=>({...t,apellido:true}))}
@@ -114,10 +114,10 @@ export default function RepresentanteForm({ data, onSaved, onCancel }) {
         </div>
         </div>
         <div className="mt-4">
-          <label className="block text-[11px] font-semibold tracking-wide uppercase text-gray-600 mb-1">CI</label>
+          <label className="block text-[11px] font-semibold tracking-wide uppercase muted mb-1">CI</label>
           <input
             placeholder="V-12345678"
-            className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 ${showError('ci') ? 'border-red-400 ring-red-300 focus:ring-red-400' : 'border-gray-300'}`}
+            className={`w-full card rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 ${showError('ci') ? 'border-red-400 ring-red-300 focus:ring-red-400' : 'border'}`}
             value={(() => {
               if (!form.ci) return '';
               const raw = form.ci.toUpperCase();
@@ -146,38 +146,36 @@ export default function RepresentanteForm({ data, onSaved, onCancel }) {
             aria-invalid={!!showError('ci')}
             aria-describedby={showError('ci') ? 'err-ci' : 'hint-ci'}
           />
-          <p id="hint-ci" className="mt-1 text-[10px] text-gray-500">Escribe solo números (mínimo 6) y se prefijará con V- automáticamente.</p>
+          <p id="hint-ci" className="mt-1 text-[10px] muted">Escribe solo números (mínimo 6) y se prefijará con V- automáticamente.</p>
           {showError('ci') && <p id="err-ci" className="mt-1 text-xs text-red-600">{errors.ci}</p>}
         </div>
-      </div>
-
-      {/* Sección: Contacto */}
-      <div>
+        <div>
         <div className="flex items-center gap-2 mb-4">
           <span className="w-1.5 h-5 rounded bg-yellow-400" aria-hidden="true" />
-          <h3 className="text-xs font-bold tracking-wide uppercase text-gray-700">Contacto</h3>
+          <h3 className="text-xs font-bold tracking-wide uppercase text-app">Contacto</h3>
+        </div>
         </div>
         <div className="space-y-6">
           <div>
-            <label className="block text-[11px] font-semibold tracking-wide uppercase text-gray-600 mb-1">Teléfono móvil</label>
+            <label className="block text-[11px] font-semibold tracking-wide uppercase muted mb-1">Teléfono móvil</label>
             <input
               placeholder="0412-1234567"
-              className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 ${showError('telefono_movil') ? 'border-red-400 ring-red-300 focus:ring-red-400' : 'border-gray-300'}`}
+              className={`w-full card rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 ${showError('telefono_movil') ? 'border-red-400 ring-red-300 focus:ring-red-400' : 'border'}`}
               value={form.telefono_movil}
               onChange={e=>setForm({...form,telefono_movil:normalizeMovil(e.target.value)})}
               onBlur={()=>setTouched(t=>({...t,telefono_movil:true}))}
               aria-invalid={!!showError('telefono_movil')}
               aria-describedby={showError('telefono_movil') ? 'err-movil' : undefined}
             />
-            <p className="mt-1 text-[10px] text-gray-500">Formato sugerido: 0412-1234567</p>
+            <p className="mt-1 text-[10px] muted">Formato sugerido: 0412-1234567</p>
             {showError('telefono_movil') && <p id="err-movil" className="mt-1 text-xs text-red-600">{errors.telefono_movil}</p>}
           </div>
           <div>
-          <label className="block text-[11px] font-semibold tracking-wide uppercase text-gray-600 mb-1">Email *</label>
+          <label className="block text-[11px] font-semibold tracking-wide uppercase muted mb-1">Email *</label>
           <input
             placeholder="correo@dominio.com"
             type="email"
-            className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 ${showError('email') ? 'border-red-400 ring-red-300 focus:ring-red-400' : 'border-gray-300'}`}
+            className={`w-full card rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 ${showError('email') ? 'border-red-400 ring-red-300 focus:ring-red-400' : 'border'}`}
             value={form.email}
             onChange={e=>setForm({...form,email:e.target.value})}
             onBlur={()=>setTouched(t=>({...t,email:true}))}
@@ -189,11 +187,11 @@ export default function RepresentanteForm({ data, onSaved, onCancel }) {
         </div>
       </div>
       {/* Errores mostrados solo tras intento de submit (submitted) o interacción individual */}
-      <div className="flex justify-end gap-2 pt-2">
+        <div className="flex justify-end gap-2 pt-2">
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-sm"
+          className="px-4 py-2 rounded-lg card-90 hover:shadow-sm text-sm"
         >Cancelar</button>
         <button
           disabled={loading || (submitted && Object.keys(errors).length > 0)}

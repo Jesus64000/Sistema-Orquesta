@@ -170,7 +170,7 @@ export default function ProgramasAdmin() {
         />
         <table className="w-full text-sm border-collapse">
           <thead>
-            <tr className="bg-gray-100">
+            <tr className="table-head">
               <th className="px-4 py-2 border-b text-left">Nombre</th>
               <th className="px-4 py-2 border-b text-left">Descripción</th>
               <th className="px-4 py-2 border-b text-left">Acciones</th>
@@ -178,14 +178,14 @@ export default function ProgramasAdmin() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={3} className="text-center py-4">Cargando...</td></tr>
+              <tr><td colSpan={3} className="text-center py-4 table-empty">Cargando...</td></tr>
             ) : !Array.isArray(programas) || programas.length === 0 ? (
-              <tr><td colSpan={3} className="text-center py-4 text-gray-500">No hay programas</td></tr>
+              <tr><td colSpan={3} className="text-center py-4 table-empty">No hay programas</td></tr>
             ) : (
               paginatedProgramas.map((p) => (
                 <tr key={p.id_programa}>
-                  <td className="px-4 py-2 border-b">{p.nombre}</td>
-                  <td className="px-4 py-2 border-b">{p.descripcion}</td>
+                  <td className="px-4 py-2 border-b text-app">{p.nombre}</td>
+                  <td className="px-4 py-2 border-b text-app">{p.descripcion}</td>
                   <td className="px-4 py-2 border-b">
                     <button onClick={() => handleEdit(p)} className="text-yellow-600 font-semibold hover:underline mr-2" aria-label={`Editar programa ${p.nombre}`}>Editar</button>
                     <button onClick={() => handleDelete(p.id_programa)} className="text-red-600 font-semibold hover:underline" aria-label={`Eliminar programa ${p.nombre}`}>Eliminar</button>

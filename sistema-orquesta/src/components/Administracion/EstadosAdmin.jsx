@@ -106,7 +106,7 @@ export default function EstadosAdmin() {
       <form onSubmit={handleSubmit} className="mb-6 flex flex-col md:flex-row gap-2 items-end">
         <div>
           <label className="block text-xs text-yellow-500 font-semibold mb-1">Nombre</label>
-          <input name="nombre" value={form.nombre} onChange={handleChange} required className="border rounded px-3 py-1 w-48" />
+          <input name="nombre" value={form.nombre} onChange={handleChange} required className="border rounded px-3 py-1 w-48 bg-app text-app" />
         </div>
         <Button type="submit" variant="primary" loading={loading}>
           {editId ? "Actualizar" : "Agregar"}
@@ -125,7 +125,7 @@ export default function EstadosAdmin() {
       <div className="overflow-x-auto">
         <table className="w-full text-sm border-collapse">
           <thead>
-            <tr className="bg-gray-100">
+            <tr className="table-head">
               <th className="px-4 py-2 border-b text-left">Nombre</th>
               <th className="px-4 py-2 border-b text-left">Acciones</th>
             </tr>
@@ -134,14 +134,14 @@ export default function EstadosAdmin() {
             {loading ? (
               <tr><td colSpan={2} className="text-center py-4">Cargando...</td></tr>
             ) : !Array.isArray(estados) || estados.length === 0 ? (
-              <tr><td colSpan={2} className="text-center py-4 text-gray-500">No hay estados</td></tr>
+              <tr><td colSpan={2} className="text-center py-4 table-empty">No hay estados</td></tr>
             ) : (
               paginatedEstados.map((e) => (
                 <tr key={e.id_estado}>
-                  <td className="px-4 py-2 border-b">{e.nombre}</td>
+                  <td className="px-4 py-2 border-b text-app">{e.nombre}</td>
                   <td className="px-4 py-2 border-b">
-                    <button onClick={() => handleEdit(e)} className="text-yellow-600 font-semibold hover:underline mr-2">Editar</button>
-                    <button onClick={() => handleDelete(e.id_estado)} className="text-red-600 font-semibold hover:underline">Eliminar</button>
+                    <button onClick={() => handleEdit(e)} className="text-app font-semibold hover:underline mr-2">Editar</button>
+                    <button onClick={() => handleDelete(e.id_estado)} className="text-app font-semibold hover:underline">Eliminar</button>
       {/* ConfirmDialog para eliminar */}
       <ConfirmDialog
         open={confirm.open}

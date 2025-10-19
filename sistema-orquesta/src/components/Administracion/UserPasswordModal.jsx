@@ -35,16 +35,16 @@ export default function UserPasswordModal({ open, onClose, user, onChanged }) {
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded">{error}</div>}
         <div>
-          <label className="block text-xs font-semibold mb-1">Contraseña actual</label>
-          <input type="password" name="current_password" value={form.current_password} onChange={handleChange} className="w-full border rounded px-3 py-2 text-sm" />
+          <label className="block text-xs font-semibold muted mb-1">Contraseña actual</label>
+          <input type="password" name="current_password" value={form.current_password} onChange={handleChange} className="w-full card rounded px-3 py-2 text-sm" />
         </div>
         <div>
-          <label className="block text-xs font-semibold mb-1">Nueva contraseña</label>
-          <input type="password" name="new_password" value={form.new_password} onChange={handleChange} className="w-full border rounded px-3 py-2 text-sm" />
+          <label className="block text-xs font-semibold muted mb-1">Nueva contraseña</label>
+          <input type="password" name="new_password" value={form.new_password} onChange={handleChange} className="w-full card rounded px-3 py-2 text-sm" />
         </div>
         <div>
-          <label className="block text-xs font-semibold mb-1">Confirmar nueva contraseña</label>
-          <input type="password" name="confirm_password" value={form.confirm_password} onChange={handleChange} className="w-full border rounded px-3 py-2 text-sm" />
+          <label className="block text-xs font-semibold muted mb-1">Confirmar nueva contraseña</label>
+          <input type="password" name="confirm_password" value={form.confirm_password} onChange={handleChange} className="w-full card rounded px-3 py-2 text-sm" />
         </div>
         <div className="flex justify-end gap-2 pt-2">
           <Button type="button" variant="ghost" onClick={onClose} disabled={loading}>Cancelar</Button>

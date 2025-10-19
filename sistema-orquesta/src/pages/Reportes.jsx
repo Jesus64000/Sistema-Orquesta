@@ -26,6 +26,7 @@ import EventosSection from "../components/Reportes/EventosSection";
 import ReportesHeader from "../components/Reportes/ReportesHeader";
 import ReportesViewSelector from "../components/Reportes/ReportesViewSelector";
 import ReportesTabs from "../components/Reportes/ReportesTabs";
+import TagSelect from "../components/TagSelect";
 
 export default function Reportes() {
   const [activeTab, setActiveTab] = useState("alumnos");
@@ -44,17 +45,21 @@ export default function Reportes() {
   const [alumnosEdad, setAlumnosEdad] = useState([]);
   const [alumnosGenero, setAlumnosGenero] = useState([]);
   const [alumnosComparativa, setAlumnosComparativa] = useState([]);
+  const [loadingAlumnos, setLoadingAlumnos] = useState(false);
 
   // Instrumentos
   const [instrumentosEstado, setInstrumentosEstado] = useState([]);
   const [instrumentosCategoria, setInstrumentosCategoria] = useState([]);
   const [instrumentosTop, setInstrumentosTop] = useState([]);
+  const [loadingInstrumentos, setLoadingInstrumentos] = useState(false);
 
   // Representantes
   const [representantesPorAlumnos, setRepresentantesPorAlumnos] = useState([]);
+  const [loadingRepresentantes, setLoadingRepresentantes] = useState(false);
 
   // Eventos
   const [eventosPorMes, setEventosPorMes] = useState([]);
+  const [loadingEventos, setLoadingEventos] = useState(false);
 
   // Filtros dinámicos
   const [filtroPrograma, setFiltroPrograma] = useState("todos");
@@ -66,15 +71,18 @@ export default function Reportes() {
 
   // Cargar reportes al inicio y cuando cambia el filtro de programa
 
-  // Cargar reportes al inicio y cuando cambia el filtro de programa o filtroEstadoInstrumento
+  // Fetch KPIs and programas on mount (fast essentials)
   useEffect(() => {
-    const cargar = async () => {
+    let mounted = true;
+    const init = async () => {
       try {
-        // KPIs
-        const resAlumnos = await getAlumnosTotal();
-        const resInstrumentos = await getInstrumentosTotal();
-        const resRepresentantes = await getRepresentantesTotal();
-        const resEventos = await getEventosTotal();
+        const [resAlumnos, resInstrumentos, resRepresentantes, resEventos] = await Promise.all([
+          getAlumnosTotal(),
+          getInstrumentosTotal(),
+          getRepresentantesTotal(),
+          getEventosTotal(),
+        ]);
+        if (!mounted) return;
         setTotales({
           alumnos: resAlumnos.data.total,
           instrumentos: resInstrumentos.data.total,
@@ -82,56 +90,87 @@ export default function Reportes() {
           eventos: resEventos.data.total,
         });
 
-        // Alumnos
-        const resAlumnosPrograma = await getAlumnosPorPrograma();
-        setAlumnosPrograma(resAlumnosPrograma.data);
-        setProgramasDisponibles(resAlumnosPrograma.data.map(a => a.programa));
+        // programas disponibles
+        const resProgramas = await getAlumnosPorPrograma();
+        if (!mounted) return;
+        setProgramasDisponibles(resProgramas.data.map(a => a.programa));
 
-        // Alumnos por edad y género con filtro de programa
-        const resAlumnosEdad = await getAlumnosPorEdad(filtroPrograma);
-        setAlumnosEdad(resAlumnosEdad.data);
-
-        const resAlumnosGenero = await getAlumnosPorGenero(filtroPrograma);
-        setAlumnosGenero(resAlumnosGenero.data);
-
-        const resComparativa = await getAlumnosPorProgramaAnio(2024, 2025);
-        setAlumnosComparativa(resComparativa.data);
-
-
-  // Instrumentos (usar ambos filtros)
-  const resInstrumentosEstado = await getInstrumentosPorEstado(filtroEstadoInstrumento, filtroCategoriaInstrumento);
-  setInstrumentosEstado(resInstrumentosEstado.data);
-
-        // Estados disponibles
+        // estados y categorias (needed for instrumentos filters) - load once
         const resEstados = await getEstados();
+        if (!mounted) return;
         setEstadosInstrumentoDisponibles(Array.isArray(resEstados.data) ? resEstados.data : []);
-
-        // Categorías disponibles
         const { getCategorias } = await import("../api/administracion/categorias");
         const resCategorias = await getCategorias();
+        if (!mounted) return;
         setCategoriasInstrumentoDisponibles(Array.isArray(resCategorias.data) ? resCategorias.data : []);
-
-        // Instrumentos por categoría (usar ambos filtros)
-        const { getInstrumentosPorCategoria } = await import("../api/reportes");
-        const resInstrumentosCategoria = await getInstrumentosPorCategoria(filtroCategoriaInstrumento, filtroEstadoInstrumento);
-        setInstrumentosCategoria(resInstrumentosCategoria.data);
-
-        const resInstrumentosTop = await getInstrumentosTopAsignados();
-        setInstrumentosTop(resInstrumentosTop.data);
-
-        // Representantes
-        const resRepPorAlumnos = await getRepresentantesPorAlumnos();
-        setRepresentantesPorAlumnos(resRepPorAlumnos.data);
-
-        // Eventos
-        const resEventosPorMes = await getEventosPorMes();
-        setEventosPorMes(resEventosPorMes.data);
       } catch (err) {
-        console.error("Error cargando reportes:", err);
+        console.error("Error inicializando reportes:", err);
       }
     };
-    cargar();
-  }, [filtroPrograma, filtroEstadoInstrumento, filtroCategoriaInstrumento]);
+    init();
+    return () => { mounted = false; };
+  }, []);
+
+  // Fetch data only for the active tab (and respect filters)
+  useEffect(() => {
+    let mounted = true;
+    const fetchSection = async () => {
+      try {
+        if (activeTab === "alumnos") {
+          setLoadingAlumnos(true);
+          const [resAlumnosPrograma, resAlumnosEdad, resAlumnosGenero, resComparativa] = await Promise.all([
+            getAlumnosPorPrograma(),
+            getAlumnosPorEdad(filtroPrograma),
+            getAlumnosPorGenero(filtroPrograma),
+            getAlumnosPorProgramaAnio(2024, 2025),
+          ]);
+          if (!mounted) return;
+          setAlumnosPrograma(resAlumnosPrograma.data || []);
+          setAlumnosEdad(resAlumnosEdad.data || []);
+          setAlumnosGenero(resAlumnosGenero.data || []);
+          setAlumnosComparativa(resComparativa.data || []);
+          setLoadingAlumnos(false);
+        } else if (activeTab === "instrumentos") {
+          setLoadingInstrumentos(true);
+          const [resInstrumentosEstado, resInstrumentosCategoria, resInstrumentosTop] = await Promise.all([
+            getInstrumentosPorEstado(filtroEstadoInstrumento, filtroCategoriaInstrumento),
+            // dynamic import kept for backward compatibility
+            (async () => {
+              const { getInstrumentosPorCategoria } = await import("../api/reportes");
+              const r = await getInstrumentosPorCategoria(filtroCategoriaInstrumento, filtroEstadoInstrumento);
+              return r;
+            })(),
+            getInstrumentosTopAsignados(),
+          ]);
+          if (!mounted) return;
+          setInstrumentosEstado(resInstrumentosEstado.data || []);
+          setInstrumentosCategoria(resInstrumentosCategoria.data || []);
+          setInstrumentosTop(resInstrumentosTop.data || []);
+          setLoadingInstrumentos(false);
+        } else if (activeTab === "representantes") {
+          setLoadingRepresentantes(true);
+          const resRepPorAlumnos = await getRepresentantesPorAlumnos();
+          if (!mounted) return;
+          setRepresentantesPorAlumnos(resRepPorAlumnos.data || []);
+          setLoadingRepresentantes(false);
+        } else if (activeTab === "eventos") {
+          setLoadingEventos(true);
+          const resEventosPorMes = await getEventosPorMes();
+          if (!mounted) return;
+          setEventosPorMes(resEventosPorMes.data || []);
+          setLoadingEventos(false);
+        }
+      } catch (err) {
+        console.error("Error cargando sección de reportes:", err);
+        setLoadingAlumnos(false);
+        setLoadingInstrumentos(false);
+        setLoadingRepresentantes(false);
+        setLoadingEventos(false);
+      }
+    };
+    fetchSection();
+    return () => { mounted = false; };
+  }, [activeTab, filtroPrograma, filtroEstadoInstrumento, filtroCategoriaInstrumento]);
 
 
   return (
@@ -145,16 +184,14 @@ export default function Reportes() {
       {/* Filtros dinámicos */}
       {activeTab === "alumnos" && (
         <div className="flex gap-2 mb-4">
-          <select
+          <TagSelect
             value={filtroPrograma}
-            onChange={(e) => setFiltroPrograma(e.target.value)}
-            className="px-3 py-1 border rounded"
-          >
-            <option value="todos">Todos los programas</option>
-            {programasDisponibles.map((p, i) => (
-              <option key={i} value={p}>{p}</option>
-            ))}
-          </select>
+            onChange={setFiltroPrograma}
+            options={[{ label: "Todos los programas", value: "todos" }, ...programasDisponibles.map((p) => ({ label: p, value: p }))]}
+            size="mdCompact"
+            accent="grayStrong"
+            menuWidth={220}
+          />
         </div>
       )}
 
@@ -211,6 +248,7 @@ export default function Reportes() {
                 : alumnosComparativa.filter(c => c.programa === filtroPrograma)
             }
             viewGlobal={viewGlobal}
+            loading={loadingAlumnos}
           />
         )}
         {activeTab === "instrumentos" && (
@@ -223,18 +261,21 @@ export default function Reportes() {
             instrumentosCategoria={instrumentosCategoria}
             instrumentosTop={instrumentosTop}
             viewGlobal={viewGlobal}
+            loading={loadingInstrumentos}
           />
         )}
         {activeTab === "representantes" && (
           <RepresentantesSection 
             representantesPorAlumnos={representantesPorAlumnos} 
             viewGlobal={viewGlobal}
+            loading={loadingRepresentantes}
           />
         )}
         {activeTab === "eventos" && (
           <EventosSection 
             eventosPorMes={eventosPorMes} 
             viewGlobal={viewGlobal}
+            loading={loadingEventos}
           />
         )}
       </div>

@@ -4,7 +4,7 @@ import Card from '../ui/Card';
 
 // Tooltip replicado del dashboard
 const Tooltip = ({ eventos, align = 'center' }) => (
-  <div className={`absolute z-50 w-64 bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-xs text-gray-700 pointer-events-none ${align === 'left' ? 'right-full mr-2' : align === 'right' ? 'left-full ml-2' : '-translate-x-1/2 left-1/2'}`}>
+  <div className={`absolute z-50 w-64 card rounded-lg shadow-lg p-3 text-xs text-app pointer-events-none ${align === 'left' ? 'right-full mr-2' : align === 'right' ? 'left-full ml-2' : '-translate-x-1/2 left-1/2'}`}>
     {eventos.map(ev => {
       const d = ev.fecha_evento ? new Date(ev.fecha_evento) : null;
       return (
@@ -115,7 +115,7 @@ export default function EventosCalendar({ eventos = [] }) {
               onMouseEnter={() => setHovered({ date: d, eventos: eventosDia })}
               onMouseLeave={() => setHovered(null)}
               className={`relative aspect-square rounded-xl text-sm grid place-items-center border shadow-sm select-none
-                ${inMonth ? 'bg-white text-gray-900 border-gray-200' : 'bg-gray-50 text-gray-400 border-transparent'}
+                ${inMonth ? 'card-90 text-app border' : 'muted text-muted border-transparent'}
                 ${eventosDia.length ? 'bg-gradient-to-br from-yellow-100 to-yellow-200 font-semibold cursor-pointer hover:from-yellow-200 hover:to-yellow-300 transition' : ''}
                 ${isToday ? 'ring-2 ring-yellow-400 ring-offset-2 ring-offset-white font-semibold' : ''}`}
               aria-label={`Día ${day}${eventosDia.length ? ` con ${eventosDia.length} evento${eventosDia.length===1?'':'s'}` : ''}`}

@@ -19,14 +19,25 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen grid place-items-center bg-gray-50">
-      <form onSubmit={onSubmit} className="w-full max-w-sm bg-white p-6 rounded-xl shadow">
-        <h1 className="text-lg font-semibold mb-4">Iniciar sesión</h1>
+    <div className="min-h-screen grid place-items-center bg-app text-app">
+      <form onSubmit={onSubmit} className="w-full max-w-sm card p-6 rounded-xl shadow transition-colors">
+        <h1 className="text-lg font-semibold mb-4 text-app">Iniciar sesión</h1>
         {error && <div className="mb-3 text-sm text-red-600">{error}</div>}
-        <label className="block mb-2 text-sm">Email</label>
-        <input className="w-full border rounded px-3 py-2 mb-4" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <label className="block mb-2 text-sm">Contraseña</label>
-        <input type="password" className="w-full border rounded px-3 py-2 mb-6" value={password} onChange={(e) => setPassword(e.target.value)} />
+        <label className="block mb-2 text-sm muted">Email</label>
+        <input
+          className="w-full border rounded px-3 py-2 mb-4 bg-transparent text-app placeholder:text-muted border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-300"
+          placeholder="usuario@dominio"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <label className="block mb-2 text-sm muted">Contraseña</label>
+        <input
+          type="password"
+          className="w-full border rounded px-3 py-2 mb-6 bg-transparent text-app placeholder:text-muted border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-yellow-300"
+          placeholder="••••••••"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
         <button disabled={loading} className="w-full bg-gray-900 text-white py-2 rounded disabled:opacity-50">{loading ? 'Ingresando…' : 'Entrar'}</button>
       </form>
     </div>

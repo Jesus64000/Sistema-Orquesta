@@ -123,15 +123,15 @@ export default function TagSelect({ options = [], value, onChange, size = "sm", 
         aria-expanded={open}
         aria-label={ariaLabel || placeholder}
       >
-        <span>{current ? current.label : placeholder}</span>
-        <svg className="h-4 w-4 opacity-80" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <span className={current ? '' : 'muted'}>{current ? current.label : placeholder}</span>
+        <svg className="h-4 w-4 opacity-80 text-muted" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
           <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clipRule="evenodd" />
         </svg>
       </button>
 
       {open && (
         <div
-          className={`absolute z-40 mt-2 bg-white border border-gray-200 shadow-xl rounded-xl p-2 ${align === "right" ? "right-0" : "left-0"}`}
+          className={`absolute z-40 mt-2 card rounded-xl shadow-xl p-2 ${align === "right" ? "right-0" : "left-0"}`}
           style={{
             width: typeof menuWidth === "number" ? `${menuWidth}px` : menuWidth,
             maxWidth: "calc(100vw - 16px)",
@@ -148,12 +148,12 @@ export default function TagSelect({ options = [], value, onChange, size = "sm", 
                     onChange?.(opt.value);
                     setOpen(false);
                   }}
-                  className={`w-full text-left inline-flex items-center justify-start rounded-full border ${S.chip} transition-colors ${selected ? `${A.active} ${A.optionActiveExtra}` : `${A.filled} ${A.optionHover}`}`}
+                  className={`w-full text-left inline-flex items-center justify-start rounded-full ${S.chip} transition-colors ${selected ? `${A.active} ${A.optionActiveExtra}` : `${A.filled} ${A.optionHover}`}`}
                   role="option"
                   aria-selected={selected}
                   aria-label={opt.label}
                 >
-                  {opt.label}
+                  <span className={`truncate ${selected ? 'font-medium' : 'muted'}`}>{opt.label}</span>
                 </button>
               );
             })}

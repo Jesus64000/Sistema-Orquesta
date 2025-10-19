@@ -85,11 +85,11 @@ export default function RepresentantesAdmin() {
       <form onSubmit={handleSubmit} className="mb-6 flex flex-col md:flex-row gap-2 items-end">
         <div>
           <label className="block text-xs text-yellow-500 font-semibold mb-1">Nombre</label>
-          <input name="nombre" value={form.nombre} onChange={handleChange} required className="border rounded px-3 py-1 w-48" />
+          <input name="nombre" value={form.nombre} onChange={handleChange} required className="border rounded px-3 py-1 w-48 bg-app text-app" />
         </div>
         <div>
           <label className="block text-xs text-yellow-500 font-semibold mb-1">Teléfono</label>
-          <input name="telefono" value={form.telefono} onChange={handleChange} className="border rounded px-3 py-1 w-40" />
+          <input name="telefono" value={form.telefono} onChange={handleChange} className="border rounded px-3 py-1 w-40 bg-app text-app" />
         </div>
         <Button type="submit" variant="primary" loading={loading} disabled={loading}>{editId ? 'Actualizar' : 'Agregar'}</Button>
         {editId && (
@@ -101,7 +101,7 @@ export default function RepresentantesAdmin() {
       <div className="overflow-x-auto">
         <table className="w-full text-sm border-collapse">
           <thead>
-            <tr className="bg-gray-100">
+            <tr className="table-head">
               <th className="px-4 py-2 border-b text-left">Nombre</th>
               <th className="px-4 py-2 border-b text-left">Teléfono</th>
               <th className="px-4 py-2 border-b text-left">Acciones</th>
@@ -111,15 +111,15 @@ export default function RepresentantesAdmin() {
             {loading ? (
               <tr><td colSpan={3} className="text-center py-4">Cargando...</td></tr>
             ) : !Array.isArray(representantes) || representantes.length === 0 ? (
-              <tr><td colSpan={3} className="text-center py-4 text-gray-500">No hay representantes</td></tr>
+              <tr><td colSpan={3} className="text-center py-4 table-empty">No hay representantes</td></tr>
             ) : (
               representantes.map((r) => (
                 <tr key={r.id_representante}>
-                  <td className="px-4 py-2 border-b">{r.nombre}</td>
-                  <td className="px-4 py-2 border-b">{r.telefono}</td>
+                  <td className="px-4 py-2 border-b text-app">{r.nombre}</td>
+                  <td className="px-4 py-2 border-b text-app">{r.telefono}</td>
                   <td className="px-4 py-2 border-b">
-                    <button onClick={() => handleEdit(r)} className="text-yellow-600 font-semibold mr-2 hover:underline">Editar</button>
-                    <button onClick={() => handleDelete(r.id_representante)} className="text-red-600 font-semibold hover:underline">Eliminar</button>
+                    <button onClick={() => handleEdit(r)} className="text-app font-semibold mr-2 hover:underline">Editar</button>
+                    <button onClick={() => handleDelete(r.id_representante)} className="text-app font-semibold hover:underline">Eliminar</button>
                   </td>
                 </tr>
               ))

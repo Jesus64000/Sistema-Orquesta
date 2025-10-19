@@ -115,11 +115,11 @@ export default function MultiSelect({ options = [], value = [], onChange, placeh
         aria-expanded={open ? 'true' : 'false'}
         onClick={() => { setOpen((s) => !s); if (!open) setActiveIndex(0); }}
         onKeyDown={onTriggerKeyDown}
-        className="w-full flex items-center justify-between gap-2 px-3 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-yellow-400"
+        className="w-full flex items-center justify-between gap-2 px-3 py-2 border rounded-lg card focus:outline-none focus:ring-2 focus:ring-yellow-400"
       >
         <div className="flex flex-wrap gap-1 text-left">
           {selected.length === 0 ? (
-            <span className="text-sm text-gray-500">{placeholder}</span>
+            <span className="text-sm text-muted">{placeholder}</span>
           ) : (
             selected.map((s) => (
               <span key={s.id_programa} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-yellow-100 text-gray-800 border border-yellow-200">
@@ -139,11 +139,11 @@ export default function MultiSelect({ options = [], value = [], onChange, placeh
             ))
           )}
         </div>
-        <ChevronDown className="h-4 w-4 text-gray-500" />
+        <ChevronDown className="h-4 w-4 muted" />
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-2 w-full bg-white border rounded-xl shadow-lg p-2" role="presentation">
+        <div className="absolute z-50 mt-2 w-full card rounded-xl shadow-lg p-2 border" role="presentation">
           <div
             ref={listRef}
             role="listbox"
@@ -165,13 +165,13 @@ export default function MultiSelect({ options = [], value = [], onChange, placeh
                   onClick={() => toggle(opt.id_programa)}
                   className={
                     `flex items-center gap-2 px-2 py-1 rounded cursor-pointer text-sm ` +
-                    (active ? 'bg-yellow-50 ring-1 ring-yellow-300 ' : 'hover:bg-gray-50 ') +
-                    (checked ? 'font-medium text-gray-900' : 'text-gray-700')
+                    (active ? 'card-90 shadow-sm ' : 'hover:shadow-sm ') +
+                    (checked ? 'font-medium text-app' : 'text-app muted')
                   }
                 >
                   <span
                     className={`h-4 w-4 inline-flex items-center justify-center border rounded-sm text-[10px] ` +
-                      (checked ? 'bg-yellow-400 border-yellow-400 text-gray-900' : 'bg-white border-gray-300')}
+                      (checked ? 'bg-yellow-400 border-yellow-400 text-app' : 'card-90 border')}
                     aria-hidden="true"
                   >
                     {checked ? '✓' : ''}
@@ -181,12 +181,12 @@ export default function MultiSelect({ options = [], value = [], onChange, placeh
               );
             })}
             {options.length === 0 && (
-              <div className="px-2 py-1 text-xs text-gray-500">Sin opciones</div>
+              <div className="px-2 py-1 text-xs muted">Sin opciones</div>
             )}
           </div>
           {value.length > 0 && (
             <div className="flex justify-between items-center pt-2 mt-2 border-t">
-              <span className="text-xs text-gray-500">{value.length} seleccionado(s)</span>
+              <span className="text-xs muted">{value.length} seleccionado(s)</span>
               <button
                 type="button"
                 className="text-xs text-red-600 hover:underline"

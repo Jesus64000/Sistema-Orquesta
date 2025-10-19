@@ -305,7 +305,7 @@ export default function Alumnos() {
 
       {/* Tabla / Estados */}
       {loading && (
-        <div className="bg-white border rounded-2xl shadow-sm p-6 space-y-4">
+          <div className="card border rounded-2xl shadow-sm p-6 space-y-4">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="grid grid-cols-6 gap-4 animate-pulse">
               <div className="col-span-2 h-4 rounded bg-gray-200" />
@@ -323,7 +323,7 @@ export default function Alumnos() {
       )}
 
       {!loading && loadError && (
-        <div className="bg-white border rounded-2xl shadow-sm p-10 flex flex-col items-center gap-4 text-center">
+          <div className="card border rounded-2xl shadow-sm p-10 flex flex-col items-center gap-4 text-center">
           <div className="flex items-center justify-center h-14 w-14 rounded-full bg-red-50 border border-red-200 text-red-600 text-xl font-bold">!</div>
           <div className="space-y-1">
             <h3 className="font-semibold text-gray-800">No se pudieron cargar los datos</h3>
@@ -343,7 +343,7 @@ export default function Alumnos() {
       )}
 
       {!loading && !loadError && alumnosFiltrados.length === 0 && (
-        <div className="bg-white border rounded-2xl shadow-sm p-10 flex flex-col items-center gap-5 text-center">
+          <div className="card border rounded-2xl shadow-sm p-10 flex flex-col items-center gap-5 text-center">
           <div className="relative">
             <div className="h-16 w-16 rounded-2xl bg-gradient-to-b from-gray-50 to-gray-100 border border-gray-200 flex items-center justify-center text-gray-500">
               <span className="text-2xl">👤</span>

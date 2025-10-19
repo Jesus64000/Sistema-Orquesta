@@ -44,16 +44,12 @@ export default function Administracion() {
   return (
     <div className="flex h-full">
       {/* Menú lateral */}
-      <aside className="w-64 bg-gray-50 border-r p-4 space-y-2">
+      <aside className="w-64 admin-aside">
         <h2 className="font-bold text-lg mb-4">Administración</h2>
         {visibles.map((s) => (
           <button
             key={s.key}
-            className={`block w-full text-left px-4 py-2 rounded transition font-medium ${
-              seccion === s.key
-                ? "bg-blue-100 text-blue-700"
-                : "hover:bg-gray-100 text-gray-700"
-            }`}
+            className={`admin-item ${seccion === s.key ? 'active' : ''}`}
             onClick={() => setSeccion(s.key)}
           >
             {s.label}

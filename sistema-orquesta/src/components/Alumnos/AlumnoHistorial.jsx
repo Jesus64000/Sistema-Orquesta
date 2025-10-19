@@ -51,7 +51,7 @@ export default function AlumnoHistorial({ idAlumno }) {
         <select
           value={form.tipo}
           onChange={(e) => setForm({ ...form, tipo: e.target.value })}
-          className="border rounded-lg px-2 py-1 text-sm"
+          className="border rounded-lg px-2 py-1 text-sm bg-transparent"
         >
           <option value="NOTA">Nota</option>
           <option value="ESTADO">Estado</option>
@@ -63,7 +63,7 @@ export default function AlumnoHistorial({ idAlumno }) {
           value={form.descripcion}
           onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
           placeholder="Descripción"
-          className="flex-1 border rounded-lg px-2 py-1 text-sm"
+          className="flex-1 border rounded-lg px-2 py-1 text-sm bg-transparent"
         />
         <Button
           type="submit"
@@ -73,9 +73,9 @@ export default function AlumnoHistorial({ idAlumno }) {
           Agregar
         </Button>
       </form>
-      <div className="max-h-60 overflow-auto border rounded-lg">
+      <div className="max-h-60 overflow-auto rounded-lg border card-90">
         <table className="w-full text-sm">
-          <thead className="bg-gray-100 text-gray-600">
+          <thead className="muted">
             <tr>
               <th className="px-2 py-1 text-left">Fecha</th>
               <th className="px-2 py-1 text-left">Tipo</th>
@@ -94,7 +94,7 @@ export default function AlumnoHistorial({ idAlumno }) {
             ))}
             {historial.length === 0 && !loading && (
               <tr>
-                <td colSpan="4" className="text-center py-2 text-gray-500">
+                <td colSpan="4" className="text-center py-2 muted">
                   Sin historial
                 </td>
               </tr>

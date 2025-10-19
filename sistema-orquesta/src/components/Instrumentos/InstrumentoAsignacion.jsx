@@ -84,9 +84,9 @@ export default function InstrumentoAsignacion({ instrumento }) {
   return (
     <div className="space-y-4">
       {asignado ? (
-        <div className="p-3 border rounded-lg bg-blue-50">
+        <div className="p-3 rounded card-90 border">
           <h4 className="font-semibold mb-2">Alumno asignado</h4>
-          <div className="space-y-1 text-sm">
+          <div className="space-y-1 text-sm text-app">
             <p><span className="font-medium">Nombre:</span> {asignado.nombre}</p>
             {asignado.genero && <p><span className="font-medium">Género:</span> {asignado.genero}</p>}
             {asignado.telefono_contacto && <p><span className="font-medium">Teléfono:</span> {asignado.telefono_contacto}</p>}
@@ -105,7 +105,7 @@ export default function InstrumentoAsignacion({ instrumento }) {
       ) : (
         <div className="space-y-2">
           <select
-            className="w-full border rounded-lg p-2 text-sm"
+            className="w-full border rounded-lg p-2 text-sm bg-transparent"
             value={alumnoId}
             onChange={(e) => setAlumnoId(e.target.value)}
           >

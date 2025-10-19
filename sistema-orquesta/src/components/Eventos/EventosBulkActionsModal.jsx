@@ -67,26 +67,26 @@ export default function EventosBulkActionsModal({ open, onClose, selectedIds = [
     <>
       <Modal title="Acciones masivas eventos" onClose={onClose}>
         <form onSubmit={handleSubmit} className="space-y-5" noValidate>
-          <div className="flex items-center gap-2 text-[12px] text-gray-600">
-            <span className="font-semibold text-gray-800">{selectedIds.length}</span> seleccionados
+          <div className="flex items-center gap-2 text-[12px] muted">
+            <span className="font-semibold text-app">{selectedIds.length}</span> seleccionados
           </div>
-          <div className="flex gap-2 bg-gray-50 p-1 rounded-lg w-max text-[12px]">
-            <button type="button" onClick={() => { setMode('lugar'); setValue(''); }} className={`px-3 py-1 rounded-md font-medium transition ${mode==='lugar' ? 'bg-white shadow border' : 'text-gray-500 hover:text-gray-700'}`}>Lugar</button>
-            <button type="button" onClick={() => { setMode('hora'); setValue(''); }} className={`px-3 py-1 rounded-md font-medium transition ${mode==='hora' ? 'bg-white shadow border' : 'text-gray-500 hover:text-gray-700'}`}>Hora</button>
-            <button type="button" onClick={() => { setMode('eliminar'); setValue(''); }} className={`px-3 py-1 rounded-md font-medium transition ${mode==='eliminar' ? 'bg-white shadow border text-red-600' : 'text-gray-500 hover:text-gray-700'}`}>Eliminar</button>
+          <div className="flex gap-2 card-90 p-1 rounded-lg w-max text-[12px]">
+            <button type="button" onClick={() => { setMode('lugar'); setValue(''); }} className={`px-3 py-1 rounded-md font-medium transition ${mode==='lugar' ? 'card shadow border' : 'muted hover:text-app'}`}>Lugar</button>
+            <button type="button" onClick={() => { setMode('hora'); setValue(''); }} className={`px-3 py-1 rounded-md font-medium transition ${mode==='hora' ? 'card shadow border' : 'muted hover:text-app'}`}>Hora</button>
+            <button type="button" onClick={() => { setMode('eliminar'); setValue(''); }} className={`px-3 py-1 rounded-md font-medium transition ${mode==='eliminar' ? 'card shadow border text-red-600' : 'muted hover:text-app'}`}>Eliminar</button>
           </div>
 
           {mode === 'lugar' && (
             <div className="flex flex-col gap-1">
-              <label htmlFor="bulk_lugar" className="text-xs font-medium text-gray-600 uppercase tracking-wide">Nuevo lugar *</label>
-              <input id="bulk_lugar" value={value} onChange={e=>setValue(e.target.value)} className="p-2 border rounded-lg text-sm bg-white" placeholder="Ej: Auditorio Principal" />
+              <label htmlFor="bulk_lugar" className="text-xs font-medium muted uppercase tracking-wide">Nuevo lugar *</label>
+              <input id="bulk_lugar" value={value} onChange={e=>setValue(e.target.value)} className="p-2 border rounded-lg text-sm card" placeholder="Ej: Auditorio Principal" />
             </div>
           )}
           {mode === 'hora' && (
             <div className="flex flex-col gap-1">
-              <label htmlFor="bulk_hora" className="text-xs font-medium text-gray-600 uppercase tracking-wide">Nueva hora (HH:MM) *</label>
-              <input id="bulk_hora" value={value} onChange={e=>setValue(e.target.value)} className="p-2 border rounded-lg text-sm bg-white" placeholder="14:30" />
-              <p className="text-[10px] text-gray-500">Se aplica sólo el campo hora_evento.</p>
+              <label htmlFor="bulk_hora" className="text-xs font-medium muted uppercase tracking-wide">Nueva hora (HH:MM) *</label>
+              <input id="bulk_hora" value={value} onChange={e=>setValue(e.target.value)} className="p-2 border rounded-lg text-sm card" placeholder="14:30" />
+              <p className="text-[10px] muted">Se aplica sólo el campo hora_evento.</p>
             </div>
           )}
           {mode === 'eliminar' && (

@@ -54,8 +54,8 @@ export default function CompactSelect({ options = [], value, onChange, size = "s
     },
     gray: {
       ring: "focus:ring-gray-300",
-      border: "border-gray-200 hover:border-gray-300",
-      bgHover: "hover:bg-gray-50/80",
+      border: "border",
+      bgHover: "hover:shadow-sm",
       filledBg: "bg-gray-500 hover:bg-gray-600",
       textFilled: "text-white",
     },
@@ -70,7 +70,7 @@ export default function CompactSelect({ options = [], value, onChange, size = "s
         className={`appearance-none cursor-pointer transition-colors duration-150 ease-out focus:outline-none focus:ring-2 ${A.ring} focus:ring-offset-1 focus:ring-offset-white px-2 ${sizes[size]} ${variants[variant]} ${
           tone === "filled"
             ? `${A.filledBg} ${A.textFilled} border border-transparent`
-            : `bg-white/80 backdrop-blur-sm ${A.border} ${A.bgHover} border shadow-sm`
+            : `card-90 backdrop-blur-sm ${A.border} ${A.bgHover} shadow-sm`
         }`}
       >
         {options.map((opt) => (
@@ -80,7 +80,7 @@ export default function CompactSelect({ options = [], value, onChange, size = "s
         ))}
       </select>
       <svg
-        className={`pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 ${tone === "filled" ? A.textFilled : "text-gray-500"}`}
+    className={`pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 ${tone === "filled" ? A.textFilled : "text-muted"}`}
         viewBox="0 0 20 20"
         fill="currentColor"
         aria-hidden="true"

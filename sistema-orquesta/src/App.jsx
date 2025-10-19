@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { Toaster } from "react-hot-toast";
 import { useAuth, IfPermiso } from "./context/AuthContext";
+import ThemeToggle from "./components/ui/ThemeToggle";
 import AccessDenied from "./components/auth/AccessDenied";
 
 // Páginas
@@ -23,10 +24,10 @@ import Login from "./pages/Login";
 const SidebarItem = ({ icon: IconComp, label, to }) => (
   <Link
     to={to}
-    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors hover:bg-gray-100"
+    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors hover:card"
   >
-  <IconComp className="h-5 w-5" />
-    <span>{label}</span>
+  <IconComp className="h-5 w-5 muted" />
+    <span className="text-app">{label}</span>
   </Link>
 );
 
@@ -50,17 +51,20 @@ function AppLayout() {
   const onLogout = () => { logout(); };
 
   return (
-    <div className="min-h-screen bg-white text-gray-900">
+    <div className="min-h-screen bg-app text-app">
       <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr]">
         {/* Sidebar */}
-        <aside className="bg-white border-r border-gray-200 p-5 lg:min-h-screen shadow-sm">
+  <aside className="card border-r p-5 lg:min-h-screen shadow-sm">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-yellow-400 grid place-items-center text-gray-900 shadow">
               <Music2 className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-xs text-gray-500 leading-none">Sistema Nacional</p>
-              <p className="text-sm font-semibold text-gray-900 leading-none">de Orquestas – Cabimas</p>
+              <p className="text-xs muted leading-none">Sistema Nacional</p>
+              <p className="text-sm font-semibold text-app leading-none">de Orquestas – Cabimas</p>
+            </div>
+            <div className="ml-auto">
+              <ThemeToggle />
             </div>
           </div>
 

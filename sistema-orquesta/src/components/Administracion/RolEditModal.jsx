@@ -71,26 +71,26 @@ export default function RolEditModal({ open, initialData, onClose, onSave, savin
             value={nombre}
             onChange={(e)=>setNombre(e.target.value)}
             required
-            className="border rounded px-3 py-2 w-full"
+            className="card rounded px-3 py-2 w-full"
             disabled={isAdminRole}
           />
           {isAdminRole && (
-            <p className="text-xs text-gray-500 mt-1">El rol Administrador no puede ser editado.</p>
+            <p className="text-xs muted mt-1">El rol Administrador no puede ser editado.</p>
           )}
         </div>
         <div>
           <label className="block text-xs text-yellow-500 font-semibold mb-2">Nivel de acceso</label>
           <div className="flex flex-wrap gap-2">
-            <label className="inline-flex items-center gap-2 px-2 py-1 rounded border">
+            <label className="inline-flex items-center gap-2 px-2 py-1 rounded card">
               <input type="radio" name="nivel" value={1} checked={nivel===1} onChange={()=>setNivel(1)} />
               <span className="text-sm">1 - Acceso a Administración según permisos</span>
             </label>
-            <label className="inline-flex items-center gap-2 px-2 py-1 rounded border">
+            <label className="inline-flex items-center gap-2 px-2 py-1 rounded card">
               <input type="radio" name="nivel" value={2} checked={nivel===2} onChange={()=>setNivel(2)} />
               <span className="text-sm">2 - Sin acceso a Administración</span>
             </label>
           </div>
-          <p className="mt-1 text-xs text-gray-500">Nota: el nivel 0 (Admin total) está reservado exclusivamente para el rol Administrador.</p>
+          <p className="mt-1 text-xs muted">Nota: el nivel 0 (Admin total) está reservado exclusivamente para el rol Administrador.</p>
         </div>
         <div>
           <label className="block text-xs text-yellow-500 font-semibold mb-2">Permisos por recurso</label>
@@ -98,7 +98,7 @@ export default function RolEditModal({ open, initialData, onClose, onSave, savin
         </div>
         {error && <div className="text-red-600 text-sm">{error}</div>}
         <div className="flex justify-end gap-2 pt-2">
-          <button type="button" className="px-3 py-2 rounded border" onClick={onClose} disabled={saving}>Cancelar</button>
+          <button type="button" className="px-3 py-2 rounded card-90" onClick={onClose} disabled={saving}>Cancelar</button>
           <button type="submit" className="px-3 py-2 rounded bg-yellow-400 text-gray-900 font-medium disabled:opacity-50" disabled={saving || isAdminRole}>{saving ? 'Guardando…' : 'Guardar'}</button>
         </div>
       </form>

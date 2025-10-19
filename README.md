@@ -20,326 +20,186 @@ Plataforma web integral para la gestión de alumnos, programas, instrumentos, ev
 - [📚 Documentación de la API](#documentación-de-la-api)
 - [🛠️ Dependencias principales](#dependencias-principales)
 - [🗄️ Estructura del Backend](#estructura-del-backend)
-- [🖥️ Estructura del Frontend](#estructura-del-frontend)
-- [🔒 Seguridad y buenas prácticas](#seguridad-y-buenas-prácticas)
-- [📝 Buenas prácticas de desarrollo](#buenas-prácticas-de-desarrollo)
-- [📜 Historial de cambios](docs/changelog.md)
-- [📖 Guía de instalación](docs/instalacion.md)
-- [🔐 Guía de seguridad](docs/seguridad.md)
-- [🤝 Guía para colaboradores](docs/contribuir.md)
-- [📊 Modelos de datos](docs/modelos.md)
-- [🏛️ Arquitectura](docs/arquitectura.md)
+# Sistema Nacional de Orquestas
 
-</details>
+![Orquesta](https://upload.wikimedia.org/wikipedia/commons/6/6a/Orquesta_Sinf%C3%B3nica_Nacional_de_Venezuela.jpg)
+
+Plataforma web para la gestión de alumnos, programas, instrumentos, eventos y usuarios del Sistema Nacional de Orquestas.
+
+Este repositorio contiene la API (backend) construída con Node.js/Express y la interfaz cliente (frontend) con React + Vite.
 
 ---
 
-## 📦 Estructura del Proyecto
+## Índice rápido
 
-```text
-Sistema-Orquesta/
-│
-├── backend/              # API REST Node.js/Express/MySQL
-│   ├── db.js             # Configuración de conexión a MySQL
-│   ├── index.js          # Inicialización del servidor y rutas
-│   ├── package.json      # Dependencias y scripts
-│   ├── uploads.config.js # Configuración de subida de archivos
-│   ├── helpers/          # Funciones auxiliares de negocio
-│   ├── routes/           # Endpoints RESTful para cada entidad
-│   ├── uploads/          # Archivos subidos por usuarios
-│   └── ...
-│
-├── sistema-orquesta/     # Frontend React (Vite)
-│   ├── src/
-│   │   ├── api/          # Llamadas centralizadas al backend
-│   │   ├── components/   # Componentes reutilizables y específicos
-│   │   ├── pages/        # Vistas principales
-│   │   ├── context/      # Contextos globales
-│   │   ├── assets/       # Imágenes, íconos y estilos
-│   │   ├── utils/        # Funciones auxiliares
-│   │   └── ...
-│   ├── public/           # Archivos estáticos
-│   ├── package.json      # Dependencias y scripts
-│   └── ...
-│
-├── docs/                 # Documentación técnica y de usuario
-│   ├── api.md            # Endpoints y ejemplos de la API
-│   ├── arquitectura.md   # Arquitectura y diagramas
-│   ├── changelog.md      # Historial de cambios
-│   ├── contribuir.md     # Guía para colaboradores
-│   ├── instalacion.md    # Guía de instalación detallada
-│   ├── modelos.md        # Modelos de datos y relaciones
-│   ├── seguridad.md      # Buenas prácticas de seguridad
-│   └── estructura-proyecto.md # Detalle de carpetas y archivos
-│
-├── .gitignore
-├── README.md
-└── ...
-```
+- Descripción general
+- Requisitos y Quick Start (backend y frontend)
+- Variables de entorno importantes
+- Estructura del proyecto
+- Notas para desarrolladores
+- Documentación y recursos
 
 ---
 
-## 🚀 Descripción General del Sistema
+## Descripción general
 
-> **Visión:**
-> Plataforma modular, escalable y segura para la gestión de orquestas, adaptable a cualquier institución musical.
+El sistema está compuesto por dos piezas principales:
 
-El sistema está dividido en dos grandes módulos:
+- Backend: API REST en Node.js y MySQL. Gestiona autenticación (JWT), permisos por roles, entidades (alumnos, programas, instrumentos, eventos, usuarios) y exportación de datos.
+- Frontend: Single Page App en React (Vite). Consume la API, gestiona sesión en localStorage y aplica controles de UI basados en permisos.
 
-### 1. Backend (API REST)
-
-- **Tecnologías:** Node.js, Express, MySQL
-- **Funcionalidad:**
-   - Gestión de programas musicales (CRUD)
-   - Gestión integral de alumnos (asociación a programas, historial, instrumentos, documentos, filtros, paginación)
-   - Administración de instrumentos (registro, estado, reportes, asignación)
-   - Gestión de eventos (futuros, históricos, participación, asistencia)
-   - Reportes agregados (alumnos por programa, instrumentos por estado, relaciones N:M)
-   - Administración de usuarios y roles
-   - Dashboard con métricas clave
-- **Características técnicas:**
-   - API RESTful modular
-   - Manejo avanzado de errores y validaciones
-   - Exportación de datos y archivos
-   - Integración sencilla con cualquier frontend
-
-### 2. Frontend (React + Vite)
-
-- **Tecnologías:** React, Vite, Axios
-- **Funcionalidad:**
-   - Paneles administrativos y dashboards
-   - Formularios avanzados y filtros
-   - Visualización de estadísticas y reportes
-   - Componentes reutilizables y diseño responsivo
-- **Componentes principales:**
-   - Modal, ConfirmDialog, MultiSelect, InfoDialog, Loader
-   - AlumnoDetalle, AlumnoForm, AlumnoHistorial, AlumnoInstrumento, ToggleAlumnoEstado
-   - InstrumentoDetalle, InstrumentoForm, InstrumentoHistorial, InstrumentoAsignacion
-   - EventoDetalle, EventoForm
-   - Páginas: Alumnos, Configuraciones, Dashboard, Eventos, Instrumentos, Miembros, Reportes
-   - Contextos y hooks personalizados
-
-> **Nota:** La arquitectura está pensada para facilitar la extensión y el mantenimiento, permitiendo agregar nuevos módulos y funcionalidades de forma sencilla.
+La arquitectura es modular para facilitar extensiones y mantenimiento.
 
 ---
 
-## ⚙️ Instalación y Ejecución
+## Requisitos
 
-### Requisitos previos
+- Node.js >= 18 (recomendado)
+- npm (o pnpm/yarn)
+- MySQL (local o en contenedor)
 
-- Node.js y npm (backend y frontend)
-- MySQL (puedes usar XAMPP, WAMP, Docker, etc.)
-- Vite (opcional, para desarrollo frontend moderno)
+Recomendado usar un entorno de desarrollo con Docker para la base de datos o una instancia MySQL local.
 
-### Instalación Backend
+---
+
+## Quick Start
+
+Estos son los pasos mínimos para levantar el proyecto en desarrollo.
+
+1) Backend
 
 ```bash
 cd backend
 npm install
-# Configura la conexión a MySQL en db.js y variables en .env
-node index.js
-# El backend estará disponible en http://localhost:4000
+# configurar variables de entorno (ver sección "Variables de entorno")
+# levantar la API (puerta por defecto 4000)
+npm start
 ```
 
-### Instalación Frontend
+2) Frontend
 
 ```bash
 cd sistema-orquesta
 npm install
 npm run dev
-# El frontend estará disponible en http://localhost:5173
 ```
 
-> **Importante:** Consulta la [guía de instalación detallada](docs/instalacion.md) para pasos avanzados, configuración de variables de entorno y troubleshooting.
+Por defecto el frontend de desarrollo (Vite) sirve en http://localhost:5173 y el backend en http://localhost:4000.
 
----
+Si necesitas ejecutar las pruebas del backend (si existen y están preparadas):
 
-## 📚 Documentación de la API
-
-La documentación completa de los endpoints, ejemplos de uso y modelos de datos está en:
-
-- [docs/api.md](docs/api.md) — Endpoints, métodos, ejemplos de request/response
-- [docs/modelos.md](docs/modelos.md) — Modelos de datos y relaciones
-- [docs/arquitectura.md](docs/arquitectura.md) — Arquitectura y diagramas
-
-> **Recomendación:** Consulta estos documentos antes de consumir la API o desarrollar nuevas funcionalidades.
-
----
-
-## 🛠️ Dependencias principales
-
-### Backend
-
-| Paquete         | Descripción                                              |
-|-----------------|----------------------------------------------------------|
-| express         | Framework para crear la API REST                         |
-| cors            | Permite peticiones entre dominios                        |
-| mysql2/promise  | Cliente MySQL con soporte para promesas                  |
-| multer          | Gestión de archivos subidos (documentos)                 |
-| dotenv          | Variables de entorno para configuración segura           |
-
-Instalación:
 ```bash
-npm install express cors mysql2 multer dotenv
-```
-
-### Frontend
-
-| Paquete | Descripción                                 |
-|---------|---------------------------------------------|
-| react   | Biblioteca principal para interfaces de usuario |
-| vite    | Herramienta para desarrollo rápido de React  |
-| axios   | Cliente HTTP para consumir la API           |
-
-Instalación:
-```bash
-npm install react axios
+cd backend
+npm test
 ```
 
 ---
 
-## 🗄️ Estructura del Backend
+## Variables de entorno (principales)
 
-| Archivo/Carpeta      | Descripción                                      |
-|----------------------|--------------------------------------------------|
-| db.js                | Configuración y conexión a MySQL                 |
-| index.js             | Inicialización del servidor y rutas              |
-| routes/              | Endpoints RESTful para cada entidad              |
-| helpers/             | Funciones auxiliares de negocio                  |
-| uploads/             | Archivos subidos por usuarios                    |
-| uploads.config.js    | Configuración de subida de archivos              |
-| package.json         | Dependencias y scripts                           |
-| README.md            | Documentación técnica                            |
+Configura estas variables para entornos de desarrollo/producción (por ejemplo con un `.env`):
 
----
+- DB_HOST — host de MySQL (ej. localhost)
+- DB_USER — usuario de BD
+- DB_PASS — contraseña
+- DB_NAME — nombre de la base de datos
+- JWT_SECRET — secreto para firmar tokens JWT (obligatorio en producción)
+- PORT — puerto del backend (por defecto 4000)
+- MIGRATIONS — `off` para desactivar la ejecución automática de migraciones en arranque
+- TRUST_PROXY — `1` si la app está detrás de proxy y quiere confiar en X-Forwarded-* (relevante para rate limiting por IP)
+- ALLOW_DEV_USER — (opcional) permitir carga de usuario de desarrollo (header `x-user-id` o query `_devrole`). Usar SOLO en desarrollo.
 
-## 🖥️ Estructura del Frontend
+Ejemplo `.env` (NO subir a repositorio):
 
-| Carpeta/Archivo      | Descripción                                      |
-|----------------------|--------------------------------------------------|
-| src/api/             | Llamadas centralizadas al backend                |
-| src/components/      | Componentes reutilizables y específicos          |
-| src/pages/           | Vistas principales (Alumnos, Dashboard, etc.)    |
-| src/context/         | Contextos globales                               |
-| src/hooks/           | Hooks personalizados                             |
-| src/assets/          | Imágenes, íconos y estilos                       |
-| src/utils/           | Funciones auxiliares                             |
-| public/              | Archivos estáticos (index.html, favicon, etc.)   |
-| README.md            | Documentación específica del frontend            |
-
-> **Nota:** La estructura modular permite escalar el sistema y agregar nuevas funcionalidades de manera sencilla.
+```
+DB_HOST=localhost
+DB_USER=root
+DB_PASS=secreto
+DB_NAME=sistema_orquesta
+JWT_SECRET=una_clave_segura
+PORT=4000
+MIGRATIONS=on
+TRUST_PROXY=0
+ALLOW_DEV_USER=1
+```
 
 ---
 
-## 🔒 Seguridad y buenas prácticas
+## Estructura del proyecto (resumen)
 
-- Las contraseñas de usuario deben almacenarse como hash seguro (bcrypt recomendado)
-- Implementar autenticación y autorización para ambientes productivos
-- Validaciones exhaustivas en backend y frontend
-- Uso de CORS para desarrollo y producción
-- Configuración de variables de entorno para credenciales y rutas sensibles
-- Manejo centralizado de errores y respuestas consistentes
-- Logs de auditoría y monitoreo recomendados
+```
+/backend                 # API Node.js + migraciones + routes
+  ├─ db.js
+  ├─ index.js
+  ├─ app.js
+  ├─ routes/
+  ├─ middleware/
+  └─ migrations/
 
-> Consulta la [guía de seguridad](docs/seguridad.md) para recomendaciones avanzadas y ejemplos de configuración.
+/sistema-orquesta        # Frontend React (Vite)
+  ├─ src/
+  │  ├─ api/
+  │  ├─ components/
+  │  ├─ context/
+  │  └─ pages/
+  └─ package.json
 
----
+/docs                    # Documentación técnica y guías
 
-## 📝 Buenas prácticas de desarrollo
-
-- Código modular y reutilizable (separación de lógica, presentación y API)
-- Componentes funcionales y hooks en React para gestión eficiente del estado
-- Documentación técnica y de usuario actualizada en `docs/`
-- Pruebas unitarias y de integración recomendadas
-- Uso de control de versiones (git) y ramas para nuevas funcionalidades
-- Comentarios claros y documentación en el código fuente
-- Actualizar el changelog y la documentación con cada versión
-
-> Consulta la [guía para colaboradores](docs/contribuir.md) para estándares de código, flujos de trabajo y recomendaciones de contribución.
+README.md
+```
 
 ---
 
-## ♿ Accesibilidad (A11y)
+## Notas importantes para desarrolladores
 
-El frontend incorpora mejoras progresivas para ofrecer una mejor experiencia a usuarios que utilizan tecnologías de asistencia:
-
-### Diálogos y Modales
-- Implementación de un `DialogShell` unificado con:
-   - `role="dialog"` + `aria-modal="true"` y aislamiento visual.
-   - Bloqueo de scroll y restauración de foco al elemento disparador.
-   - Focus trap (Tab / Shift+Tab) para navegación contenida.
-   - `aria-hidden` dinámico sobre el fondo mientras el diálogo está abierto.
-   - Soporte de `aria-describedby` para mensajes contextuales (Confirm / Info).
-
-### Tabla de Alumnos
-- Estados de carga, vacío y error claramente diferenciados y semánticos.
-- Anuncios en vivo (live regions) para:
-   - Conteo de resultados filtrados.
-   - Cambios de estado (activado / desactivado) de alumnos.
-- Uso de `aria-sort` en columnas ordenables.
-- Indicadores visuales + texto (no solo color) para estados y chips.
-
-### Navegación por Pestañas (Detalle Alumno / Instrumento)
-- `role="tablist"`, `role="tab"`, `aria-controls`, `aria-selected` y panel asociado con `aria-labelledby`.
-- Gestión de foco accesible al cambiar pestañas (sin forzar navegación con teclas mientras no se requiera).
-
-### Componentes Reutilizables
-- `Pill` base para chips / badges con variantes de color y soporte de punto indicador o spinner.
-- `EstadoPill` mantiene lógica de estado + compatibilidad con `aria-live` cuando hay cambios.
-
-### Principios Adoptados
-- No depender únicamente del color para transmitir significado.
-- Anuncios concisos y no intrusivos (live regions polite y atómicos).
-- Estructura consistente de modales evita divergencias de comportamiento.
-- Refactor preparado para futuras mejoras (ej: navegación por teclado más avanzada si se solicita).
-
-### Próximos Pasos Potenciales
-- Tests automatizados (axe / jest-dom) para validación estática de accesibilidad.
-- Preferencias de usuario (modo alto contraste / reducción de animaciones) si surge la necesidad.
+- Contraseñas: el sistema usa bcrypt en varios puntos (login, cambio de contraseña). Hay un `TODO` en el endpoint de creación de usuarios (`backend/routes/usuarios.js`) para asegurar que siempre se hashee la contraseña al crear cuentas. Verificar antes de poner en producción.
+- Permisos: el backend centraliza el catálogo de permisos en `backend/permissionsCatalog.js`. El frontend transforma `effectivePerms` en tokens `recurso:accion` para el control de UI.
+- Usuario de desarrollo: existe soporte para inyectar un usuario de desarrollo (`x-user-id` o `_devrole`) para facilitar testing en local. Asegúrate de desactivar esto en producción (controlado por `ALLOW_DEV_USER` / `NODE_ENV`).
+- Rate limiting: la implementación actual (`middleware/rateLimit.js`) es en memoria. No es adecuada para despliegues en múltiples instancias — se recomienda usar Redis o un servicio centralizado si se escala.
 
 ---
 
-## 🧩 UX de Formularios (Validación Diferida)
+## Migraciones
 
-Para reducir fricción cognitiva y evitar ruido visual, los formularios clave siguen un patrón de validación diferida:
+Las migraciones están en `backend/migrations/`. Por defecto, en el arranque (`index.js`) se ejecuta `ensureMigrations` salvo que `MIGRATIONS=off`.
 
-- No se muestran errores inmediatamente al enfocar o salir (blur) de un campo vacío la primera vez.
-- Los mensajes de error aparecen tras el primer intento de guardado fallido (submit) y solo en los campos con problemas.
-- Una vez mostrado un error, si el usuario corrige el campo, el mensaje desaparece dinámicamente.
-- Los atributos `aria-invalid` y `aria-describedby` sólo se activan cuando el error es visible, mejorando la experiencia de lectores de pantalla.
-- Eliminado el banner global genérico de "Revisa los campos" en favor de feedback contextual preciso.
-
-### Formularios que ya aplican este patrón
-- Representante (`RepresentanteForm.jsx`)
-
-### Beneficios
-- Menos distracciones iniciales al crear/editar.
-- Enfoque guiado solo cuando realmente hay intención de enviar datos.
-- Accesibilidad mejorada: menos anuncios redundantes para tecnologías de asistencia.
-
-### Próximas alineaciones previstas
-- Aplicar el mismo patrón de validación diferida a `AlumnoForm` y futuros formularios (Instrumentos, Eventos) manteniendo consistencia.
+Si prefieres controlar las migraciones manualmente, pon `MIGRATIONS=off` y ejecuta el script que corresponda desde `migrations/`.
 
 ---
 
-## 📜 Recursos y documentación adicional
+## Tests y calidad
 
-- [Documentación de la API](docs/api.md)
-- [Modelos de datos](docs/modelos.md)
-- [Arquitectura del sistema](docs/arquitectura.md)
-- [Guía de instalación](docs/instalacion.md)
-- [Guía de seguridad](docs/seguridad.md)
-- [Historial de cambios](docs/changelog.md)
-- [Guía para colaboradores](docs/contribuir.md)
+- Backend: `npm test` en `backend/` ejecuta pruebas Node.js (`node --test`). Revisa `backend/tests/`.
+- Frontend: `npm test` en `sistema-orquesta/` usa Vitest si está configurado.
+
+Es recomendable añadir un pipeline CI que ejecute linter y tests para cada PR.
 
 ---
 
-## 💡 Contacto y soporte
+## Recursos y documentación
 
-¿Tienes dudas, sugerencias o encontraste un error?
-
-- Consulta la documentación técnica en la carpeta `docs/`
-- Abre un issue en el repositorio
-- Contacta al equipo responsable del proyecto
+- Documentación de la API y modelos: ver carpeta `docs/` (`api.md`, `modelos.md`, `arquitectura.md`).
+- Guía de instalación avanzada y troubleshooting: `docs/instalacion.md`.
+- Historial de cambios: `docs/changelog.md`.
 
 ---
+
+## Cómo contribuir
+
+1. Abre un issue describiendo la mejora o bug.
+2. Crea una rama con un nombre claro: `feature/<tema>` o `fix/<tema>`.
+3. Añade tests para cambios de lógica cuando aplique.
+4. Abre un pull request describiendo los cambios.
+
+Consulta `docs/contribuir.md` para el flujo de trabajo y las convenciones de código.
+
+---
+
+## Contacto
+
+Para dudas o soporte, abre un issue en el repositorio o contacta con el equipo responsable.
+
+---
+
+*Este README fue reorganizado para facilitar la incorporación de nuevos desarrolladores y la puesta en marcha rápida del proyecto. Si quieres que también actualice los README específicos de `backend/` y `sistema-orquesta/`, dime y los rehago manteniendo el mismo nivel de detalle.*

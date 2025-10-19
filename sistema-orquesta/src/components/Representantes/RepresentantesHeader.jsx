@@ -10,7 +10,7 @@ export default function RepresentantesHeader({ onCreate, selected = [], onExport
       </div>
       <div className="flex flex-col sm:flex-row sm:items-center gap-3" aria-label="Acciones representantes" role="group">
         {count > 0 && (
-          <div className="flex items-center gap-2 bg-white/70 backdrop-blur-sm border border-gray-200 rounded-full pl-3 pr-4 h-10 shadow-sm" role="status" aria-live="polite">
+          <div className="flex items-center gap-2 card-90 backdrop-blur-sm rounded-full pl-3 pr-4 h-10 shadow-sm" role="status" aria-live="polite">
             <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-900 text-white tracking-wide" aria-label={`Total seleccionados: ${count}`}>{count}</span>
             <span className="text-xs text-gray-600" aria-hidden="true">seleccionado{count === 1 ? '' : 's'}</span>
           </div>

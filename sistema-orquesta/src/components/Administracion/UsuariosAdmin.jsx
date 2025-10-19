@@ -138,7 +138,7 @@ export default function UsuariosAdmin() {
         </div>
         <div>
           <label className="block text-xs text-yellow-500 font-semibold mb-1">Rol</label>
-          <select name="id_rol" value={form.id_rol} onChange={handleChange} required className="border rounded px-3 py-1 w-40">
+          <select name="id_rol" value={form.id_rol} onChange={handleChange} required className="border rounded px-3 py-1 w-40 bg-app text-app">
             <option value="">Seleccione</option>
             {roles.map((r) => {
               const nivel = (r && r.permisos && typeof r.permisos.$nivel === 'number') ? r.permisos.$nivel : 2;
@@ -152,7 +152,7 @@ export default function UsuariosAdmin() {
           Agregar
         </Button>
       </form>
-      <p className="text-[11px] text-gray-600 mb-4">El nivel proviene del rol: 1=Acceso a Administración (según permisos), 2=Sin Administración.</p>
+      <p className="text-[11px] muted mb-4">El nivel proviene del rol: 1=Acceso a Administración (según permisos), 2=Sin Administración.</p>
       {error && <div className="text-red-500 mb-2">{error}</div>}
       {success && <div className="text-green-600 mb-2">{success}</div>}
       <div className="overflow-x-auto">
@@ -167,7 +167,7 @@ export default function UsuariosAdmin() {
         />
         <table className="w-full text-sm border-collapse">
           <thead>
-            <tr className="bg-gray-100">
+            <tr className="table-head">
               <th className="px-4 py-2 border-b text-left">Nombre</th>
               <th className="px-4 py-2 border-b text-left">Email</th>
               <th className="px-4 py-2 border-b text-left">Rol</th>
@@ -176,15 +176,15 @@ export default function UsuariosAdmin() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={4} className="text-center py-4">Cargando...</td></tr>
+              <tr><td colSpan={4} className="text-center py-4 table-empty">Cargando...</td></tr>
             ) : !Array.isArray(usuarios) || usuarios.length === 0 ? (
-              <tr><td colSpan={4} className="text-center py-4 text-gray-500">No hay usuarios</td></tr>
+              <tr><td colSpan={4} className="text-center py-4 table-empty">No hay usuarios</td></tr>
             ) : (
               usuarios.map((u) => (
                 <tr key={u.id_usuario}>
-                  <td className="px-4 py-2 border-b">{u.nombre}</td>
-                  <td className="px-4 py-2 border-b">{u.email}</td>
-                  <td className="px-4 py-2 border-b">{u.rol_nombre}</td>
+                  <td className="px-4 py-2 border-b text-app">{u.nombre}</td>
+                  <td className="px-4 py-2 border-b text-app">{u.email}</td>
+                  <td className="px-4 py-2 border-b text-app">{u.rol_nombre}</td>
                   <td className="px-4 py-2 border-b">
                     <button onClick={() => handleEdit(u)} className="text-yellow-600 font-semibold mr-2 hover:underline">Editar</button>
                     <button onClick={() => handleDelete(u.id_usuario)} className="text-red-600 font-semibold hover:underline">Eliminar</button>

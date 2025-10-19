@@ -5,11 +5,11 @@ export default function RepresentantesTable({ data, loading, onEdit, onDelete, o
     <button
       type="button"
       onClick={() => onSort && onSort(key)}
-      className="group inline-flex items-center gap-1 font-medium text-gray-600 hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300 rounded"
+      className="group inline-flex items-center gap-1 font-medium muted hover:text-app focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300 rounded"
     >
       <span>{label}</span>
       {sortBy === key ? (
-        sortDir === 'asc' ? <ChevronUp size={14} className="text-gray-500" /> : <ChevronDown size={14} className="text-gray-500" />
+        sortDir === 'asc' ? <ChevronUp size={14} className="muted" /> : <ChevronDown size={14} className="muted" />
       ) : (
         <ChevronUp size={14} className="opacity-0 group-hover:opacity-40 transition" />
       )}
@@ -20,9 +20,9 @@ export default function RepresentantesTable({ data, loading, onEdit, onDelete, o
   const someSelected = selectedIds.length > 0 && !allSelected;
 
   return (
-    <div className="overflow-x-auto bg-white border rounded-2xl shadow-sm" role="region" aria-label="Tabla de representantes">
+    <div className="overflow-x-auto card rounded-2xl shadow-sm" role="region" aria-label="Tabla de representantes">
       <table className="w-full text-[13px] text-left border-collapse" role="grid">
-        <thead className="bg-gradient-to-b from-gray-50 to-gray-100 text-gray-600 text-[11px] uppercase tracking-wide sticky top-0 z-10 shadow-sm">
+        <thead className="card-90 muted text-[11px] uppercase tracking-wide sticky top-0 z-10 shadow-sm">
           <tr>
             <th className="px-3 py-2 w-[36px]">
               <input
@@ -30,7 +30,7 @@ export default function RepresentantesTable({ data, loading, onEdit, onDelete, o
                 checked={allSelected}
                 ref={el => { if (el) el.indeterminate = someSelected; }}
                 onChange={onToggleSelectAll}
-                className="h-4 w-4 rounded border-gray-300 text-yellow-500 focus:ring-yellow-300"
+                className="h-4 w-4 rounded border text-yellow-500 focus:ring-yellow-300"
                 aria-label={allSelected ? 'Deseleccionar todos' : 'Seleccionar todos'}
               />
             </th>
@@ -45,25 +45,25 @@ export default function RepresentantesTable({ data, loading, onEdit, onDelete, o
         </thead>
         <tbody>
           {loading && (
-            <tr><td colSpan={6} className="px-4 py-10 text-center text-gray-500">Cargando...</td></tr>
+            <tr><td colSpan={8} className="px-4 py-10 text-center muted">Cargando...</td></tr>
           )}
           {!loading && data.length === 0 && (
-            <tr><td colSpan={6} className="px-4 py-10 text-center text-gray-500">Sin resultados</td></tr>
+            <tr><td colSpan={8} className="px-4 py-10 text-center muted">Sin resultados</td></tr>
           )}
           {!loading && data.map(r => {
             const selected = selectedIds.includes(r.id_representante);
             return (
-              <tr key={r.id_representante} className={`transition ${selected ? 'bg-yellow-50' : 'hover:bg-gray-50'}`}> 
+              <tr key={r.id_representante} className={`transition ${selected ? 'bg-yellow-50' : 'hover:card-90'}`}> 
                 <td className="px-3 py-2 align-middle">
                   <input
                     type="checkbox"
                     checked={selected}
                     onChange={() => onToggleOne(r.id_representante)}
-                    className="h-4 w-4 rounded border-gray-300 text-yellow-500 focus:ring-yellow-300"
+                    className="h-4 w-4 rounded border text-yellow-500 focus:ring-yellow-300"
                     aria-label={selected ? `Quitar selección de ${r.nombre}` : `Seleccionar ${r.nombre}`}
                   />
                 </td>
-                <td className="px-3 py-2 font-medium text-gray-800">
+                <td className="px-3 py-2 font-medium text-app">
                   <button
                     type="button"
                     onClick={() => onView(r)}
@@ -73,17 +73,17 @@ export default function RepresentantesTable({ data, loading, onEdit, onDelete, o
                     {(r.nombre||'') + (r.apellido? ' '+r.apellido: '')}
                   </button>
                 </td>
-                <td className="px-3 py-2 text-gray-600">{r.ci || <span className="text-gray-400 italic">—</span>}</td>
-                <td className="px-3 py-2 text-gray-600">{r.telefono_movil || r.telefono || <span className="text-gray-400 italic">—</span>}</td>
-                <td className="px-3 py-2 text-gray-600 break-all">{r.email}</td>
-                <td className="px-3 py-2 text-gray-600">{r.parentesco_nombre || <span className="text-gray-400 italic">—</span>}</td>
-                <td className="px-3 py-2 text-gray-600 text-center">{r.alumnos_count ?? 0}</td>
+                <td className="px-3 py-2 muted">{r.ci || <span className="muted italic">—</span>}</td>
+                <td className="px-3 py-2 muted">{r.telefono_movil || r.telefono || <span className="muted italic">—</span>}</td>
+                <td className="px-3 py-2 muted break-all">{r.email}</td>
+                <td className="px-3 py-2 muted">{r.parentesco_nombre || <span className="muted italic">—</span>}</td>
+                <td className="px-3 py-2 muted text-center">{r.alumnos_count ?? 0}</td>
                 <td className="px-3 py-2">
                   <div className="flex items-center gap-1.5">
                     {onEdit && (
                       <button
                         onClick={() => onEdit(r)}
-                        className="p-1.5 rounded-lg border bg-blue-50 text-blue-600 hover:bg-blue-100 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
+                        className="p-1.5 rounded-lg border card-90 text-app hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
                         title="Editar"
                         aria-label={`Editar ${r.nombre}`}
                       >
@@ -92,7 +92,7 @@ export default function RepresentantesTable({ data, loading, onEdit, onDelete, o
                     )}
                     <button
                       onClick={() => onView(r)}
-                      className="p-1.5 rounded-lg border bg-yellow-50 text-yellow-700 hover:bg-yellow-100 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:ring-offset-1"
+                      className="p-1.5 rounded-lg border bg-yellow-100 text-yellow-800 hover:bg-yellow-200 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:ring-offset-1"
                       title="Ver detalle"
                       aria-label={`Ver detalle de ${r.nombre}`}
                     >
@@ -101,7 +101,7 @@ export default function RepresentantesTable({ data, loading, onEdit, onDelete, o
                     {onDelete && (
                       <button
                         onClick={() => onDelete(r)}
-                        className="p-1.5 rounded-lg border bg-red-50 text-red-600 hover:bg-red-100 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-1"
+                        className="p-1.5 rounded-lg border card-90 text-app hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-1"
                         title="Eliminar"
                         aria-label={`Eliminar ${r.nombre}`}
                       >

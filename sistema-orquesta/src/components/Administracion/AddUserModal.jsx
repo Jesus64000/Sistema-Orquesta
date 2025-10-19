@@ -49,23 +49,23 @@ export default function AddUserModal({ open, onClose, onCreated, usuarios = [] }
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded">{error}</div>}
         <div>
-          <label className="block text-xs font-semibold mb-1">Nombre</label>
-          <input name="nombre" value={form.nombre} onChange={handleChange} className="w-full border rounded px-3 py-2 text-sm" />
+          <label className="block text-xs font-semibold muted mb-1">Nombre</label>
+          <input name="nombre" value={form.nombre} onChange={handleChange} className="w-full card rounded px-3 py-2 text-sm" />
         </div>
         <div>
-          <label className="block text-xs font-semibold mb-1">Email</label>
-          <input name="email" type="email" value={form.email} onChange={handleChange} className="w-full border rounded px-3 py-2 text-sm" />
+          <label className="block text-xs font-semibold muted mb-1">Email</label>
+          <input name="email" type="email" value={form.email} onChange={handleChange} className="w-full card rounded px-3 py-2 text-sm" />
         </div>
         <div>
-          <label className="block text-xs font-semibold mb-1">Rol</label>
-          <select name="id_rol" value={form.id_rol} onChange={handleChange} className="w-full border rounded px-3 py-2 text-sm">
+          <label className="block text-xs font-semibold muted mb-1">Rol</label>
+          <select name="id_rol" value={form.id_rol} onChange={handleChange} className="w-full card rounded px-3 py-2 text-sm">
             <option value="">Seleccione</option>
             {roles.map(r=>(<option key={r.id_rol} value={r.id_rol}>{r.nombre}</option>))}
           </select>
         </div>
         <div>
-          <label className="block text-xs font-semibold mb-1">Contraseña</label>
-          <input name="password" type="password" value={form.password} onChange={handleChange} className="w-full border rounded px-3 py-2 text-sm" />
+          <label className="block text-xs font-semibold muted mb-1">Contraseña</label>
+          <input name="password" type="password" value={form.password} onChange={handleChange} className="w-full card rounded px-3 py-2 text-sm" />
         </div>
         <div className="flex justify-end gap-2 pt-2">
           <Button type="button" variant="ghost" onClick={()=>{ onClose(); reset(); }} disabled={loading}>Cancelar</Button>

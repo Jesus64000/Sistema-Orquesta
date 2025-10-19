@@ -23,7 +23,7 @@ export default function InstrumentoDetalle({ instrumento, onClose }) {
       title={`Detalle de ${instrumento.nombre}`}
       size="lg"
     >
-      <div className="flex items-center gap-2 mb-5 border-b border-gray-200" role="tablist" aria-label="Secciones del instrumento">
+  <div className="flex items-center gap-2 mb-5 border-b muted" role="tablist" aria-label="Secciones del instrumento">
         {tabs.map(t => {
           const active = tab === t.key;
           const tabId = `instrumento-tab-${t.key}`;
@@ -33,7 +33,7 @@ export default function InstrumentoDetalle({ instrumento, onClose }) {
               key={t.key}
               id={tabId}
               onClick={() => setTab(t.key)}
-              className={`relative px-4 h-10 text-sm font-medium rounded-t-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300 ${active ? "bg-white text-gray-900 -mb-px border border-gray-200 border-b-white" : "text-gray-500 hover:text-gray-700"}`}
+              className={`relative px-4 h-10 text-sm font-medium rounded-t-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300 ${active ? "-mb-px border-b-white" : "muted hover:text-app"}`}
               aria-selected={active}
               aria-controls={panelId}
               role="tab"
@@ -46,39 +46,39 @@ export default function InstrumentoDetalle({ instrumento, onClose }) {
         })}
       </div>
 
-      <div role="tabpanel" id={`instrumento-panel-${tab}`} aria-labelledby={`instrumento-tab-${tab}`} className="space-y-6 text-sm">
+      <div role="tabpanel" id={`instrumento-panel-${tab}`} aria-labelledby={`instrumento-tab-${tab}`} className="space-y-6 text-app">
         {tab === "perfil" && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
-              <p className="text-[11px] uppercase tracking-wide text-gray-500">Nombre</p>
-              <p className="font-medium text-gray-900">{instrumento.nombre}</p>
+              <p className="text-[11px] uppercase tracking-wide muted">Nombre</p>
+              <p className="font-medium">{instrumento.nombre}</p>
             </div>
             <div>
-              <p className="text-[11px] uppercase tracking-wide text-gray-500">Categoría</p>
-              <p className="font-medium text-gray-900">{instrumento.categoria_nombre}</p>
+              <p className="text-[11px] uppercase tracking-wide muted">Categoría</p>
+              <p className="font-medium">{instrumento.categoria_nombre}</p>
             </div>
             <div>
-              <p className="text-[11px] uppercase tracking-wide text-gray-500">Número de serie</p>
-              <p className="font-medium text-gray-900">{instrumento.numero_serie}</p>
+              <p className="text-[11px] uppercase tracking-wide muted">Número de serie</p>
+              <p className="font-medium">{instrumento.numero_serie}</p>
             </div>
             <div>
-              <p className="text-[11px] uppercase tracking-wide text-gray-500">Estado</p>
-              <p className="font-medium text-gray-900">{instrumento.estado_nombre}</p>
+              <p className="text-[11px] uppercase tracking-wide muted">Estado</p>
+              <p className="font-medium">{instrumento.estado_nombre}</p>
             </div>
             <div>
-              <p className="text-[11px] uppercase tracking-wide text-gray-500">Fecha adquisición</p>
-              <p className="font-medium text-gray-900">{instrumento.fecha_adquisicion?.slice(0, 10) || "—"}</p>
+              <p className="text-[11px] uppercase tracking-wide muted">Fecha adquisición</p>
+              <p className="font-medium">{instrumento.fecha_adquisicion?.slice(0, 10) || "—"}</p>
             </div>
             <div>
-              <p className="text-[11px] uppercase tracking-wide text-gray-500">Ubicación</p>
-              <p className="font-medium text-gray-900">{instrumento.ubicacion || "—"}</p>
+              <p className="text-[11px] uppercase tracking-wide muted">Ubicación</p>
+              <p className="font-medium">{instrumento.ubicacion || "—"}</p>
             </div>
             <div className="md:col-span-2">
-              <p className="text-[11px] uppercase tracking-wide text-gray-500">Asignado a</p>
+              <p className="text-[11px] uppercase tracking-wide muted">Asignado a</p>
               {instrumento.asignado && instrumento.asignado.nombre ? (
                 <Pill tone="blue" size="xs" className="font-semibold">{instrumento.asignado.nombre}</Pill>
               ) : (
-                <span className="text-xs text-gray-400">—</span>
+                <span className="text-xs muted">—</span>
               )}
             </div>
           </div>

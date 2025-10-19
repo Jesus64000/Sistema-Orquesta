@@ -175,12 +175,12 @@ export default function AlumnoForm({ data, programas, onCancel, onSaved }) {
 
         <fieldset className="space-y-5" aria-labelledby="legend-datos-basicos">
           <legend id="legend-datos-basicos" className="sr-only">Datos básicos</legend>
-          <h3 aria-hidden="true" className="text-sm font-semibold text-gray-800 tracking-wide flex items-center gap-2">
+          <h3 aria-hidden="true" className="text-sm font-semibold text-app tracking-wide flex items-center gap-2">
             <span className="inline-block h-5 w-1 rounded bg-yellow-400" /> Datos básicos
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label htmlFor="alumno-nombre" className="block text-xs font-medium text-gray-600 mb-1">Nombre *</label>
+              <label htmlFor="alumno-nombre" className="block text-xs font-medium muted mb-1">Nombre *</label>
               <input
                 ref={firstFieldRef}
                 id="alumno-nombre"
@@ -188,42 +188,48 @@ export default function AlumnoForm({ data, programas, onCancel, onSaved }) {
                 value={formData.nombre}
                 onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                 placeholder="Ej: Juan Pérez"
-                className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 placeholder:text-gray-400 ${ (submitted && errors?.nombre) ? 'border-red-400 focus:ring-red-400 ring-red-300' : 'border-gray-300'}`}
+                className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 placeholder:muted ${ (submitted && errors?.nombre) ? 'border-red-400 focus:ring-red-400 ring-red-300' : 'border'}`}
                 aria-invalid={(submitted && errors?.nombre) ? 'true' : 'false'}
               />
               {submitted && errors?.nombre && <p className="mt-1 text-xs text-red-600" role="alert">{errors.nombre}</p>}
             </div>
             <div>
-              <label htmlFor="alumno-fecha" className="block text-xs font-medium text-gray-600 mb-1">Fecha de nacimiento *</label>
-              <input
-                id="alumno-fecha"
-                type="date"
-                value={formData.fecha_nacimiento}
-                max={new Date().toISOString().slice(0, 10)}
-                onChange={(e) => setFormData({ ...formData, fecha_nacimiento: e.target.value })}
-                className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 ${ (submitted && errors?.fecha_nacimiento) ? 'border-red-400 focus:ring-red-400 ring-red-300' : 'border-gray-300'}`}
-                aria-invalid={(submitted && errors?.fecha_nacimiento) ? 'true' : 'false'}
-                aria-describedby="hint-fecha"
-              />
-              <p id="hint-fecha" className="mt-1 text-[11px] text-gray-500">Usa el selector o escribe en formato AAAA-MM-DD.</p>
+              <label htmlFor="alumno-fecha" className="block text-xs font-medium muted mb-1">Fecha de nacimiento *</label>
+              <div className="relative">
+                <input
+                  id="alumno-fecha"
+                  name="fecha_nacimiento"
+                  type="date"
+                  value={formData.fecha_nacimiento || ''}
+                  onChange={(e) => setFormData({ ...formData, fecha_nacimiento: e.target.value })}
+                  className={`w-full px-3 py-2 pr-10 border rounded-lg text-sm card focus:outline-none focus:ring-2 focus:ring-yellow-400 ${ (submitted && errors?.fecha_nacimiento) ? 'border-red-400 focus:ring-red-400 ring-red-300' : 'border'}`}
+                />
+                <button type="button" onClick={() => { const el = document.querySelector('#alumno-fecha'); if (el) { try { if (typeof el.showPicker === 'function') { el.showPicker(); } else { el.focus(); } } catch { el.focus(); } } }} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover:text-app p-1" aria-label="Abrir calendario">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" strokeWidth="1.5" />
+                    <path d="M16 2v4M8 2v4" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+              </div>
+              <p id="hint-fecha" className="mt-1 text-[11px] muted">Usa el selector o escribe en formato AAAA-MM-DD.</p>
               {submitted && errors?.fecha_nacimiento && <p className="mt-1 text-xs text-red-600" role="alert">{errors.fecha_nacimiento}</p>}
             </div>
             <div className="flex flex-col">
               <span className="block text-xs font-medium text-gray-600 mb-1">Edad</span>
               {edadCalculada ? (
-                <span className="inline-flex items-center self-start rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700 border border-gray-200">
+                <span className="inline-flex items-center self-start rounded-full card-90 px-3 py-1 text-xs font-medium text-app border">
                   {edadCalculada} años
                 </span>
               ) : (
-                <span className="text-[11px] text-gray-400">—</span>
+                <span className="text-[11px] muted">—</span>
               )}
             </div>
             <div className="md:col-span-1">
-              <label className="text-xs text-gray-500">Género</label>
+              <label className="text-xs muted">Género</label>
               <select
                 value={formData.genero}
                 onChange={(e) => setFormData({ ...formData, genero: e.target.value })}
-                className="w-full p-2 border rounded-lg"
+                className="w-full p-2 border rounded-lg card text-app"
               >
                 <option>Masculino</option>
                 <option>Femenino</option>
@@ -232,7 +238,7 @@ export default function AlumnoForm({ data, programas, onCancel, onSaved }) {
             </div>
             {data && (
               <div className="md:col-span-1">
-                <label className="text-xs text-gray-500">Estado</label>
+                <label className="text-xs muted">Estado</label>
                 <select value={formData.estado || 'Activo'} onChange={e=> setFormData({ ...formData, estado: e.target.value })} className="w-full p-2 border rounded-lg">
                   {estados.map(es => <option key={es.id_estado} value={es.nombre}>{es.nombre}</option>)}
                 </select>
@@ -243,12 +249,12 @@ export default function AlumnoForm({ data, programas, onCancel, onSaved }) {
 
         <fieldset className="space-y-5" aria-labelledby="legend-contacto">
           <legend id="legend-contacto" className="sr-only">Contacto</legend>
-          <h3 aria-hidden="true" className="text-sm font-semibold text-gray-800 tracking-wide flex items-center gap-2">
+          <h3 aria-hidden="true" className="text-sm font-semibold text-app tracking-wide flex items-center gap-2">
             <span className="inline-block h-5 w-1 rounded bg-yellow-400" /> Contacto
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs text-gray-500" htmlFor="alumno-telefono">Teléfono</label>
+              <label className="text-xs muted" htmlFor="alumno-telefono">Teléfono</label>
               <input
                 id="alumno-telefono"
                 type="text"
@@ -259,7 +265,7 @@ export default function AlumnoForm({ data, programas, onCancel, onSaved }) {
                   setFormData(f => ({ ...f, telefono_contacto: val }));
                   setErrors(prev => ({ ...prev, telefono_contacto: undefined }));
                 }}
-                className={`w-full p-2 border rounded-lg placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 ${ (submitted && errors?.telefono_contacto) ? 'border-red-400 focus:ring-red-400 ring-red-300' : 'border-gray-300'}`}
+                className={`w-full p-2 border rounded-lg placeholder:muted focus:outline-none focus:ring-2 focus:ring-yellow-400 ${ (submitted && errors?.telefono_contacto) ? 'border-red-400 focus:ring-red-400 ring-red-300' : 'border'}`}
                 aria-invalid={(submitted && errors?.telefono_contacto) ? 'true' : 'false'}
                 placeholder="Ej: 0412-1234567"
                 aria-describedby="hint-telefono"
@@ -270,7 +276,7 @@ export default function AlumnoForm({ data, programas, onCancel, onSaved }) {
             <div className="md:col-span-2 space-y-4">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-gray-800 tracking-wide flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-app tracking-wide flex items-center gap-2">
                     <span className="inline-block h-5 w-1 rounded bg-yellow-400" /> Representante
                   </h3>
                   <button
@@ -281,8 +287,8 @@ export default function AlumnoForm({ data, programas, onCancel, onSaved }) {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
                   <div className="md:col-span-3 flex flex-col gap-1">
-                    <label className="text-[11px] text-gray-500">Representante {data ? '' : '*'} </label>
-                    <select value={nuevoVinculo.id_representante} onChange={e => {
+              <label className="text-[11px] muted">Representante {data ? '' : '*'} </label>
+            <select value={nuevoVinculo.id_representante} onChange={e => {
                       const val = e.target.value;
                       setNuevoVinculo(v => ({ ...v, id_representante: val, principal: true }));
                       setFormData(f => {
@@ -303,13 +309,13 @@ export default function AlumnoForm({ data, programas, onCancel, onSaved }) {
                           representantes_links: data ? [principalEntry, ...otros] : [principalEntry]
                         };
                       });
-                    }} className="w-full p-2 border rounded bg-white text-sm">
+                    }} className="w-full p-2 border rounded text-sm card">
                       <option value="">-- Seleccionar --</option>
                       {representantes.map(r => <option key={r.id_representante} value={r.id_representante}>{r.nombre}{r.apellido ? ` ${r.apellido}` : ''}</option>)}
                     </select>
                   </div>
                   <div className="md:col-span-2 flex flex-col gap-1">
-                    <label className="text-[11px] text-gray-500">Parentesco</label>
+                    <label className="text-[11px] muted">Parentesco</label>
                     <select value={nuevoVinculo.id_parentesco} onChange={e => {
                       const parVal = e.target.value;
                       setNuevoVinculo(v => ({ ...v, id_parentesco: parVal }));
@@ -330,20 +336,20 @@ export default function AlumnoForm({ data, programas, onCancel, onSaved }) {
                           representantes_links: data ? [principalEntry, ...otros] : [principalEntry]
                         };
                       });
-                    }} className="w-full p-2 border rounded bg-white text-sm">
+                    }} className="w-full p-2 border rounded text-sm card">
                       <option value="">-- Seleccionar --</option>
                       {parentescos.map(p => <option key={p.id_parentesco} value={p.id_parentesco}>{p.nombre}</option>)}
                     </select>
                   </div>
                   {/* Principal siempre true aquí */}
                 </div>
-                {data && formData.representantes_links.filter(l=>!l.principal).length > 0 && (
-                  <div className="rounded border bg-white divide-y">
+          {data && formData.representantes_links.filter(l=>!l.principal).length > 0 && (
+            <div className="rounded border card-90 divide-y">
                     {formData.representantes_links.filter(l=>!l.principal).map((r, idx) => (
                       <div key={idx} className="p-3 flex flex-col md:flex-row md:items-center gap-3 text-xs">
                         <div className="flex-1">
-                          <p className="font-medium text-gray-800">{r.representante_nombre || r.nombre}</p>
-                          <p className="text-gray-500">{r.parentesco_nombre || '—'}</p>
+                          <p className="font-medium text-app">{r.representante_nombre || r.nombre}</p>
+                          <p className="muted">{r.parentesco_nombre || '—'}</p>
                         </div>
                         <div className="flex items-center gap-3">
                           <button type="button" onClick={() => {
@@ -370,11 +376,11 @@ export default function AlumnoForm({ data, programas, onCancel, onSaved }) {
 
         <fieldset className="space-y-5" aria-labelledby="legend-programas">
           <legend id="legend-programas" className="sr-only">Programas</legend>
-          <h3 aria-hidden="true" className="text-sm font-semibold text-gray-800 tracking-wide flex items-center gap-2">
+          <h3 aria-hidden="true" className="text-sm font-semibold text-app tracking-wide flex items-center gap-2">
             <span className="inline-block h-5 w-1 rounded bg-yellow-400" /> Programas
           </h3>
           <div>
-            <label className="text-xs text-gray-500" htmlFor="alumno-programas">Programas (máx. 2) *</label>
+            <label className="text-xs muted" htmlFor="alumno-programas">Programas (máx. 2) *</label>
             <div id="alumno-programas">
               <MultiSelect
                 options={programas}
@@ -389,10 +395,10 @@ export default function AlumnoForm({ data, programas, onCancel, onSaved }) {
                 }}
                 placeholder="Selecciona uno o dos programas"
               />
-              <div id="hint-programas" className="mt-1 flex flex-wrap items-center gap-3 text-[11px] text-gray-500">
+              <div id="hint-programas" className="mt-1 flex flex-wrap items-center gap-3 text-[11px] muted">
                 <span>{formData.programa_ids.length} / 2 seleccionados</span>
                 {formData.programa_ids.length === 0 && !(submitted && errors?.programa_ids) && (
-                  <span className="text-gray-400">Selecciona al menos uno para continuar</span>
+                  <span className="muted">Selecciona al menos uno para continuar</span>
                 )}
                 {submitted && errors?.programa_ids && <span className="text-red-600">{errors.programa_ids}</span>}
               </div>
@@ -401,7 +407,7 @@ export default function AlumnoForm({ data, programas, onCancel, onSaved }) {
         </fieldset>
 
         <div className="h-4" aria-hidden="true"></div>
-        <div className="sticky bottom-0 left-0 right-0 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 border-t mt-8">
+        <div className="sticky bottom-0 left-0 right-0 card-90 border-t mt-8">
           <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3 order-2 sm:order-1">
               {/* Botón fantasma: limpiar (creación) o revertir (edición) */}
@@ -428,7 +434,7 @@ export default function AlumnoForm({ data, programas, onCancel, onSaved }) {
                       <button
                         type="button"
                         onClick={() => { setFormData(defaults); setErrors({}); }}
-                        className="text-xs sm:text-sm text-gray-500 hover:text-gray-700 focus:outline-none underline decoration-dotted"
+                        className="text-xs sm:text-sm muted hover:text-app focus:outline-none underline decoration-dotted"
                       >Limpiar</button>
                     );
                   }
@@ -453,7 +459,7 @@ export default function AlumnoForm({ data, programas, onCancel, onSaved }) {
                             setErrors({});
                           }
                         }}
-                        className="text-xs sm:text-sm text-gray-500 hover:text-gray-700 focus:outline-none underline decoration-dotted"
+                        className="text-xs sm:text-sm muted hover:text-app focus:outline-none underline decoration-dotted"
                       >Revertir cambios</button>
                     );
                   }
@@ -479,7 +485,7 @@ export default function AlumnoForm({ data, programas, onCancel, onSaved }) {
 
       {showCrearRep && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-3xl overflow-hidden">
+          <div className="card rounded-lg shadow-lg w-full max-w-3xl overflow-hidden">
             <div className="flex items-center justify-between px-6 py-3 border-b">
               <h3 className="font-medium text-gray-800">Nuevo representante</h3>
               <button onClick={() => setShowCrearRep(false)} className="text-gray-500 hover:text-gray-700 text-sm">✕</button>

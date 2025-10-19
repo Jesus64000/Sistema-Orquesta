@@ -87,17 +87,17 @@ export default function InstrumentosBulkActionsModal({ open, onClose, selectedId
     <>
       <Modal title="Acciones masivas instrumentos" onClose={onClose}>
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-          <div className="flex items-center gap-2 text-[12px] text-gray-600">
-            <span className="font-semibold text-gray-800">{selectedIds.length}</span> seleccionados
+          <div className="flex items-center gap-2 text-[12px] muted">
+            <span className="font-semibold text-app">{selectedIds.length}</span> seleccionados
           </div>
-          <div className="flex gap-2 bg-gray-50 p-1 rounded-lg w-max text-[12px]">
-            <button type="button" onClick={() => setMode('estado')} className={`px-3 py-1 rounded-md font-medium transition ${mode==='estado' ? 'bg-white shadow border' : 'text-gray-500 hover:text-gray-700'}`}>Estado</button>
-            <button type="button" onClick={() => setMode('categoria')} className={`px-3 py-1 rounded-md font-medium transition ${mode==='categoria' ? 'bg-white shadow border' : 'text-gray-500 hover:text-gray-700'}`}>Categoría</button>
+          <div className="flex gap-2 card-90 p-1 rounded-lg w-max text-[12px]">
+            <button type="button" onClick={() => setMode('estado')} className={`px-3 py-1 rounded-md font-medium transition ${mode==='estado' ? 'card shadow border' : 'muted hover:text-app'}`}>Estado</button>
+            <button type="button" onClick={() => setMode('categoria')} className={`px-3 py-1 rounded-md font-medium transition ${mode==='categoria' ? 'card shadow border' : 'muted hover:text-app'}`}>Categoría</button>
           </div>
           {mode === 'estado' && (
             <div className="flex flex-col gap-1">
-              <label htmlFor="bulk_estado" className="text-xs font-medium text-gray-600 uppercase tracking-wide">Nuevo estado *</label>
-              <select id="bulk_estado" value={value} onChange={e=>setValue(e.target.value)} className="p-2 border rounded-lg text-sm bg-white">
+              <label htmlFor="bulk_estado" className="text-xs font-medium muted uppercase tracking-wide">Nuevo estado *</label>
+              <select id="bulk_estado" value={value} onChange={e=>setValue(e.target.value)} className="p-2 border rounded-lg text-sm card">
                 <option value="">Selecciona...</option>
                 {estados.map(e => <option key={e.id_estado} value={e.id_estado}>{e.nombre}</option>)}
               </select>
@@ -105,8 +105,8 @@ export default function InstrumentosBulkActionsModal({ open, onClose, selectedId
           )}
           {mode === 'categoria' && (
             <div className="flex flex-col gap-1">
-              <label htmlFor="bulk_categoria" className="text-xs font-medium text-gray-600 uppercase tracking-wide">Nueva categoría *</label>
-              <select id="bulk_categoria" value={value} onChange={e=>setValue(e.target.value)} className="p-2 border rounded-lg text-sm bg-white">
+              <label htmlFor="bulk_categoria" className="text-xs font-medium muted uppercase tracking-wide">Nueva categoría *</label>
+              <select id="bulk_categoria" value={value} onChange={e=>setValue(e.target.value)} className="p-2 border rounded-lg text-sm card">
                 <option value="">Selecciona...</option>
                 {categorias.map(c => <option key={c.id_categoria} value={c.id_categoria}>{c.nombre}</option>)}
               </select>
