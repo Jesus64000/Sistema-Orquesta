@@ -71,7 +71,17 @@ export function requirePermiso(recurso, accion) {
     try {
       const user = req.user;
       if (!user) return res.status(401).json({ error: { code: 'NO_AUTH', message: 'No autenticado' } });
-      const perms = user.effectivePerms || mergeRoleAndUserExtras(user.rol?.permisos, user.permisos_extra);
+      // Construir permisos efectivos admitiendo múltiples formas: objeto en rol.permisos, tokens en user.permisos o rol '*' en tokens
+      let basePerms = user.rol?.permisos;
+      if (!basePerms && user.permisos) {
+        // user.permisos puede ser JSON string, array de tokens o objeto por recurso
+        try {
+          basePerms = typeof user.permisos === 'string' ? JSON.parse(user.permisos) : user.permisos;
+        } catch {
+          basePerms = user.permisos;
+        }
+      }
+      const perms = user.effectivePerms || mergeRoleAndUserExtras(basePerms, user.permisos_extra);
       const acciones = perms[recurso] || [];
       if (!acciones.includes(accion)) {
         return res.status(403).json({ error: { code: 'PERMISO_DENEGADO', message: `Falta permiso ${recurso}.${accion}` } });

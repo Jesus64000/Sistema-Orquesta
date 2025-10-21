@@ -11,6 +11,7 @@ export const permissionsCatalog = {
   usuarios: ["read","create","update","delete"],
   dashboard: ["read"],
   reportes: ["read"],
+  personalizacion: ["read","update","delete"],
 };
 
 function tokensArrayToObject(permsArr) {

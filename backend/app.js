@@ -30,6 +30,7 @@ import adminRepresentantesRouter from './routes/administracion/representantes.js
 import adminEventosRouter from './routes/administracion/eventos.js';
 import adminProgramasRouter from './routes/administracion/programas.js';
 import adminParentescosRouter from './routes/administracion/parentescos.js';
+import personalizacionRouter from './routes/personalizacion.js';
 
 const app = express();
 
@@ -107,5 +108,8 @@ app.use('/administracion/representantes', adminRepresentantesRouter);
 app.use('/administracion/eventos', adminEventosRouter);
 app.use('/administracion/programas', adminProgramasRouter);
 app.use('/administracion/parentescos', adminParentescosRouter);
+
+// Personalizacion (tema guardado en servidor)
+app.use('/personalizacion', personalizacionRouter);
 
 export default app;

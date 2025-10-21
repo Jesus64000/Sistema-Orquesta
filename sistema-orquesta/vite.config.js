@@ -105,6 +105,15 @@ export default defineConfig({
             return '/index.html'
           }
         }
+      },
+      '/personalizacion': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+        bypass: function (req) {
+          if (req.headers && req.headers.accept && req.headers.accept.indexOf('text/html') !== -1) {
+            return '/index.html'
+          }
+        }
       }
     },
   },

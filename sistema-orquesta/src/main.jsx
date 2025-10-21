@@ -7,7 +7,7 @@ import "./index.css";
 import themeUtil from './utils/theme';
 
 // Aplicar tema inicial lo antes posible para evitar parpadeo (flash)
-try { themeUtil.applyTheme(); themeUtil.applyContrast(); } catch { /* noop */ }
+try { themeUtil.applyTheme(); themeUtil.applyContrast(); themeUtil.applyPersonalizacionTheme(); } catch { /* noop */ }
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
