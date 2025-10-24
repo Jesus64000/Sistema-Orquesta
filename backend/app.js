@@ -30,7 +30,10 @@ import adminRepresentantesRouter from './routes/administracion/representantes.js
 import adminEventosRouter from './routes/administracion/eventos.js';
 import adminProgramasRouter from './routes/administracion/programas.js';
 import adminParentescosRouter from './routes/administracion/parentescos.js';
+import adminCargosRouter from './routes/administracion/cargos.js';
 import personalizacionRouter from './routes/personalizacion.js';
+import personalRouter from './routes/personal.js';
+import cargosRouter from './routes/cargos.js';
 
 const app = express();
 
@@ -97,6 +100,8 @@ app.use('/eventos', eventosRouter);
 app.use('/reportes', reportesRouter);
 app.use('/usuarios', usuariosRouter);
 app.use('/dashboard', dashboardRouter);
+app.use('/personal', personalRouter);
+app.use('/cargos', cargosRouter);
 
 // Rutas de administración
 app.use('/administracion/usuarios', adminUsuariosRouter);
@@ -108,6 +113,7 @@ app.use('/administracion/representantes', adminRepresentantesRouter);
 app.use('/administracion/eventos', adminEventosRouter);
 app.use('/administracion/programas', adminProgramasRouter);
 app.use('/administracion/parentescos', adminParentescosRouter);
+app.use('/administracion/cargos', adminCargosRouter);
 
 // Personalizacion (tema guardado en servidor)
 app.use('/personalizacion', personalizacionRouter);

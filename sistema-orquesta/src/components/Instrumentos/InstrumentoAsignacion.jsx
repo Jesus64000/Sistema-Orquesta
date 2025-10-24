@@ -1,7 +1,8 @@
 // src/components/InstrumentoAsignacion.jsx
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { http } from "../../api/http";
 import toast from "react-hot-toast";
+import SearchableSelect from "../ui/SearchableSelect";
 
 export default function InstrumentoAsignacion({ instrumento }) {
   const [asignado, setAsignado] = useState(null);
@@ -38,6 +39,10 @@ export default function InstrumentoAsignacion({ instrumento }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [instrumento.id_instrumento]);
 
+  const alumnoOptions = useMemo(() => (
+    alumnos.map(a => ({ label: a.nombre, value: String(a.id_alumno) }))
+  ), [alumnos]);
+
   // ✅ Asignar instrumento
   const asignar = async () => {
     if (!alumnoId) return toast.error("Selecciona un alumno");
@@ -58,8 +63,9 @@ export default function InstrumentoAsignacion({ instrumento }) {
       // 🔄 Refrescar asignación inmediatamente
       await loadAsignacion();
       setAlumnoId("");
-    } catch {
-      toast.error("No se pudo asignar el instrumento");
+    } catch (e) {
+      const msg = e?.response?.data?.error || "No se pudo asignar el instrumento";
+      toast.error(msg);
     }
   };
 
@@ -104,18 +110,13 @@ export default function InstrumentoAsignacion({ instrumento }) {
         </div>
       ) : (
         <div className="space-y-2">
-          <select
-            className="w-full border rounded-lg p-2 text-sm bg-transparent"
+          <SearchableSelect
+            options={alumnoOptions}
             value={alumnoId}
-            onChange={(e) => setAlumnoId(e.target.value)}
-          >
-            <option value="">Seleccionar alumno</option>
-            {alumnos.map((a) => (
-              <option key={a.id_alumno} value={a.id_alumno}>
-                {a.nombre}
-              </option>
-            ))}
-          </select>
+            onChange={setAlumnoId}
+            placeholder="Escribe para buscar alumno"
+            className="w-full"
+          />
           <button
             onClick={asignar}
             className="px-3 py-1 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600"

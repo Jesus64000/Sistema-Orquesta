@@ -83,6 +83,7 @@ const AlumnoRow = memo(function AlumnoRow({ a, isSelected, toggleSelect, openDet
           aria-label={`Ver detalle de ${a.nombre}`}
         >
           {a.nombre}
+          {a.ci ? <span className="ml-2 text-[11px] muted">CI: {a.ci}</span> : null}
         </button>
       </td>
       <td className="px-3 py-2 muted" role="cell">{a.edad} <span className="text-[10px] uppercase tracking-wide muted">años</span></td>

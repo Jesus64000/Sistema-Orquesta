@@ -1,11 +1,11 @@
-import { PlusCircle, Download, Layers } from 'lucide-react';
+import { PlusCircle, Download, Layers, Link } from 'lucide-react';
 import Button from '../ui/Button';
 
 // Encabezado de Instrumentos alineado visualmente con el de Alumnos
 // - Orden botones cuando hay selección: Exportar (success) -> Acciones (dark) -> Agregar (primary)
 // - Contador de seleccionados en chip con blur y fondo blanco translúcido
 // - Mantiene semántica: crear = primary (amarillo), exportar = success (verde), acciones = dark
-export default function InstrumentosHeader({ onCreate, onExport, selectedCount = 0, onBulk }) {
+export default function InstrumentosHeader({ onCreate, onExport, selectedCount = 0, onBulk, onAssign }) {
   const count = selectedCount;
 
   return (
@@ -37,6 +37,19 @@ export default function InstrumentosHeader({ onCreate, onExport, selectedCount =
         )}
 
         <div className="flex items-center gap-2 flex-wrap">
+          {onAssign && (
+            <Button
+              type="button"
+              onClick={onAssign}
+              variant="dark"
+              size="md"
+              aria-label="Asignar instrumento a alumno"
+              className="gap-2"
+            >
+              <Link className="h-4 w-4" />
+              Asignar instrumento
+            </Button>
+          )}
           {count > 0 && (
             <>
               <Button

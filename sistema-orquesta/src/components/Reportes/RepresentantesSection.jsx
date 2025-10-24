@@ -1,5 +1,4 @@
 import ReportTable from "./ReportTable";
-import ReportPieChart from "./ReportPieChart";
 
 export default function RepresentantesSection({ representantesPorAlumnos, viewGlobal }) {
   if (viewGlobal === "tabla") {
@@ -11,7 +10,8 @@ export default function RepresentantesSection({ representantesPorAlumnos, viewGl
   } else {
     return (
       <div className="grid grid-cols-1 gap-4">
-        <ReportPieChart title="Representantes por Alumnos" data={representantesPorAlumnos} dataKey="cantidad" nameKey="nombre"/>
+        {/* Mantener como tabla también en vista de gráficas */}
+        <ReportTable title="Representantes por Alumnos" data={representantesPorAlumnos} cols={["nombre","cantidad"]}/>
       </div>
     );
   }

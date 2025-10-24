@@ -13,10 +13,20 @@ export default function RepresentanteForm({ data, onSaved, onCancel }) {
 
   const validate = useCallback((model = form) => {
     const errs = {};
+    // Nombre: requerido, solo letras y espacios, mínimo 2
     if (!model.nombre.trim()) errs.nombre = 'Requerido';
+    else if (model.nombre.trim().length < 2) errs.nombre = 'Mínimo 2 caracteres';
+    else if (!/^([\p{L} ]+)$/u.test(model.nombre.trim())) errs.nombre = 'Solo letras y espacios';
+    // Apellido: opcional pero si viene, solo letras y espacios
+    if (model.apellido && model.apellido.trim() && !/^([\p{L} ]+)$/u.test(model.apellido.trim())) {
+      errs.apellido = 'Solo letras y espacios';
+    }
     if (!model.email.trim()) errs.email = 'Requerido';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(model.email.trim())) errs.email = 'Formato inválido';
-    if (model.telefono_movil && model.telefono_movil.replace(/\D/g,'').length < 10) errs.telefono_movil = 'Mínimo 10 dígitos';
+    if (model.telefono_movil) {
+      if (!/^\+?\d+$/.test(model.telefono_movil)) errs.telefono_movil = "Solo dígitos; '+' solo al inicio";
+      else if (model.telefono_movil.replace(/\D/g,'').length < 10) errs.telefono_movil = 'Mínimo 10 dígitos';
+    }
     if (model.ci) {
       const raw = model.ci.trim().toUpperCase();
       // Aceptar: solo dígitos (>=6), o prefijo V/E/J/G (con o sin guion) seguido de >=6 dígitos
@@ -42,7 +52,13 @@ export default function RepresentanteForm({ data, onSaved, onCancel }) {
 
   const normalizeNombre = (v) => v.replace(/\s+/g,' ').replace(/(^|\s)\p{L}/gu, m => m.toUpperCase());
   const normalizeApellido = normalizeNombre;
-  const normalizeMovil = v => v.replace(/[^0-9+]/g,'');
+  const normalizeMovil = (v) => {
+    if (!v) return '';
+    let s = String(v).replace(/[^\d+]/g, '');
+    if (s.startsWith('+')) s = '+' + s.slice(1).replace(/\+/g, '');
+    else s = s.replace(/\+/g, '');
+    return s;
+  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -95,7 +111,10 @@ export default function RepresentanteForm({ data, onSaved, onCancel }) {
             placeholder="Ej: Carlos"
             className={`w-full card rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 ${showError('nombre') ? 'border-red-400 ring-red-300 focus:ring-red-400' : 'border'}`}
             value={form.nombre}
-            onChange={e=>setForm({...form,nombre:e.target.value})}
+            onChange={e=>{
+              const filtered = e.target.value.replace(/[^\p{L}\s]/gu,'').replace(/\s{2,}/g,' ');
+              setForm({...form,nombre: filtered});
+            }}
             onBlur={()=>setTouched(t=>({...t,nombre:true}))}
             aria-invalid={!!showError('nombre')}
             aria-describedby={showError('nombre') ? 'err-nombre' : undefined}
@@ -108,9 +127,13 @@ export default function RepresentanteForm({ data, onSaved, onCancel }) {
             placeholder="Opcional"
             className="w-full card rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
             value={form.apellido}
-            onChange={e=>setForm({...form,apellido:e.target.value})}
+            onChange={e=>{
+              const filtered = e.target.value.replace(/[^\p{L}\s]/gu,'').replace(/\s{2,}/g,' ');
+              setForm({...form,apellido:filtered});
+            }}
             onBlur={()=>setTouched(t=>({...t,apellido:true}))}
           />
+          {showError('apellido') && <p className="mt-1 text-xs text-red-600">{errors.apellido}</p>}
         </div>
         </div>
         <div className="mt-4">
@@ -162,6 +185,7 @@ export default function RepresentanteForm({ data, onSaved, onCancel }) {
               placeholder="0412-1234567"
               className={`w-full card rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 ${showError('telefono_movil') ? 'border-red-400 ring-red-300 focus:ring-red-400' : 'border'}`}
               value={form.telefono_movil}
+              inputMode="tel"
               onChange={e=>setForm({...form,telefono_movil:normalizeMovil(e.target.value)})}
               onBlur={()=>setTouched(t=>({...t,telefono_movil:true}))}
               aria-invalid={!!showError('telefono_movil')}

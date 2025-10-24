@@ -26,12 +26,9 @@ router.post('/', requirePermission('roles:create'), async (req, res) => {
     if (typeof permisos === 'string') {
       try { permsObj = JSON.parse(permisos); } catch { permsObj = null; }
     }
-    const nivel = (permsObj && typeof permsObj.$nivel === 'number') ? permsObj.$nivel : null;
-    const isAdminName = String(nombre || '').toLowerCase().includes('admin');
-    if (nivel === 0 && !isAdminName) {
-      return res.status(400).json({ error: 'Solo el rol Administrador puede tener nivel 0' });
-    }
-    const [result] = await db.query('INSERT INTO rol (nombre, permisos) VALUES (?, ?)', [nombre, typeof permisos === 'string' ? permisos : JSON.stringify(permisos ?? null)]);
+    // No gestionamos nivel desde roles; eliminar cualquier metadato $nivel si viene
+    if (permsObj && typeof permsObj === 'object' && '$nivel' in permsObj) delete permsObj.$nivel;
+    const [result] = await db.query('INSERT INTO rol (nombre, permisos) VALUES (?, ?)', [nombre, JSON.stringify(permsObj ?? null)]);
     res.json({ success: true, id_rol: result.insertId });
   } catch (err) {
     res.status(500).json({ error: 'Error al crear rol' });
@@ -52,11 +49,9 @@ router.put('/:id', requirePermission('roles:update'), async (req, res) => {
     if (typeof permisos === 'string') {
       try { permsObj = JSON.parse(permisos); } catch { permsObj = null; }
     }
-    const nivel = (permsObj && typeof permsObj.$nivel === 'number') ? permsObj.$nivel : null;
-    if (nivel === 0) {
-      return res.status(400).json({ error: 'Solo el rol Administrador puede tener nivel 0' });
-    }
-    await db.query('UPDATE rol SET nombre=?, permisos=? WHERE id_rol=?', [nombre, typeof permisos === 'string' ? permisos : JSON.stringify(permisos ?? null), req.params.id]);
+    // No gestionamos nivel desde roles; eliminar cualquier metadato $nivel si viene
+    if (permsObj && typeof permsObj === 'object' && '$nivel' in permsObj) delete permsObj.$nivel;
+    await db.query('UPDATE rol SET nombre=?, permisos=? WHERE id_rol=?', [nombre, JSON.stringify(permsObj ?? null), req.params.id]);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Error al editar rol' });

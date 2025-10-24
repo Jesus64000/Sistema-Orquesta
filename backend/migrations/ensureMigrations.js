@@ -242,6 +242,102 @@ export async function ensureMigrations(pool) {
     } catch (err) {
       console.error('Error añadiendo UNIQUE alumno_representante:', err.message);
     }
+
+    // 8. Tabla cargo (catálogo)
+    const [tblCargo] = await pool.query("SHOW TABLES LIKE 'cargo'");
+    if (tblCargo.length === 0) {
+      console.log('[migracion] Creando tabla cargo');
+      await pool.query(`CREATE TABLE cargo (
+        id_cargo INT AUTO_INCREMENT PRIMARY KEY,
+        nombre VARCHAR(100) NOT NULL,
+        activo TINYINT(1) NOT NULL DEFAULT 1,
+        creado_en TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+        actualizado_en TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uq_cargo_nombre (nombre)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`);
+      // Semillas básicas
+      await pool.query("INSERT INTO cargo (nombre) VALUES ('Profesor'),('Coordinador'),('Administrativo'),('Director'),('Asistente')");
+    }
+
+    // 9. Tabla personal (uno a programa, con cargo y soft delete)
+    const [tblPersonal] = await pool.query("SHOW TABLES LIKE 'personal'");
+    if (tblPersonal.length === 0) {
+      console.log('[migracion] Creando tabla personal');
+      await pool.query(`CREATE TABLE personal (
+        id_personal INT AUTO_INCREMENT PRIMARY KEY,
+        ci VARCHAR(20) NOT NULL,
+        nombres VARCHAR(100) NOT NULL,
+        apellidos VARCHAR(100) NOT NULL,
+        email VARCHAR(120) NOT NULL,
+        telefono VARCHAR(30) NOT NULL,
+        direccion VARCHAR(255) NULL,
+        fecha_nacimiento DATE NULL,
+        fecha_ingreso DATE NULL,
+        carga_horaria INT NOT NULL DEFAULT 0,
+        estado ENUM('ACTIVO','INACTIVO','SUSPENDIDO','PERMISO') NOT NULL DEFAULT 'ACTIVO',
+        id_cargo INT NULL,
+        id_programa INT NULL,
+        creado_en TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+        actualizado_en TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        deleted_at TIMESTAMP NULL DEFAULT NULL,
+        CONSTRAINT fk_personal_cargo FOREIGN KEY (id_cargo) REFERENCES cargo(id_cargo) ON DELETE SET NULL,
+        CONSTRAINT fk_personal_programa FOREIGN KEY (id_programa) REFERENCES programa(id_programa) ON DELETE SET NULL,
+        UNIQUE KEY uq_personal_email (email),
+        UNIQUE KEY uq_personal_ci (ci),
+        INDEX idx_personal_programa (id_programa),
+        INDEX idx_personal_cargo (id_cargo),
+        INDEX idx_personal_estado (estado)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`);
+    } else {
+      // Asegurar columnas críticas si ya existía
+      const ensureCol = async (name, ddl) => {
+        const [c] = await pool.query(`SHOW COLUMNS FROM personal LIKE '${name}'`);
+        if (c.length === 0) {
+          console.log(`[migracion] Añadiendo columna ${name} a personal`);
+          await pool.query(ddl);
+        }
+      };
+      await ensureCol('deleted_at', "ALTER TABLE personal ADD COLUMN deleted_at TIMESTAMP NULL DEFAULT NULL AFTER actualizado_en");
+      // Asegurar ENUM estado con valores requeridos (si fuera VARCHAR, se omite)
+      try {
+        const [c] = await pool.query("SHOW COLUMNS FROM personal LIKE 'estado'");
+        if (c.length && !String(c[0].Type).includes("'PERMISO'")) {
+          console.log('[migracion] Ajustando ENUM estado en personal para incluir PERMISO');
+          await pool.query("ALTER TABLE personal MODIFY estado ENUM('ACTIVO','INACTIVO','SUSPENDIDO','PERMISO') NOT NULL DEFAULT 'ACTIVO'");
+        }
+      } catch (err) {
+        console.error('Error ajustando ENUM estado personal:', err.message);
+      }
+    }
+
+    // 10. Asegurar columna CI en ALUMNO y unicidad de CI en ALUMNO/REPRESENTANTE
+    try {
+      const [colAlumnoCi] = await pool.query("SHOW COLUMNS FROM alumno LIKE 'ci'");
+      if (colAlumnoCi.length === 0) {
+        console.log('[migracion] Añadiendo columna ci a alumno');
+        await pool.query("ALTER TABLE alumno ADD COLUMN ci VARCHAR(20) NULL AFTER nombre");
+      }
+      // Índice único en alumno.ci (permite múltiples NULL)
+      const [idxAluCi] = await pool.query("SHOW INDEX FROM alumno WHERE Key_name='uq_alumno_ci'");
+      if (idxAluCi.length === 0) {
+        console.log('[migracion] Añadiendo UNIQUE uq_alumno_ci(ci) en alumno');
+        // Antes de crear índice, limpiar duplicados exactos conservando el más antiguo (solo no NULL)
+        await pool.query(`DELETE a1 FROM alumno a1
+          JOIN alumno a2 ON a1.ci IS NOT NULL AND a2.ci IS NOT NULL AND a1.ci = a2.ci AND a1.id_alumno > a2.id_alumno`);
+        await pool.query("ALTER TABLE alumno ADD UNIQUE KEY uq_alumno_ci (ci)");
+      }
+
+      // Índice único en representante.ci (col ya creada antes en paso 4)
+      const [idxRepCi] = await pool.query("SHOW INDEX FROM representante WHERE Key_name='uq_representante_ci'");
+      if (idxRepCi.length === 0) {
+        console.log('[migracion] Añadiendo UNIQUE uq_representante_ci(ci) en representante');
+        await pool.query(`DELETE r1 FROM representante r1
+          JOIN representante r2 ON r1.ci IS NOT NULL AND r2.ci IS NOT NULL AND r1.ci = r2.ci AND r1.id_representante > r2.id_representante`);
+        await pool.query("ALTER TABLE representante ADD UNIQUE KEY uq_representante_ci (ci)");
+      }
+    } catch (err) {
+      console.error('Error asegurando CI y unicidad:', err.message);
+    }
   } catch (err) {
     console.error('Error en migraciones automáticas:', err.message);
   }

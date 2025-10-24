@@ -8,16 +8,20 @@ import RolesAdmin from "../components/Administracion/RolesAdmin";
 import EstadosAdmin from "../components/Administracion/EstadosAdmin";
 import AyudaAdmin from "../components/Administracion/AyudaAdmin";
 import ParentescosAdmin from "../components/Administracion/ParentescosAdmin";
+import CargosAdmin from "../components/Administracion/CargosAdmin.jsx";
 import Personalizacion from "../components/Administracion/Personalizacion";
 
+// Cada sección puede definir múltiples permisos alternativos (OR):
+// Ej: permisos: [["instrumentos","read"],["instrumentos","update"]]
 const SECCIONES = [
-  { key: "programas", label: "Programas", permiso: ['programas','read'] },
-  { key: "categorias", label: "Categorías de instrumentos", permiso: ['categorias','read'] },
-  { key: "usuarios", label: "Usuarios", permiso: ['usuarios','read'] },
-  { key: "roles", label: "Roles y permisos", permiso: ['roles','read'] },
-  { key: "estados", label: "Estados de instrumentos", permiso: ['estados','read'] },
-  { key: "parentescos", label: "Parentescos", permiso: ['parentescos','read'] },
-  { key: "personalizacion", label: "Personalización" },
+  { key: "programas", label: "Programas", permisos: [["programas","read"]] },
+  { key: "categorias", label: "Categorías de instrumentos", permisos: [["instrumentos","read"],["instrumentos","update"],["instrumentos","create"]] },
+  { key: "usuarios", label: "Usuarios", permisos: [["usuarios","read"]] },
+  { key: "roles", label: "Roles y permisos", permisos: [["roles","read"]] },
+  { key: "estados", label: "Estados de instrumentos", permisos: [["instrumentos","read"],["instrumentos","update"],["instrumentos","create"]] },
+  { key: "parentescos", label: "Parentescos", permisos: [["representantes","read"],["representantes","update"],["representantes","create"]] },
+  { key: "cargos", label: "Cargos (personal)", permisos: [["personal","read"],["personal","update"],["personal","create"]] },
+  { key: "personalizacion", label: "Personalización", permisos: [["personalizacion","read"]] },
   { key: "ayuda", label: "Ayuda / Documentación" },
 ];
 
@@ -27,20 +31,9 @@ export default function Administracion() {
   const visibles = useMemo(() => {
     if (nivelAcceso === 0) return SECCIONES;
     if (nivelAcceso === 2) return SECCIONES.filter(s => s.key === 'ayuda');
-    // nivel 1: condicional por permisos; además, si tiene total en instrumentos o alumnos, desbloquear secciones relacionadas
-    const base = SECCIONES.filter(s => !s.permiso || anyPermiso([s.permiso]));
-    const perms = user?.permisos || [];
-    const hasTotal = (r) => perms.includes('*:*') || perms.includes(`${r}:*`);
-    const extra = new Set(base.map(s=>s.key));
-    if (hasTotal('instrumentos')) {
-      extra.add('categorias');
-      extra.add('estados');
-    }
-    if (hasTotal('alumnos')) {
-      extra.add('parentescos');
-    }
-    return SECCIONES.filter(s => extra.has(s.key));
-  }, [anyPermiso, nivelAcceso, user]);
+    // nivel 1: mostrar secciones según permisos declarados
+    return SECCIONES.filter(s => !s.permisos || anyPermiso(s.permisos));
+  }, [anyPermiso, nivelAcceso]);
   const [seccion, setSeccion] = useState(visibles[0]?.key || 'ayuda');
 
   return (
@@ -70,6 +63,7 @@ export default function Administracion() {
   {/* {seccion === "representantes" && <RepresentantesAdmin />} */}
   {/* {seccion === "eventos" && <EventosAdmin />} */}
   {seccion === "parentescos" && <ParentescosAdmin />}
+  {seccion === "cargos" && <CargosAdmin />}
   {seccion === "ayuda" && <AyudaAdmin />}
       </main>
     </div>

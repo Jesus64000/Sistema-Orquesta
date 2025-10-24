@@ -7,6 +7,8 @@ const catalog = {
   instrumentos: ["read","create","update","delete"],
   programas: ["read","create","update","delete"],
   representantes: ["read","create","update","delete"],
+  personal: ["read","create","update","delete","export"],
+  dashboard: ["read"],
   roles: ["read","create","update","delete"],
   usuarios: ["read","create","update","delete"],
   reportes: ["read"],
@@ -85,15 +87,15 @@ export default function PermisosEditor({ value, onChange, columns = 1 }) {
             <div className="mb-2">
               <div className="font-medium capitalize mb-2">{res}</div>
               <div className="flex flex-wrap gap-2 text-xs">
-                <button type="button" className={`px-2 py-1 rounded ${preset==='none'?'bg-gray-900 text-white':'bg-gray-100'}`} onClick={() => setPreset(res, 'none')}>Sin acceso</button>
-                <button type="button" className={`px-2 py-1 rounded ${preset==='read'?'bg-gray-900 text-white':'bg-gray-100'}`} onClick={() => setPreset(res, 'read')}>Solo lectura</button>
-                <button type="button" className={`px-2 py-1 rounded ${preset==='edit'?'bg-gray-900 text-white':'bg-gray-100'}`} onClick={() => setPreset(res, 'edit')}>Editar (sin desactivar)</button>
-                <button type="button" className={`px-2 py-1 rounded ${preset==='all'?'bg-gray-900 text-white':'bg-gray-100'}`} onClick={() => setPreset(res, 'all')}>Acceso total</button>
+                <button type="button" className={`px-2 py-1 rounded ${preset==='none'?'bg-yellow-400 text-gray-900':'card-90'}`} onClick={() => setPreset(res, 'none')}>Sin acceso</button>
+                <button type="button" className={`px-2 py-1 rounded ${preset==='read'?'bg-yellow-400 text-gray-900':'card-90'}`} onClick={() => setPreset(res, 'read')}>Solo lectura</button>
+                <button type="button" className={`px-2 py-1 rounded ${preset==='edit'?'bg-yellow-400 text-gray-900':'card-90'}`} onClick={() => setPreset(res, 'edit')}>Editar (sin desactivar)</button>
+                <button type="button" className={`px-2 py-1 rounded ${preset==='all'?'bg-yellow-400 text-gray-900':'card-90'}`} onClick={() => setPreset(res, 'all')}>Acceso total</button>
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
               {(catalog[res]||[]).map((a) => (
-                <label key={a} className={`inline-flex items-center gap-2 px-2 py-1 rounded border ${actions.includes('*') ? 'opacity-50' : ''}`}>
+                <label key={a} className={`inline-flex items-center gap-2 px-2 py-1 rounded card border ${actions.includes('*') ? 'opacity-50' : ''}`}>
                   <input type="checkbox" disabled={actions.includes('*')} checked={actions.includes('*') || actions.includes(a)} onChange={() => toggleAction(res, a)} />
                   <span className="text-sm">{labels[a] || a}</span>
                 </label>
@@ -116,15 +118,15 @@ export default function PermisosEditor({ value, onChange, columns = 1 }) {
               <div className="mb-2">
                 <div className="font-medium capitalize mb-2">{res}</div>
                 <div className="flex flex-wrap gap-2 text-xs">
-                  <button type="button" className={`px-2 py-1 rounded ${preset==='none'?'bg-gray-900 text-white':'bg-gray-100'}`} onClick={() => setPreset(res, 'none')}>Sin acceso</button>
-                  <button type="button" className={`px-2 py-1 rounded ${preset==='read'?'bg-gray-900 text-white':'bg-gray-100'}`} onClick={() => setPreset(res, 'read')}>Solo lectura</button>
-                  <button type="button" className={`px-2 py-1 rounded ${preset==='edit'?'bg-gray-900 text-white':'bg-gray-100'}`} onClick={() => setPreset(res, 'edit')}>Editar (sin desactivar)</button>
-                  <button type="button" className={`px-2 py-1 rounded ${preset==='all'?'bg-gray-900 text-white':'bg-gray-100'}`} onClick={() => setPreset(res, 'all')}>Acceso total</button>
+                  <button type="button" className={`px-2 py-1 rounded ${preset==='none'?'bg-yellow-400 text-gray-900':'card-90'}`} onClick={() => setPreset(res, 'none')}>Sin acceso</button>
+                  <button type="button" className={`px-2 py-1 rounded ${preset==='read'?'bg-yellow-400 text-gray-900':'card-90'}`} onClick={() => setPreset(res, 'read')}>Solo lectura</button>
+                  <button type="button" className={`px-2 py-1 rounded ${preset==='edit'?'bg-yellow-400 text-gray-900':'card-90'}`} onClick={() => setPreset(res, 'edit')}>Editar (sin desactivar)</button>
+                  <button type="button" className={`px-2 py-1 rounded ${preset==='all'?'bg-yellow-400 text-gray-900':'card-90'}`} onClick={() => setPreset(res, 'all')}>Acceso total</button>
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
                 {(catalog[res]||[]).map((a) => (
-                  <label key={a} className={`inline-flex items-center gap-2 px-2 py-1 rounded border ${actions.includes('*') ? 'opacity-50' : ''}`}>
+                  <label key={a} className={`inline-flex items-center gap-2 px-2 py-1 rounded card border ${actions.includes('*') ? 'opacity-50' : ''}`}>
                     <input type="checkbox" disabled={actions.includes('*')} checked={actions.includes('*') || actions.includes(a)} onChange={() => toggleAction(res, a)} />
                     <span className="text-sm">{labels[a] || a}</span>
                   </label>

@@ -2,14 +2,13 @@
 import React, { useEffect, useState } from "react";
 import ConfirmDialog from "../ConfirmDialog";
 import Button from "../ui/Button";
-import { getUsuarios, createUsuario, deleteUsuario } from "../../api/administracion/usuarios";
+import { getUsuarios, deleteUsuario } from "../../api/administracion/usuarios";
 import { getRoles } from "../../api/administracion/roles";
 import UsuarioEditModal from "./UsuarioEditModal";
+import AddUserModal from "./AddUserModal";
 
 // Validación de email simple
-function validarEmail(email) {
-  return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
-}
+// validarEmail ya no se usa en esta vista (creación via modal)
 
 export default function UsuariosAdmin() {
   // Confirmación personalizada para eliminar
@@ -17,7 +16,8 @@ export default function UsuariosAdmin() {
   const [toDeleteId, setToDeleteId] = useState(null);
   const [usuarios, setUsuarios] = useState([]);
   const [roles, setRoles] = useState([]);
-  const [form, setForm] = useState({ nombre: "", email: "", id_rol: "" });
+  // creación se maneja con modal, sin form inline
+  const [addOpen, setAddOpen] = useState(false);
   // Modal de edición completa
   const [editOpen, setEditOpen] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
@@ -52,48 +52,7 @@ export default function UsuariosAdmin() {
     fetchRoles();
   }, []);
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
-    // Validaciones
-    if (!form.nombre.trim()) {
-      setError("El nombre es obligatorio.");
-      return;
-    }
-    if (!form.email.trim()) {
-      setError("El email es obligatorio.");
-      return;
-    }
-    if (!validarEmail(form.email)) {
-      setError("El email no es válido.");
-      return;
-    }
-    if (!form.id_rol) {
-      setError("Debe seleccionar un rol.");
-      return;
-    }
-    // Evitar duplicados (nombre o email)
-    const existe = usuarios.some(u => u.email === form.email);
-    if (existe) {
-      setError("Ya existe un usuario con ese email.");
-      return;
-    }
-    setLoading(true);
-    try {
-      await createUsuario(form);
-      setSuccess("Usuario creado correctamente.");
-      setForm({ nombre: "", email: "", id_rol: "" });
-      fetchUsuarios();
-    } catch (err) {
-      setError("Error al crear: " + (err?.response?.data?.message || ""));
-    }
-    setLoading(false);
-  };
+  // creación ahora via modal AddUserModal
 
   const handleEdit = (u) => {
     setEditTarget(u);
@@ -126,35 +85,13 @@ export default function UsuariosAdmin() {
 
   return (
     <div>
-      <h2 className="text-xl font-bold mb-4">Usuarios</h2>
-  <form onSubmit={handleSubmit} className="mb-2 flex flex-col md:flex-row gap-2 items-end">
-        <div>
-          <label className="block text-xs text-yellow-500 font-semibold mb-1">Nombre</label>
-          <input name="nombre" value={form.nombre} onChange={handleChange} required className="border rounded px-3 py-1 w-48" />
-        </div>
-        <div>
-          <label className="block text-xs text-yellow-500 font-semibold mb-1">Email</label>
-          <input name="email" value={form.email} onChange={handleChange} required className="border rounded px-3 py-1 w-64" type="email" />
-        </div>
-        <div>
-          <label className="block text-xs text-yellow-500 font-semibold mb-1">Rol</label>
-          <select name="id_rol" value={form.id_rol} onChange={handleChange} required className="border rounded px-3 py-1 w-40 bg-app text-app">
-            <option value="">Seleccione</option>
-            {roles.map((r) => {
-              const nivel = (r && r.permisos && typeof r.permisos.$nivel === 'number') ? r.permisos.$nivel : 2;
-              return (
-                <option key={r.id_rol} value={r.id_rol}>{r.nombre} {`(nivel ${nivel})`}</option>
-              );
-            })}
-          </select>
-        </div>
-        <Button type="submit" variant="primary" loading={loading} disabled={loading}>
-          Agregar
-        </Button>
-      </form>
-      <p className="text-[11px] muted mb-4">El nivel proviene del rol: 1=Acceso a Administración (según permisos), 2=Sin Administración.</p>
-      {error && <div className="text-red-500 mb-2">{error}</div>}
-      {success && <div className="text-green-600 mb-2">{success}</div>}
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold">Usuarios</h2>
+        <Button type="button" variant="primary" onClick={()=>setAddOpen(true)}>+ Nuevo usuario</Button>
+      </div>
+  <p className="text-[11px] muted mb-4">El nivel se define por usuario: 1 = Acceso a Administración (según permisos otorgados), 2 = Sin acceso a Administración.</p>
+  {error && <div className="text-red-500 mb-2">{error}</div>}
+  {success && <div className="text-green-600 mb-2">{success}</div>}
       <div className="overflow-x-auto">
         <ConfirmDialog
           open={confirmOpen}
@@ -201,6 +138,14 @@ export default function UsuariosAdmin() {
             usuario={editTarget}
             roles={roles}
             onSaved={() => { setEditOpen(false); setEditTarget(null); fetchUsuarios(); }}
+          />
+        )}
+        {addOpen && (
+          <AddUserModal
+            open={addOpen}
+            onClose={()=>setAddOpen(false)}
+            usuarios={usuarios}
+            onCreated={()=>{ setAddOpen(false); fetchUsuarios(); }}
           />
         )}
       </div>

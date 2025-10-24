@@ -63,7 +63,24 @@ router.post('/', requirePermission('representantes:create'), async (req, res) =>
     if (!nombre || !email) {
       return res.status(400).json({ error: 'nombre y email son requeridos' });
     }
-  const [result] = await pool.query(`INSERT INTO representante (nombre, apellido, ci, telefono, telefono_movil, email, id_parentesco, activo) VALUES (?,?,?,?,?,?,?,?)`, [nombre, apellido, ci, telefono, telefono_movil, email, id_parentesco, activo ? 1 : 0]);
+    // Validación CI (opcional pero si viene debe ser formato aceptado V-/E-/... o solo dígitos) y unicidad cross-entidades
+    let ciNorm = null;
+    if (ci) {
+      const raw = String(ci).trim().toUpperCase();
+      if (!/^([VEJG]-?\d{6,}|\d{6,})$/.test(raw)) {
+        return res.status(422).json({ error: 'VALIDATION_ERROR', details: { ci: 'CI inválida' } });
+      }
+      // Normalizar a formato sin prefijo (solo dígitos) para unicidad interna del sistema
+      ciNorm = raw.replace(/^[VEJG]-?/, '');
+      // Chequear personal/alumno/representante
+      const [[{ cntP }]] = await pool.query('SELECT COUNT(*) AS cntP FROM personal WHERE ci = ? AND deleted_at IS NULL', [ciNorm]);
+      if (cntP > 0) return res.status(409).json({ error: 'CI_DUPLICATE', scope: 'personal' });
+      const [[{ cntA }]] = await pool.query('SELECT COUNT(*) AS cntA FROM alumno WHERE ci = ?', [ciNorm]);
+      if (cntA > 0) return res.status(409).json({ error: 'CI_DUPLICATE', scope: 'alumno' });
+      const [[{ cntR }]] = await pool.query('SELECT COUNT(*) AS cntR FROM representante WHERE ci = ?', [ciNorm]);
+      if (cntR > 0) return res.status(409).json({ error: 'CI_DUPLICATE', scope: 'representante' });
+    }
+  const [result] = await pool.query(`INSERT INTO representante (nombre, apellido, ci, telefono, telefono_movil, email, id_parentesco, activo) VALUES (?,?,?,?,?,?,?,?)`, [nombre, apellido, ciNorm, telefono, telefono_movil, email, id_parentesco, activo ? 1 : 0]);
     res.status(201).json({ id_representante: result.insertId, nombre, apellido, ci, telefono, telefono_movil, email, id_parentesco, activo: activo?1:0 });
   } catch (err) {
     console.error('Error en POST /representantes:', err);
@@ -76,16 +93,35 @@ router.put('/:id', requirePermission('representantes:update'), async (req, res) 
   try {
     const { id } = req.params;
     const { nombre, apellido = null, ci = null, telefono = null, telefono_movil = null, email, id_parentesco = null, activo } = req.body;
+    // Normalización/validación CI
+    let ciNorm = null;
+    if (ci !== undefined) {
+      if (ci === null || ci === '') {
+        ciNorm = null;
+      } else {
+        const raw = String(ci).trim().toUpperCase();
+        if (!/^([VEJG]-?\d{6,}|\d{6,})$/.test(raw)) {
+          return res.status(422).json({ error: 'VALIDATION_ERROR', details: { ci: 'CI inválida' } });
+        }
+        ciNorm = raw.replace(/^[VEJG]-?/, '');
+        const [[{ cntP }]] = await pool.query('SELECT COUNT(*) AS cntP FROM personal WHERE ci = ? AND deleted_at IS NULL', [ciNorm]);
+        if (cntP > 0) return res.status(409).json({ error: 'CI_DUPLICATE', scope: 'personal' });
+        const [[{ cntA }]] = await pool.query('SELECT COUNT(*) AS cntA FROM alumno WHERE ci = ?', [ciNorm]);
+        if (cntA > 0) return res.status(409).json({ error: 'CI_DUPLICATE', scope: 'alumno' });
+        const [[{ cntR }]] = await pool.query('SELECT COUNT(*) AS cntR FROM representante WHERE ci = ? AND id_representante <> ?', [ciNorm, id]);
+        if (cntR > 0) return res.status(409).json({ error: 'CI_DUPLICATE', scope: 'representante' });
+      }
+    }
     const [result] = await pool.query(`UPDATE representante SET 
       nombre = COALESCE(?, nombre),
       apellido = COALESCE(?, apellido),
-      ci = COALESCE(?, ci),
+      ci = ${ci === undefined ? 'ci' : '?'},
       telefono = COALESCE(?, telefono),
       telefono_movil = COALESCE(?, telefono_movil),
       email = COALESCE(?, email),
       id_parentesco = COALESCE(?, id_parentesco),
       activo = COALESCE(?, activo)
-      WHERE id_representante = ?`, [nombre, apellido, ci, telefono, telefono_movil, email, id_parentesco, typeof activo === 'number' ? activo : undefined, id]);
+      WHERE id_representante = ?`, [nombre, apellido, ...(ci === undefined ? [] : [ciNorm]), telefono, telefono_movil, email, id_parentesco, typeof activo === 'number' ? activo : undefined, id]);
     if (result.affectedRows === 0) return res.status(404).json({ error: 'Representante no encontrado' });
     res.json({ id_representante: Number(id), nombre, apellido, ci, telefono, telefono_movil, email, id_parentesco, activo });
   } catch (err) {

@@ -33,17 +33,15 @@ export async function authOptional(req, res, next) {
       WHERE u.id_usuario = ?`, [decoded.sub]);
     if (!userRow) return res.status(401).json({ error: { code: 'USER_NOT_FOUND', message: 'Usuario no encontrado' } });
 
-    let rolPerms = {};
+  let rolPerms = {};
     try { rolPerms = JSON.parse(userRow.rol_permisos || '{}'); } catch {}
   let extras = {};
 
     const effectivePerms = mergeRoleAndUserExtras(rolPerms, extras);
-    // Nivel de acceso (0=admin total, 1=puede ver Administración si tiene permisos, 2=sin Administración)
+    // Nivel de acceso ahora se define exclusivamente por usuario (no por rol)
     const nivelAcceso = (userRow.nivel_acceso !== undefined && userRow.nivel_acceso !== null)
       ? userRow.nivel_acceso
-      : (typeof rolPerms?.$nivel === 'number'
-        ? rolPerms.$nivel
-        : ((userRow.rol_nombre || '').toLowerCase().includes('admin') ? 0 : 2));
+      : 2; // por defecto, sin acceso a Administración
     // Limpiar metadatos del objeto de permisos efectivo si se coló
     if (effectivePerms && typeof effectivePerms === 'object') {
       delete effectivePerms['$nivel'];

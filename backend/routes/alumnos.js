@@ -156,6 +156,7 @@ router.post('/', requirePermission('alumnos:create'), async (req, res) => {
   try {
     const {
       nombre,
+      ci = null,
       fecha_nacimiento,
       genero,
       telefono_contacto,
@@ -187,10 +188,25 @@ router.post('/', requirePermission('alumnos:create'), async (req, res) => {
     if (principalCount > 1) return res.status(400).json({ error: 'Sólo un representante principal permitido' });
     if (edad < 18 && principalCount === 0) return res.status(400).json({ error: 'Menor de edad requiere representante principal' });
 
+    // Validaciones de CI (opcional pero si viene debe ser numérica >=6) y unicidad en todo el sistema
+    if (ci) {
+      const ciNum = String(ci).trim();
+      if (!/^\d{6,}$/.test(ciNum)) {
+        return res.status(422).json({ error: 'VALIDATION_ERROR', details: { ci: 'CI debe ser numérica (mínimo 6 dígitos)' } });
+      }
+      // Buscar en personal/representante/alumno
+      const [[{ cntP }]] = await pool.query('SELECT COUNT(*) AS cntP FROM personal WHERE ci = ? AND deleted_at IS NULL', [ciNum]);
+      if (cntP > 0) return res.status(409).json({ error: 'CI_DUPLICATE', scope: 'personal' });
+      const [[{ cntR }]] = await pool.query('SELECT COUNT(*) AS cntR FROM representante WHERE ci = ?', [ciNum]);
+      if (cntR > 0) return res.status(409).json({ error: 'CI_DUPLICATE', scope: 'representante' });
+      const [[{ cntA }]] = await pool.query('SELECT COUNT(*) AS cntA FROM alumno WHERE ci = ?', [ciNum]);
+      if (cntA > 0) return res.status(409).json({ error: 'CI_DUPLICATE', scope: 'alumno' });
+    }
+
     const [result] = await pool.query(
-      `INSERT INTO alumno (nombre, fecha_nacimiento, genero, telefono_contacto, estado)
-      VALUES (?, ?, ?, ?, ?)`,
-      [nombre, fecha_nacimiento, genero, telefono_contacto, estado]
+      `INSERT INTO alumno (nombre, ci, fecha_nacimiento, genero, telefono_contacto, estado)
+      VALUES (?, ?, ?, ?, ?, ?)`,
+      [nombre, ci || null, fecha_nacimiento, genero, telefono_contacto, estado]
     );
     const id_alumno = result.insertId;
 
@@ -223,7 +239,7 @@ router.post('/', requirePermission('alumnos:create'), async (req, res) => {
       [id_alumno]
     );
 
-  res.json({ id_alumno, nombre, fecha_nacimiento, genero, telefono_contacto, estado, programas: programasRows || [], id_representante, id_parentesco });
+  res.json({ id_alumno, nombre, ci: ci || null, fecha_nacimiento, genero, telefono_contacto, estado, programas: programasRows || [], id_representante, id_parentesco });
   } catch (err) {
     console.error("Error en POST /alumnos:", err);
     res.status(500).json({ error: err.message });
@@ -238,6 +254,7 @@ router.put('/:id', requirePermission('alumnos:update'), async (req, res) => {
     const { id } = req.params; // ← Línea añadida para extraer el id
     const {
       nombre,
+      ci = null,
       fecha_nacimiento,
       genero,
       telefono_contacto,
@@ -269,9 +286,23 @@ router.put('/:id', requirePermission('alumnos:update'), async (req, res) => {
     if (principalCount > 1) return res.status(400).json({ error: 'Sólo un representante principal permitido' });
     if (edad < 18 && principalCount === 0) return res.status(400).json({ error: 'Menor de edad requiere representante principal' });
 
+    // Validaciones CI
+    if (ci) {
+      const ciNum = String(ci).trim();
+      if (!/^\d{6,}$/.test(ciNum)) {
+        return res.status(422).json({ error: 'VALIDATION_ERROR', details: { ci: 'CI debe ser numérica (mínimo 6 dígitos)' } });
+      }
+      const [[{ cntP }]] = await pool.query('SELECT COUNT(*) AS cntP FROM personal WHERE ci = ? AND deleted_at IS NULL', [ciNum]);
+      if (cntP > 0) return res.status(409).json({ error: 'CI_DUPLICATE', scope: 'personal' });
+      const [[{ cntR }]] = await pool.query('SELECT COUNT(*) AS cntR FROM representante WHERE ci = ?', [ciNum]);
+      if (cntR > 0) return res.status(409).json({ error: 'CI_DUPLICATE', scope: 'representante' });
+      const [[{ cntA }]] = await pool.query('SELECT COUNT(*) AS cntA FROM alumno WHERE ci = ? AND id_alumno <> ?', [ciNum, id]);
+      if (cntA > 0) return res.status(409).json({ error: 'CI_DUPLICATE', scope: 'alumno' });
+    }
+
     await pool.query(
-      `UPDATE alumno SET nombre=?, fecha_nacimiento=?, genero=?, telefono_contacto=?, estado=? WHERE id_alumno=?`,
-      [nombre, fecha_nacimiento, genero, telefono_contacto, estado, id]
+      `UPDATE alumno SET nombre=?, ci=?, fecha_nacimiento=?, genero=?, telefono_contacto=?, estado=? WHERE id_alumno=?`,
+      [nombre, ci || null, fecha_nacimiento, genero, telefono_contacto, estado, id]
     );
 
     // Reemplazar vínculos recibidos (estrategia simple: borrar todos y recrear)
@@ -434,6 +465,7 @@ router.post('/export-masivo', requirePermission('alumnos:export'), async (req, r
         return {
           id_alumno: a.id_alumno,
           nombre: a.nombre || "",
+          ci: a.ci || "",
           fecha_nacimiento: fn,
           genero: a.genero || "",
           telefono_contacto: a.telefono_contacto || "",
@@ -445,7 +477,7 @@ router.post('/export-masivo', requirePermission('alumnos:export'), async (req, r
       });
 
       if (format === 'csv') {
-        const headers = Object.keys(rows[0] || { id_alumno: '', nombre: '', fecha_nacimiento: '', genero: '', telefono_contacto: '', estado: '', programas: '', nota: '' });
+  const headers = Object.keys(rows[0] || { id_alumno: '', nombre: '', ci: '', fecha_nacimiento: '', genero: '', telefono_contacto: '', estado: '', programas: '', nota: '' });
         const lines = [headers.join(',')];
         for (const r of rows) {
           const vals = headers.map((h) => `"${String(r[h] ?? '').replace(/"/g, '""')}"`);
@@ -538,6 +570,7 @@ router.post('/export', requirePermission('alumnos:export'), async (req, res) => 
       return {
         id_alumno: a.id_alumno,
         nombre: a.nombre || '',
+        ci: a.ci || '',
         fecha_nacimiento: fn,
         genero: a.genero || '',
         telefono_contacto: a.telefono_contacto || '',
@@ -552,6 +585,7 @@ router.post('/export', requirePermission('alumnos:export'), async (req, res) => 
       const cols = [
         { key: 'id_alumno', title: 'ID' },
         { key: 'nombre', title: 'Nombre' },
+        { key: 'ci', title: 'CI' },
         { key: 'fecha_nacimiento', title: 'F. Nac.' },
         { key: 'genero', title: 'Género' },
         { key: 'telefono_contacto', title: 'Teléfono' },
@@ -568,6 +602,7 @@ router.post('/export', requirePermission('alumnos:export'), async (req, res) => 
       ws['!cols'] = [
         { wch: 6 },  // ID
         { wch: 24 }, // Nombre
+        { wch: 16 }, // CI
         { wch: 12 }, // F. Nac.
         { wch: 10 }, // Género
         { wch: 16 }, // Teléfono
@@ -598,10 +633,10 @@ router.post('/export', requirePermission('alumnos:export'), async (req, res) => 
       doc.fillColor('#000');
       doc.moveDown();
 
-  const headers = ['ID', 'Nombre', 'F. Nac.', 'Género', 'Teléfono', 'Estado', 'Programas'];
+  const headers = ['ID', 'Nombre', 'CI', 'F. Nac.', 'Género', 'Teléfono', 'Estado', 'Programas'];
   // A4 ancho útil ~535pt (595 - 30*2). La suma debe ser 535.
   // Ajustes para minimizar cortes: más ancho a Nombre y Programas, menos a Género/Estado/Teléfono.
-  const widths = [36, 170, 60, 45, 85, 50, 89];
+  const widths = [36, 150, 70, 60, 45, 85, 50, 79];
   const tableWidth = widths.reduce((a, b) => a + b, 0);
   const padX = 3;
   const rowHeight = 16;
@@ -669,6 +704,7 @@ router.post('/export', requirePermission('alumnos:export'), async (req, res) => 
           drawRow([
             r.id_alumno,
             r.nombre,
+            r.ci,
             formatDatePDF(r.fecha_nacimiento),
             r.genero,
             r.telefono_contacto,
@@ -706,6 +742,7 @@ router.post('/export', requirePermission('alumnos:export'), async (req, res) => 
     const cols = [
       { key: 'id_alumno', title: 'ID' },
       { key: 'nombre', title: 'Nombre' },
+      { key: 'ci', title: 'CI' },
       { key: 'fecha_nacimiento', title: 'F. Nac.' },
       { key: 'genero', title: 'Género' },
       { key: 'telefono_contacto', title: 'Teléfono' },
@@ -964,6 +1001,44 @@ router.post('/:id/instrumento', requirePermission('alumnos:update'), async (req,
       );
       if (!inst) return res.status(404).json({ error: "Instrumento no encontrado" });
       if (inst.estado_nombre !== "Disponible") return res.status(400).json({ error: "Instrumento no disponible" });
+
+      // Chequeo robusto: ¿el instrumento ya tiene una asignación activa?
+      const [[rowInstAsig]] = await pool.query(
+        `SELECT ai.id_asignacion, a.id_alumno, a.nombre AS nombre_alumno
+           FROM asignacion_instrumento ai
+           JOIN alumno a ON ai.id_alumno = a.id_alumno
+          WHERE ai.id_instrumento = ? AND ai.estado = 'Activo'
+          ORDER BY ai.fecha_asignacion DESC
+          LIMIT 1`,
+        [id_instrumento]
+      );
+      if (rowInstAsig) {
+        return res.status(409).json({
+          error: `Este instrumento ya está asignado a ${rowInstAsig.nombre_alumno}`,
+          code: 'INSTRUMENTO_YA_ASIGNADO',
+          alumno: { id_alumno: rowInstAsig.id_alumno, nombre: rowInstAsig.nombre_alumno },
+          instrumento: { id_instrumento: inst.id_instrumento, nombre: inst.nombre }
+        });
+      }
+
+      // ¿el alumno ya tiene un instrumento activo asignado?
+      const [[rowAluAsig]] = await pool.query(
+        `SELECT ai.id_asignacion, i.id_instrumento, i.nombre AS nombre_instrumento
+           FROM asignacion_instrumento ai
+           JOIN instrumento i ON ai.id_instrumento = i.id_instrumento
+          WHERE ai.id_alumno = ? AND ai.estado = 'Activo'
+          ORDER BY ai.fecha_asignacion DESC
+          LIMIT 1`,
+        [id]
+      );
+      if (rowAluAsig) {
+        return res.status(409).json({
+          error: `El alumno ya tiene asignado el instrumento ${rowAluAsig.nombre_instrumento}`,
+          code: 'ALUMNO_YA_TIENE_INSTRUMENTO',
+          alumno: { id_alumno: Number(id) },
+          instrumento: { id_instrumento: rowAluAsig.id_instrumento, nombre: rowAluAsig.nombre_instrumento }
+        });
+      }
 
       // registrar asignación
       await pool.query(

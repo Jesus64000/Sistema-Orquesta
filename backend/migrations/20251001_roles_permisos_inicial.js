@@ -58,6 +58,7 @@ async function seedRoles() {
     instrumentos: ['read'],
     programas: ['read'],
     representantes: ['read','create','update'],
+    personal: ['read','create','update'],
     dashboard: ['read']
   };
   const consultaPerms = {
@@ -66,6 +67,7 @@ async function seedRoles() {
     instrumentos: ['read'],
     programas: ['read'],
     representantes: ['read'],
+    personal: ['read'],
     dashboard: ['read']
   };
 

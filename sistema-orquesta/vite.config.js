@@ -88,7 +88,25 @@ export default defineConfig({
           }
         }
       },
+      '/cargos': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+        bypass: function (req) {
+          if (req.headers && req.headers.accept && req.headers.accept.indexOf('text/html') !== -1) {
+            return '/index.html'
+          }
+        }
+      },
       '/usuarios': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+        bypass: function (req) {
+          if (req.headers && req.headers.accept && req.headers.accept.indexOf('text/html') !== -1) {
+            return '/index.html'
+          }
+        }
+      },
+      '/personal': {
         target: 'http://localhost:4000',
         changeOrigin: true,
         bypass: function (req) {

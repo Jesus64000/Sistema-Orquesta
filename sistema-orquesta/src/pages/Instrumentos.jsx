@@ -23,6 +23,7 @@ import Modal from "../components/Modal";
 import ExportModal from "../components/ExportModal.jsx";
 import ConfirmDialog from "../components/ConfirmDialog";
 import DataStates from "../components/ui/DataStates";
+import AsignarInstrumentoModal from "../components/Instrumentos/AsignarInstrumentoModal";
 
 // === Helpers UI ===
 const Badge = ({ children }) => (
@@ -59,6 +60,7 @@ export default function Instrumentos() {
   // No se usa invitación estilo Gmail; master checkbox actúa sobre todo el conjunto filtrado (paridad con Alumnos)
   const [exportOpen, setExportOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [assignOpen, setAssignOpen] = useState(false);
 
   // Form
   const [showForm, setShowForm] = useState(false);
@@ -189,7 +191,8 @@ export default function Instrumentos() {
         onCreate={openCreate}
         onExport={() => setExportOpen(true)}
         selectedCount={selected.length}
-        onBulk={() => setBulkOpen(true)}
+    onBulk={() => setBulkOpen(true)}
+    onAssign={() => setAssignOpen(true)}
       />
 
       {/* Filtros */}
@@ -298,6 +301,16 @@ export default function Instrumentos() {
             if (mode === 'categoria') return { ...inst, id_categoria: value };
             return inst;
           }));
+        }}
+      />
+
+      {/* Modal asignar instrumento global */}
+      <AsignarInstrumentoModal
+        open={assignOpen}
+        onClose={() => setAssignOpen(false)}
+        onAssigned={() => {
+          setAssignOpen(false);
+          loadData();
         }}
       />
 

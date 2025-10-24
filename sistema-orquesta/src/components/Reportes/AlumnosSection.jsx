@@ -2,14 +2,13 @@ import ReportTable from "./ReportTable";
 import ReportBarChart from "./ReportBarChart";
 import ReportPieChart from "./ReportPieChart";
 
-export default function AlumnosSection({ alumnosPrograma, alumnosEdad, alumnosGenero, alumnosComparativa, viewGlobal }) {
+export default function AlumnosSection({ alumnosPrograma, alumnosEdad, alumnosGenero, viewGlobal }) {
   if (viewGlobal === "tabla") {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <ReportTable title="Alumnos por Programa" data={alumnosPrograma} cols={["programa","cantidad"]}/>
         <ReportTable title="Alumnos por Edad" data={alumnosEdad} cols={["edad","cantidad"]}/>
         <ReportTable title="Alumnos por Género" data={alumnosGenero} cols={["genero","cantidad"]}/>
-        <ReportTable title="Comparativa Alumnos 2024-2025" data={alumnosComparativa} cols={["programa","cantidad"]}/>
       </div>
     );
   } else {
@@ -18,7 +17,6 @@ export default function AlumnosSection({ alumnosPrograma, alumnosEdad, alumnosGe
         <ReportBarChart title="Alumnos por Programa" data={alumnosPrograma} dataKey="cantidad" nameKey="programa"/>
         <ReportBarChart title="Alumnos por Edad" data={alumnosEdad} dataKey="cantidad" nameKey="edad"/>
         <ReportPieChart title="Alumnos por Género" data={alumnosGenero} dataKey="cantidad" nameKey="genero"/>
-        <ReportBarChart title="Comparativa Alumnos 2024-2025" data={alumnosComparativa} dataKey="cantidad" nameKey="programa"/>
       </div>
     );
   }

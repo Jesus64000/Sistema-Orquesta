@@ -12,6 +12,7 @@ import Button from "../ui/Button";
 export default function AlumnoForm({ data, programas, onCancel, onSaved }) {
   const [formData, setFormData] = useState({
     nombre: "",
+    ci: "",
     fecha_nacimiento: "",
     genero: "Masculino",
     telefono_contacto: "",
@@ -76,6 +77,7 @@ export default function AlumnoForm({ data, programas, onCancel, onSaved }) {
       setFormData(f => ({
         ...f,
         nombre: data.nombre || "",
+        ci: data.ci || "",
         fecha_nacimiento: data.fecha_nacimiento ? String(data.fecha_nacimiento).slice(0, 10) : "",
         genero: data.genero || "Masculino",
         telefono_contacto: data.telefono_contacto || "",
@@ -86,6 +88,7 @@ export default function AlumnoForm({ data, programas, onCancel, onSaved }) {
       }));
       initialSnapshotRef.current = {
         nombre: data.nombre || "",
+        ci: data.ci || "",
         fecha_nacimiento: data.fecha_nacimiento ? String(data.fecha_nacimiento).slice(0, 10) : "",
         genero: data.genero || "Masculino",
         telefono_contacto: data.telefono_contacto || "",
@@ -103,6 +106,7 @@ export default function AlumnoForm({ data, programas, onCancel, onSaved }) {
     const snap = initialSnapshotRef.current;
     const current = {
       nombre: formData.nombre,
+      ci: formData.ci,
       fecha_nacimiento: formData.fecha_nacimiento,
       genero: formData.genero,
       telefono_contacto: formData.telefono_contacto,
@@ -129,6 +133,7 @@ export default function AlumnoForm({ data, programas, onCancel, onSaved }) {
       setLoading(true);
       const payloadBase = {
         nombre: formData.nombre,
+        ci: formData.ci ? String(formData.ci).replace(/\D/g,'') : null,
         fecha_nacimiento: formData.fecha_nacimiento,
         genero: formData.genero,
         telefono_contacto: formData.telefono_contacto,
@@ -186,12 +191,31 @@ export default function AlumnoForm({ data, programas, onCancel, onSaved }) {
                 id="alumno-nombre"
                 type="text"
                 value={formData.nombre}
-                onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                onChange={(e) => {
+                  // permitir solo letras (incluye acentos) y espacios; colapsar espacios múltiples
+                  const raw = e.target.value;
+                  const filtered = raw.replace(/[^\p{L}\s]/gu, '').replace(/\s{2,}/g, ' ');
+                  setFormData({ ...formData, nombre: filtered });
+                }}
                 placeholder="Ej: Juan Pérez"
                 className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 placeholder:muted ${ (submitted && errors?.nombre) ? 'border-red-400 focus:ring-red-400 ring-red-300' : 'border'}`}
                 aria-invalid={(submitted && errors?.nombre) ? 'true' : 'false'}
               />
               {submitted && errors?.nombre && <p className="mt-1 text-xs text-red-600" role="alert">{errors.nombre}</p>}
+            </div>
+            <div>
+              <label htmlFor="alumno-ci" className="block text-xs font-medium muted mb-1">CI</label>
+              <input
+                id="alumno-ci"
+                type="text"
+                inputMode="numeric"
+                value={formData.ci}
+                onChange={(e) => setFormData({ ...formData, ci: e.target.value.replace(/\D/g,'') })}
+                placeholder="Solo números (mín. 6)"
+                className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 placeholder:muted ${ (submitted && errors?.ci) ? 'border-red-400 focus:ring-red-400 ring-red-300' : 'border'}`}
+                aria-invalid={(submitted && errors?.ci) ? 'true' : 'false'}
+              />
+              {submitted && errors?.ci && <p className="mt-1 text-xs text-red-600" role="alert">{errors.ci}</p>}
             </div>
             <div>
               <label htmlFor="alumno-fecha" className="block text-xs font-medium muted mb-1">Fecha de nacimiento *</label>
@@ -258,8 +282,19 @@ export default function AlumnoForm({ data, programas, onCancel, onSaved }) {
               <input
                 id="alumno-telefono"
                 type="text"
+                inputMode="tel"
                 value={formData.telefono_contacto}
-                onChange={(e) => setFormData({ ...formData, telefono_contacto: e.target.value })}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  // Permitir solo dígitos y un único '+' al inicio
+                  let v = raw.replace(/[^\d+]/g, '');
+                  if (v.startsWith('+')) {
+                    v = '+' + v.slice(1).replace(/\+/g, '');
+                  } else {
+                    v = v.replace(/\+/g, '');
+                  }
+                  setFormData({ ...formData, telefono_contacto: v });
+                }}
                 onBlur={(e) => {
                   const val = normalizaTelefono(e.target.value);
                   setFormData(f => ({ ...f, telefono_contacto: val }));

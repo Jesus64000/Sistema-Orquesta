@@ -19,6 +19,7 @@ export default function RolesAdmin() {
     instrumentos: ["read","create","update","delete"],
     programas: ["read","create","update","delete"],
     representantes: ["read","create","update","delete"],
+    personal: ["read","create","update","delete","export"],
     roles: ["read","create","update","delete"],
     usuarios: ["read","create","update","delete"],
     reportes: ["read"],

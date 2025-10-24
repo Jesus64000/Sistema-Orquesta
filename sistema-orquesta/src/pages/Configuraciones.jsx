@@ -1,11 +1,10 @@
 // Página de ajustes personales del usuario
 import { useEffect, useState } from "react";
-import { Settings, Lock, User, Eye } from "lucide-react";
+import { Settings, Lock, User } from "lucide-react";
 import Button from "../components/ui/Button";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 import { updatePerfil, changePassword } from "../api/usuarios";
-import themeUtil from "../utils/theme";
 
 export default function Configuraciones() {
   const { user, refresh } = useAuth();
@@ -101,43 +100,7 @@ export default function Configuraciones() {
         </form>
       </section>
 
-      {/* Apariencia */}
-  <section className="card border rounded-2xl shadow-sm p-5">
-        <h2 className="text-lg font-semibold flex items-center gap-2 mb-3"><Eye className="h-5 w-5"/> Apariencia</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-xs text-gray-600 mb-1">Tema</label>
-            <select
-              className="w-full border rounded px-3 py-2"
-              defaultValue={themeUtil.getStoredTheme() || 'system'}
-              onChange={(e) => { themeUtil.setTheme(e.target.value); }}
-            >
-              <option value="light">Claro</option>
-              <option value="dark">Oscuro</option>
-              <option value="system">Sistema</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs text-gray-600 mb-1">Contraste</label>
-            <select
-              className="w-full border rounded px-3 py-2"
-              defaultValue={themeUtil.getStoredContrast() || 'normal'}
-              onChange={(e) => { themeUtil.setContrast(e.target.value); }}
-            >
-              <option value="normal">Normal</option>
-              <option value="high">Alto</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs text-gray-600 mb-1">Tamaño de fuente</label>
-            <select className="w-full border rounded px-3 py-2" defaultValue={localStorage.getItem('ui_font') || 'md'} onChange={(e)=>{ localStorage.setItem('ui_font', e.target.value); document.documentElement.dataset.font = e.target.value; }}>
-              <option value="sm">Pequeña</option>
-              <option value="md">Mediana</option>
-              <option value="lg">Grande</option>
-            </select>
-          </div>
-        </div>
-      </section>
+      {/* Apariencia eliminada */}
     </div>
   );
 }

@@ -16,7 +16,8 @@ export default function InstrumentosSection({ instrumentosEstado, instrumentosCa
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <ReportPieChart title="Instrumentos por Estado" data={instrumentosEstado} dataKey="cantidad" nameKey="estado"/>
         <ReportBarChart title="Instrumentos por Categoría" data={instrumentosCategoria} dataKey="cantidad" nameKey="categoria"/>
-        <ReportBarChart title="Top Instrumentos Asignados" data={instrumentosTop} dataKey="cantidad" nameKey="nombre"/>
+        {/* Mantener Top como tabla incluso en vista de gráficas */}
+        <ReportTable title="Top Instrumentos Asignados" data={instrumentosTop} cols={["nombre","cantidad"]}/>
       </div>
     );
   }

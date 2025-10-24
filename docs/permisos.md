@@ -56,9 +56,11 @@ export const permissionsCatalog = {
   instrumentos: ["read","create","update","delete"],
   programas: ["read","create","update","delete"],
   representantes: ["read","create","update","delete"],
+  personal: ["read","create","update","delete","export"],
   roles: ["read","create","update","delete"],
   usuarios: ["read","create","update","delete"],
   dashboard: ["read"],
+  personalizacion: ["read","update","delete"],
 };
 ```
 Acciones genéricas: `read|create|update|delete`. Acciones especiales actuales: `export` (alumnos), `finalize|cancel` (eventos).
@@ -75,9 +77,9 @@ Tabla `Rol`:
   "dashboard": ["read"]
 }
 ```
-Wildcard ejemplo Admin:
+Wildcard ejemplo Admin (incluye personal y personalización):
 ```json
-{ "alumnos": ["*"], "eventos": ["*"], "instrumentos": ["*"], "programas": ["*"], "representantes": ["*"], "roles": ["*"], "usuarios": ["*"], "dashboard": ["*"] }
+{ "alumnos": ["*"], "eventos": ["*"], "instrumentos": ["*"], "programas": ["*"], "representantes": ["*"], "personal": ["*"], "roles": ["*"], "usuarios": ["*"], "dashboard": ["*"], "personalizacion": ["*"] }
 ```
 
 Tabla `Usuario` (nuevas columnas fase 1):

@@ -19,9 +19,14 @@ router.get('/', async (req, res) => {
 
 // Crear usuario
 router.post('/', requirePermission('usuarios:create'), async (req, res) => {
-  const { nombre, email, id_rol, password } = req.body;
+  const { nombre, email, id_rol, password, nivel_acceso } = req.body || {};
   try {
-    await db.query('INSERT INTO usuario (nombre, email, password_hash, id_rol) VALUES (?, ?, ?, ?)', [nombre, email, password ?? '123456', id_rol]);
+    if (!nombre || !email || !id_rol) return res.status(400).json({ error: 'Faltan campos requeridos' });
+    // Validación de nivel: ahora es obligatorio (1 o 2). 0 reservado para Admin, no asignable aquí.
+    const n = Number(nivel_acceso);
+    if (![1,2].includes(n)) return res.status(400).json({ error: 'nivel_acceso inválido o ausente (debe ser 1 o 2)' });
+    const pass = password ?? '123456';
+    await db.query('INSERT INTO usuario (nombre, email, password_hash, id_rol, nivel_acceso) VALUES (?, ?, ?, ?, ?)', [nombre, email, pass, id_rol, n]);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Error al crear usuario' });

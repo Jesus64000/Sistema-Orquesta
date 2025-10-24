@@ -5,7 +5,6 @@ import PermisosEditor from './PermisosEditor';
 export default function RolEditModal({ open, initialData, onClose, onSave, saving = false }) {
   const [nombre, setNombre] = useState('');
   const [permisos, setPermisos] = useState({});
-  const [nivel, setNivel] = useState(2);
   const [error, setError] = useState('');
 
   const tokensToObject = (arr) => {
@@ -14,7 +13,7 @@ export default function RolEditModal({ open, initialData, onClose, onSave, savin
     if (arr.includes('*')) {
       // acceso total: todos los recursos '*'
       // Establecemos por recurso ['*'] para que el editor muestre Acceso total
-      const allResources = ['alumnos','eventos','instrumentos','programas','representantes','roles','usuarios','reportes']; // 'dashboard' se oculta del editor
+  const allResources = ['alumnos','eventos','instrumentos','programas','representantes','personal','dashboard','roles','usuarios','reportes']; // 'personalizacion' se oculta del editor
       for (const res of allResources) obj[res] = ['*'];
       return obj;
     }
@@ -44,7 +43,6 @@ export default function RolEditModal({ open, initialData, onClose, onSave, savin
     } catch { initPerms = initialData?.permisos || {}; }
     setNombre(initNombre);
     setPermisos(initPerms);
-    try { setNivel(typeof initialData?.permisos?.$nivel === 'number' ? initialData.permisos.$nivel : 2); } catch { setNivel(2); }
     setError('');
   }, [open, initialData]);
 
@@ -53,8 +51,10 @@ export default function RolEditModal({ open, initialData, onClose, onSave, savin
     setError('');
     if (!nombre.trim()) { setError('El nombre es obligatorio'); return; }
     try {
-      const payloadPerms = { ...permisos, $nivel: nivel };
-      await onSave?.({ nombre: nombre.trim(), permisos: payloadPerms });
+      // No persistimos $nivel en roles; el nivel es por usuario
+      // Aseguramos que no viaje accidentalmente un $nivel si viene de datos previos
+  const { $nivel: _NIVEL, ...permLimpios } = permisos || {};
+      await onSave?.({ nombre: nombre.trim(), permisos: permLimpios });
     } catch (e) {
       setError(e?.message || 'Error al guardar');
     }
@@ -78,20 +78,7 @@ export default function RolEditModal({ open, initialData, onClose, onSave, savin
             <p className="text-xs muted mt-1">El rol Administrador no puede ser editado.</p>
           )}
         </div>
-        <div>
-          <label className="block text-xs text-yellow-500 font-semibold mb-2">Nivel de acceso</label>
-          <div className="flex flex-wrap gap-2">
-            <label className="inline-flex items-center gap-2 px-2 py-1 rounded card">
-              <input type="radio" name="nivel" value={1} checked={nivel===1} onChange={()=>setNivel(1)} />
-              <span className="text-sm">1 - Acceso a Administración según permisos</span>
-            </label>
-            <label className="inline-flex items-center gap-2 px-2 py-1 rounded card">
-              <input type="radio" name="nivel" value={2} checked={nivel===2} onChange={()=>setNivel(2)} />
-              <span className="text-sm">2 - Sin acceso a Administración</span>
-            </label>
-          </div>
-          <p className="mt-1 text-xs muted">Nota: el nivel 0 (Admin total) está reservado exclusivamente para el rol Administrador.</p>
-        </div>
+        {/* El nivel de acceso ahora es por usuario, no por rol */}
         <div>
           <label className="block text-xs text-yellow-500 font-semibold mb-2">Permisos por recurso</label>
           <PermisosEditor value={permisos} onChange={setPermisos} columns={2} />

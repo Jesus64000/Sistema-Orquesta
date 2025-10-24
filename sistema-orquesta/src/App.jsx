@@ -18,6 +18,7 @@ import Configuraciones from "./pages/Configuraciones";
 import Administracion from "./pages/Administracion";
 import Representantes from "./pages/Representantes"; // nuevo
 import Login from "./pages/Login";
+import Personal from "./pages/Personal";
 
 // Sidebar item
 // eslint-disable-next-line no-unused-vars
@@ -38,16 +39,12 @@ function AppLayout() {
     ['roles','read'],
     ['usuarios','read'],
     ['programas','read'],
-    ['categorias','read'],
-    ['estados','read'],
-    ['parentescos','read'],
+    ['instrumentos','read'],
+    ['representantes','read'],
+    ['personal','read'],
+    ['personalizacion','read'],
   ]);
-  const perms = user?.permisos || [];
-  const hasTotal = (r) => perms.includes('*:*') || perms.includes(`${r}:*`);
-  const unlocksAdminByTotal = [
-    'roles','usuarios','programas','instrumentos','alumnos'
-  ].some(hasTotal);
-  const canSeeAdmin = nivelAcceso === 0 || (nivelAcceso === 1 && (canSeeAdminByPerms || unlocksAdminByTotal));
+  const canSeeAdmin = nivelAcceso === 0 || (nivelAcceso === 1 && canSeeAdminByPerms);
   const onLogout = () => { logout(); };
 
   return (
@@ -76,6 +73,9 @@ function AppLayout() {
             </IfPermiso>
             <IfPermiso recurso="representantes" accion="read" fallback={null}>
               <SidebarItem icon={UserCircle2} label="Representantes" to="/representantes" />
+            </IfPermiso>
+            <IfPermiso recurso="personal" accion="read" fallback={null}>
+              <SidebarItem icon={Users} label="Personal" to="/personal" />
             </IfPermiso>
             <IfPermiso recurso="instrumentos" accion="read" fallback={null}>
               <SidebarItem icon={Music2} label="Instrumentos" to="/instrumentos" />
@@ -129,6 +129,11 @@ function AppLayout() {
             <Route path="/reportes" element={
               <IfPermiso recurso="reportes" accion="read" fallback={<AccessDenied title="Reportes" message="No tienes permiso para ver reportes." />}>
                 <Reportes />
+              </IfPermiso>
+            } />
+            <Route path="/personal" element={
+              <IfPermiso recurso="personal" accion="read" fallback={<AccessDenied title="Personal" message="No tienes permiso para ver personal." />}>
+                <Personal />
               </IfPermiso>
             } />
             {/* Configuraciones sin gating; su contenido internamente se adapta */}

@@ -17,14 +17,48 @@ router.param('id', (req, res, next, val) => {
 // GET /instrumentos
 router.get('/', requirePermission('instrumentos:read'), async (_req, res) => {
   try {
+    // Traer instrumentos junto con su asignación activa más reciente (si existe)
     const [rows] = await pool.query(`
-      SELECT i.*, c.nombre as categoria_nombre, e.nombre as estado_nombre
+      SELECT 
+        i.*, 
+        c.nombre AS categoria_nombre, 
+        e.nombre AS estado_nombre,
+        a.id_alumno AS asignado_id_alumno,
+        a.nombre    AS asignado_nombre,
+        asi.fecha_asignacion AS asignado_fecha
       FROM instrumento i
       LEFT JOIN categoria c ON i.id_categoria = c.id_categoria
-      LEFT JOIN estados e ON i.id_estado = e.id_estado
+      LEFT JOIN estados e   ON i.id_estado = e.id_estado
+      LEFT JOIN (
+        SELECT ai1.id_instrumento, ai1.id_alumno, ai1.fecha_asignacion
+          FROM asignacion_instrumento ai1
+          JOIN (
+            SELECT id_instrumento, MAX(fecha_asignacion) AS max_fecha
+              FROM asignacion_instrumento
+             WHERE estado = 'Activo'
+             GROUP BY id_instrumento
+          ) latest 
+            ON latest.id_instrumento = ai1.id_instrumento 
+           AND latest.max_fecha = ai1.fecha_asignacion
+         WHERE ai1.estado = 'Activo'
+      ) asi ON asi.id_instrumento = i.id_instrumento
+      LEFT JOIN alumno a ON a.id_alumno = asi.id_alumno
       ORDER BY i.nombre ASC
     `);
-    res.json(rows);
+
+    // Mapear a objeto con asignado anidado para consumo directo del front
+    const data = rows.map(r => {
+      const asignado = r.asignado_nombre ? {
+        id_alumno: r.asignado_id_alumno,
+        nombre: r.asignado_nombre,
+        fecha_asignacion: r.asignado_fecha
+      } : null;
+      // Eliminar campos planos auxiliares
+      const { asignado_id_alumno, asignado_nombre, asignado_fecha, ...rest } = r;
+      return { ...rest, asignado };
+    });
+
+    res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
