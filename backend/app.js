@@ -5,6 +5,8 @@
 import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 import pool from './db.js';
 import authOptional from './middleware/auth.js';
@@ -31,15 +33,21 @@ import adminEventosRouter from './routes/administracion/eventos.js';
 import adminProgramasRouter from './routes/administracion/programas.js';
 import adminParentescosRouter from './routes/administracion/parentescos.js';
 import adminCargosRouter from './routes/administracion/cargos.js';
+import adminIdentidadRouter from './routes/administracion/identidad.js';
 import personalizacionRouter from './routes/personalizacion.js';
 import personalRouter from './routes/personal.js';
 import cargosRouter from './routes/cargos.js';
 
 const app = express();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Middleware base
 app.use(cors());
 app.use(bodyParser.json());
+
+// Servir archivos subidos (logo/sello/firma y otros) de forma estática
+// Ubicación correcta: backend/uploads (evitar backend/backend/uploads)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Habilitar confianza en proxy si está detrás de uno (relevante para rate limiting por IP)
 if (process.env.TRUST_PROXY === '1') {
@@ -114,6 +122,7 @@ app.use('/administracion/eventos', adminEventosRouter);
 app.use('/administracion/programas', adminProgramasRouter);
 app.use('/administracion/parentescos', adminParentescosRouter);
 app.use('/administracion/cargos', adminCargosRouter);
+app.use('/administracion/identidad', adminIdentidadRouter);
 
 // Personalizacion (tema guardado en servidor)
 app.use('/personalizacion', personalizacionRouter);

@@ -2,11 +2,14 @@
 import { Router } from 'express';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import pool from '../db.js';
 import requirePermiso from '../middleware/requirePermiso.js';
 
 const router = Router();
-const dataDir = path.resolve(process.cwd(), 'backend', 'data');
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const backendRoot = path.resolve(__dirname, '..');
+const dataDir = path.join(backendRoot, 'data');
 const filePath = path.join(dataDir, 'personalizacion.json');
 
 function ensureDataDir() {

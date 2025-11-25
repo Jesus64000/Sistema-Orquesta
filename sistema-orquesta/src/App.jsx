@@ -3,6 +3,10 @@ import { BrowserRouter as Router, Routes, Route, Link, Navigate } from "react-ro
 import { 
   Gauge, Users, Music2, Calendar, BarChart3, Settings, LogOut, Wrench, UserCircle2
 } from "lucide-react";
+import { getIdentidad } from "./api/administracion/identidad";
+// El logo del sistema siempre será el proporcionado en `public/logo.png`.
+// Coloca tu archivo `logo.png` en `sistema-orquesta/public/logo.png`.
+const SYSTEM_LOGO = '/logo.png';
 import { Toaster } from "react-hot-toast";
 import { useAuth, IfPermiso } from "./context/AuthContext";
 import ThemeToggle from "./components/ui/ThemeToggle";
@@ -34,6 +38,8 @@ const SidebarItem = ({ icon: IconComp, label, to }) => (
 
 function AppLayout() {
   const { logout, anyPermiso, user } = useAuth();
+  // Usamos siempre el logo fijo del sistema
+  const [logoUrl] = React.useState(SYSTEM_LOGO);
   const nivelAcceso = typeof user?.nivel_acceso === 'number' ? user.nivel_acceso : (String(user?.rol?.nombre || user?.rol || '').toLowerCase().includes('admin') ? 0 : 2);
   const canSeeAdminByPerms = anyPermiso([
     ['roles','read'],
@@ -46,22 +52,34 @@ function AppLayout() {
   ]);
   const canSeeAdmin = nivelAcceso === 0 || (nivelAcceso === 1 && canSeeAdminByPerms);
   const onLogout = () => { logout(); };
+  // NOTA: no se intenta actualizar `logoUrl` desde la identidad. El logo
+  // del sistema se mantiene siempre como `SYSTEM_LOGO`.
 
   return (
     <div className="min-h-screen bg-app text-app">
       <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr]">
         {/* Sidebar */}
   <aside className="card border-r p-5 lg:min-h-screen shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-yellow-400 grid place-items-center text-gray-900 shadow">
-              <Music2 className="h-5 w-5" />
-            </div>
+          <div className="flex flex-col gap-3">
+            {logoUrl ? (
+              <img
+                src={logoUrl}
+                alt="Logo"
+                className="w-full h-28 sm:h-32 md:h-40 rounded-xl object-contain"
+              />
+            ) : (
+              <div className="flex items-center gap-3">
+                <div className="h-20 w-20 md:h-24 md:w-24 rounded-xl bg-yellow-400 grid place-items-center text-gray-900 shadow">
+                  <Music2 className="h-8 w-8 md:h-10 md:w-10" />
+                </div>
+                <div>
+                  <p className="text-xs muted leading-none">Sistema Nacional</p>
+                  <p className="text-sm font-semibold text-app leading-none">de Orquestas – Cabimas</p>
+                </div>
+              </div>
+            )}
             <div>
-              <p className="text-xs muted leading-none">Sistema Nacional</p>
-              <p className="text-sm font-semibold text-app leading-none">de Orquestas – Cabimas</p>
-            </div>
-            <div className="ml-auto">
-              <ThemeToggle />
+              <ThemeToggle variant="sidebar" />
             </div>
           </div>
 

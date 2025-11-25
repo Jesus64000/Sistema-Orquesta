@@ -7,12 +7,12 @@ export const permissionsCatalog = {
   instrumentos: ["read","create","update","delete"],
   programas: ["read","create","update","delete"],
   representantes: ["read","create","update","delete"],
-  personal: ["read","create","update","delete","export"],
   roles: ["read","create","update","delete"],
   usuarios: ["read","create","update","delete"],
   dashboard: ["read"],
   reportes: ["read"],
   personalizacion: ["read","update","delete"],
+  identidad: ["read","update"],
 };
 
 function tokensArrayToObject(permsArr) {

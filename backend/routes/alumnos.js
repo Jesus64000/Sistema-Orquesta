@@ -5,7 +5,8 @@ import upload from '../uploads.config.js';
 import { registrarHistorial, registrarHistorialInstrumento } from '../helpers/historial.js';
 import alumnosHelpers from '../helpers/alumnos.js';
 import XLSX from 'xlsx';
-import PDFDocument from 'pdfkit';
+import { buildWorkbookBuffer } from '../export/excel.js';
+import { streamTablePDF } from '../export/pdf.js';
 import { requirePermission } from '../helpers/permissions.js';
 
 const { fetchProgramasPorAlumnos, fetchAlumnosWithPrograms } = alumnosHelpers;
@@ -581,36 +582,17 @@ router.post('/export', requirePermission('alumnos:export'), async (req, res) => 
 
     // XLSX/Excel
     if (format === 'xlsx' || format === 'excel') {
-      const wb = XLSX.utils.book_new();
-      const cols = [
-        { key: 'id_alumno', title: 'ID' },
-        { key: 'nombre', title: 'Nombre' },
-        { key: 'ci', title: 'CI' },
-        { key: 'fecha_nacimiento', title: 'F. Nac.' },
-        { key: 'genero', title: 'Género' },
-        { key: 'telefono_contacto', title: 'Teléfono' },
-        { key: 'estado', title: 'Estado' },
-        { key: 'programas', title: 'Programas' },
+      const columns = [
+        { key: 'id_alumno', header: 'ID', width: 8 },
+        { key: 'nombre', header: 'Nombre', width: 30 },
+        { key: 'ci', header: 'CI', width: 16 },
+        { key: 'fecha_nacimiento', header: 'F. Nac.', width: 14 },
+        { key: 'genero', header: 'Género', width: 10 },
+        { key: 'telefono_contacto', header: 'Teléfono', width: 18 },
+        { key: 'estado', header: 'Estado', width: 12 },
+        { key: 'programas', header: 'Programas', width: 42 },
       ];
-      const aoa = [cols.map((c) => c.title)];
-      if (data.length === 0) {
-        aoa.push(cols.map(() => ''));
-      } else {
-        aoa.push(...data.map((r) => cols.map((c) => r[c.key])));
-      }
-      const ws = XLSX.utils.aoa_to_sheet(aoa);
-      ws['!cols'] = [
-        { wch: 6 },  // ID
-        { wch: 24 }, // Nombre
-        { wch: 16 }, // CI
-        { wch: 12 }, // F. Nac.
-        { wch: 10 }, // Género
-        { wch: 16 }, // Teléfono
-        { wch: 12 }, // Estado
-        { wch: 42 }, // Programas
-      ];
-      XLSX.utils.book_append_sheet(wb, ws, 'Alumnos');
-      const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+      const buf = await buildWorkbookBuffer({ sheetName: 'Alumnos', columns, rows: data });
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', `attachment; filename="alumnos_export_${Date.now()}.xlsx"`);
       return res.send(buf);
@@ -620,121 +602,17 @@ router.post('/export', requirePermission('alumnos:export'), async (req, res) => 
     if (format === 'pdf') {
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="alumnos_export_${Date.now()}.pdf"`);
-      const doc = new PDFDocument({ margin: 30, size: 'A4' });
-      doc.pipe(res);
-
-      // Encabezado
-      doc.fontSize(14).text('Alumnos exportados', { align: 'center' });
-      const now = new Date();
-      const hours12 = now.getHours() % 12 || 12;
-      const ampm = now.getHours() >= 12 ? 'PM' : 'AM';
-      const ts = `${now.toLocaleDateString()} ${hours12}:${String(now.getMinutes()).padStart(2, '0')} ${ampm}`;
-      doc.fontSize(8).fillColor('#666').text(`Generado: ${ts}`, { align: 'right' });
-      doc.fillColor('#000');
-      doc.moveDown();
-
-  const headers = ['ID', 'Nombre', 'CI', 'F. Nac.', 'Género', 'Teléfono', 'Estado', 'Programas'];
-  // A4 ancho útil ~535pt (595 - 30*2). La suma debe ser 535.
-  // Ajustes para minimizar cortes: más ancho a Nombre y Programas, menos a Género/Estado/Teléfono.
-  const widths = [36, 150, 70, 60, 45, 85, 50, 79];
-  const tableWidth = widths.reduce((a, b) => a + b, 0);
-  const padX = 3;
-  const rowHeight = 16;
-  const headerFontSize = 10;
-  const rowFontSize = 8;
-      let tableStartX = 0;
-
-      const fitText = (text, maxWidth) => {
-        let t = String(text ?? '');
-        const ell = '…';
-        while (doc.widthOfString(t) > maxWidth && t.length > 0) t = t.slice(0, -1);
-        if (t.length < String(text ?? '').length && t.length > 0) {
-          while (doc.widthOfString(t + ell) > maxWidth && t.length > 0) t = t.slice(0, -1);
-          t += ell;
-        }
-        return t;
-      };
-
-      const drawRow = (vals, isHeader = false, zebra = false) => {
-        const y = doc.y;
-        const startX = tableStartX || doc.x;
-        if (zebra && !isHeader) {
-          doc.save();
-          doc.rect(startX, y - 2, tableWidth, rowHeight).fill('#fafafa');
-          doc.fillColor('#000');
-          doc.restore();
-        }
-        doc.font(isHeader ? 'Helvetica-Bold' : 'Helvetica').fontSize(isHeader ? headerFontSize : rowFontSize).fillColor('#111827');
-        let x = startX;
-        for (let i = 0; i < vals.length; i++) {
-          const maxW = widths[i] - padX * 2;
-          const txt = fitText(vals[i], maxW);
-          doc.text(txt, x + padX, y + 3, { width: maxW, lineBreak: false });
-          x += widths[i];
-        }
-        const sepY = y + rowHeight - 2;
-        doc.moveTo(startX, sepY).lineTo(startX + tableWidth, sepY).strokeColor('#e5e7eb').lineWidth(0.5).stroke();
-        doc.strokeColor('#000').lineWidth(1);
-        doc.y = y + rowHeight;
-      };
-
-      const drawHeader = () => {
-        const startX = doc.x;
-        const startY = doc.y;
-        const headerHeight = rowHeight;
-        doc.save();
-        doc.rect(startX, startY - 2, tableWidth, headerHeight).fill('#f3f4f6');
-        doc.fillColor('#111827');
-        doc.restore();
-        tableStartX = startX;
-        drawRow(headers, true, false);
-      };
-
-      drawHeader();
-      doc.on('pageAdded', () => drawHeader());
-
-      const formatDatePDF = (s) => (s || ''); // ya viene normalizado a YYYY-MM-DD para ahorrar ancho
-
-      if (data.length === 0) {
-        doc.moveDown();
-        doc.font('Helvetica-Oblique').fillColor('#6b7280').text('No hay registros para mostrar.', { align: 'center' });
-        doc.fillColor('#000');
-      } else {
-        data.forEach((r, idx) => {
-          drawRow([
-            r.id_alumno,
-            r.nombre,
-            r.ci,
-            formatDatePDF(r.fecha_nacimiento),
-            r.genero,
-            r.telefono_contacto,
-            r.estado,
-            r.programas,
-          ], false, idx % 2 === 1);
-        });
-      }
-
-      // Resumen por estado
-      const total = data.length;
-      const activos = data.filter((d) => d.estado?.toLowerCase() === 'activo').length;
-      const inactivos = data.filter((d) => d.estado?.toLowerCase() === 'inactivo').length;
-      const otros = total - activos - inactivos;
-      doc.moveDown();
-      doc.font('Helvetica-Bold').text('Resumen');
-      doc.font('Helvetica').text(`Total alumnos: ${total}`);
-      doc.text(`Activos: ${activos}    Inactivos: ${inactivos}    Otros: ${otros}`);
-
-      // Pie de página con paginación
-      const range = doc.bufferedPageRange();
-      for (let i = range.start; i < range.start + range.count; i++) {
-        doc.switchToPage(i);
-        doc
-          .fontSize(8)
-          .fillColor('#666')
-          .text(`Página ${i + 1} de ${range.count}`, 30, doc.page.height - 30, { align: 'center' })
-          .fillColor('#000');
-      }
-      doc.end();
+      const columns = [
+        { key: 'id_alumno', header: 'ID', width: 36 },
+        { key: 'nombre', header: 'Nombre', width: 150 },
+        { key: 'ci', header: 'CI', width: 70 },
+        { key: 'fecha_nacimiento', header: 'F. Nac.', width: 60, format: (s) => s || '' },
+        { key: 'genero', header: 'Género', width: 45 },
+        { key: 'telefono_contacto', header: 'Teléfono', width: 85 },
+        { key: 'estado', header: 'Estado', width: 50 },
+        { key: 'programas', header: 'Programas', width: 79 }
+      ];
+      streamTablePDF(res, { title: 'Alumnos exportados', columns, rows: data });
       return;
     }
 

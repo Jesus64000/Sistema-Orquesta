@@ -2,7 +2,8 @@
 import { Router } from 'express';
 import pool from '../db.js';
 import XLSX from 'xlsx';
-import PDFDocument from 'pdfkit';
+import { buildWorkbookBuffer } from '../export/excel.js';
+import { streamTablePDF } from '../export/pdf.js';
 import { requirePermission } from '../helpers/permissions.js';
 
 const router = Router();
@@ -205,10 +206,18 @@ router.post('/export', requirePermission('representantes:read'), async (req, res
     }
 
     if (format === 'xlsx' || format === 'excel') {
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(data);
-      XLSX.utils.book_append_sheet(wb, ws, 'Representantes');
-      const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+      const columns = [
+        { key: 'id_representante', header: 'ID', width: 8 },
+        { key: 'nombre_completo', header: 'Nombre Completo', width: 32 },
+        { key: 'ci', header: 'CI', width: 16 },
+        { key: 'telefono_movil', header: 'Teléfono Móvil', width: 18 },
+        { key: 'telefono', header: 'Teléfono Fijo', width: 18 },
+        { key: 'email', header: 'Email', width: 28 },
+        { key: 'parentesco', header: 'Parentesco', width: 18 },
+        { key: 'alumnos_count', header: 'Alumnos', width: 12 },
+        { key: 'activo', header: 'Activo', width: 10 }
+      ];
+      const buf = await buildWorkbookBuffer({ sheetName: 'Representantes', columns, rows: data });
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', `attachment; filename="representantes_export_${Date.now()}.xlsx"`);
       return res.send(buf);
@@ -217,31 +226,18 @@ router.post('/export', requirePermission('representantes:read'), async (req, res
     if (format === 'pdf') {
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="representantes_export_${Date.now()}.pdf"`);
-      const doc = new PDFDocument({ margin: 30, size: 'A4' });
-      doc.pipe(res);
-      doc.fontSize(14).text('Exportación de Representantes', { align: 'center' });
-      doc.moveDown();
-      const colTitles = ['ID','Nombre','CI','Tel.Móvil','Email','Parentesco','Alumnos'];
-      const colWidths = [30,120,60,70,120,70,50];
-      const startX = doc.x;
-      let y = doc.y;
-      const rowHeight = 16;
-      const drawRow = (vals, header=false) => {
-        let x = startX;
-        doc.font(header ? 'Helvetica-Bold' : 'Helvetica').fontSize(8);
-        vals.forEach((v,i)=>{
-          const w = colWidths[i];
-            doc.text(String(v||''), x, y, { width: w, ellipsis: true });
-            x += w + 4;
-        });
-        y += rowHeight;
-        if (y > doc.page.height - 50) { doc.addPage(); y = doc.y; }
-      };
-      drawRow(colTitles, true);
-      for (const r of data) {
-        drawRow([r.id_representante, r.nombre_completo, r.ci, r.telefono_movil || r.telefono, r.email, r.parentesco, r.alumnos_count]);
-      }
-      doc.end();
+      const columns = [
+        { key: 'id_representante', header: 'ID', width: 30 },
+        { key: 'nombre_completo', header: 'Nombre', width: 140 },
+        { key: 'ci', header: 'CI', width: 60 },
+        { key: 'telefono_movil', header: 'Tel.Móvil', width: 70 },
+        { key: 'email', header: 'Email', width: 130 },
+        { key: 'parentesco', header: 'Parentesco', width: 70 },
+        { key: 'alumnos_count', header: 'Alumnos', width: 50 }
+      ];
+      // Mejor usar telefono_movil si está; proyectar rows en consecuencia
+      const rows = data.map(r => ({ ...r, telefono_movil: r.telefono_movil || r.telefono }));
+      streamTablePDF(res, { title: 'Exportación de Representantes', columns, rows });
       return;
     }
 

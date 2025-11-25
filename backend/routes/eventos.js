@@ -2,7 +2,8 @@
 import { Router } from 'express';
 import pool from '../db.js';
 import XLSX from 'xlsx';
-import PDFDocument from 'pdfkit';
+import { buildWorkbookBuffer } from '../export/excel.js';
+import { streamTablePDF } from '../export/pdf.js';
 import { requirePermission } from '../helpers/permissions.js';
 
 // Helper para calcular diffs (también exportado para tests)
@@ -510,10 +511,16 @@ router.post('/export', requirePermission('eventos:read'), async (req, res) => {
     }
 
     if (format === 'xlsx' || format === 'excel') {
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(data);
-      XLSX.utils.book_append_sheet(wb, ws, 'Eventos');
-      const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+      const columns = [
+        { key: 'id_evento', header: 'ID', width: 8 },
+        { key: 'titulo', header: 'Título', width: 30 },
+        { key: 'fecha_evento', header: 'Fecha', width: 14 },
+        { key: 'hora_evento', header: 'Hora', width: 10 },
+        { key: 'lugar', header: 'Lugar', width: 28 },
+        { key: 'id_programa', header: 'Programa', width: 12 },
+        { key: 'estado', header: 'Estado', width: 12 },
+      ];
+      const buf = await buildWorkbookBuffer({ sheetName: 'Eventos', columns, rows: data });
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', `attachment; filename="eventos_export_${Date.now()}.xlsx"`);
       return res.send(buf);
@@ -521,42 +528,16 @@ router.post('/export', requirePermission('eventos:read'), async (req, res) => {
     if (format === 'pdf') {
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="eventos_export_${Date.now()}.pdf"`);
-      const doc = new PDFDocument({ margin: 30, size: 'A4' });
-      doc.pipe(res);
-      doc.fontSize(14).text('Exportación de Eventos', { align: 'center' });
-      doc.moveDown();
-      const colTitles = ['ID','Título','Fecha','Hora','Lugar','Programa','Estado'];
-      const colWidths = [40,140,60,50,110,60,60];
-      const startX = doc.x;
-      let y = doc.y;
-      const rowHeight = 16;
-      const drawRow = (vals, header=false) => {
-        let x = startX;
-        doc.font(header ? 'Helvetica-Bold' : 'Helvetica').fontSize(8);
-        vals.forEach((v,i)=>{
-          const w = colWidths[i];
-            doc.text(String(v||''), x, y, { width: w, ellipsis: true });
-          x += w + 4;
-        });
-        y += rowHeight;
-        if (y > doc.page.height - 50) {
-          doc.addPage();
-          y = doc.y;
-        }
-      };
-      drawRow(colTitles, true);
-      for (const ev of data) {
-        drawRow([
-          ev.id_evento,
-          ev.titulo,
-          ev.fecha_evento,
-          ev.hora_evento,
-          ev.lugar,
-          ev.id_programa,
-          ev.estado
-        ]);
-      }
-      doc.end();
+      const columns = [
+        { key: 'id_evento', header: 'ID', width: 40 },
+        { key: 'titulo', header: 'Título', width: 140 },
+        { key: 'fecha_evento', header: 'Fecha', width: 60 },
+        { key: 'hora_evento', header: 'Hora', width: 50 },
+        { key: 'lugar', header: 'Lugar', width: 110 },
+        { key: 'id_programa', header: 'Programa', width: 60 },
+        { key: 'estado', header: 'Estado', width: 60 },
+      ];
+      streamTablePDF(res, { title: 'Exportación de Eventos', columns, rows: data });
       return; // stream
     }
 

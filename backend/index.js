@@ -4,11 +4,15 @@
 import pool from './db.js';
 import app from './app.js';
 import { ensureMigrations } from './migrations/ensureMigrations.js';
+import { migrateLegacyPaths } from './boot/migrateLegacyPaths.js';
 
 const PORT = process.env.PORT || 4000;
 
 async function start() {
   try {
+    // Antes de tocar DB o levantar servidor, migra rutas legadas de archivos
+    migrateLegacyPaths();
+
     await pool.query('SELECT 1');
     console.log('Conexión a DB OK');
 

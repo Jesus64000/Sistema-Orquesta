@@ -10,6 +10,7 @@ import AyudaAdmin from "../components/Administracion/AyudaAdmin";
 import ParentescosAdmin from "../components/Administracion/ParentescosAdmin";
 import CargosAdmin from "../components/Administracion/CargosAdmin.jsx";
 import Personalizacion from "../components/Administracion/Personalizacion";
+import IdentidadVisual from "../components/Administracion/IdentidadVisual.jsx";
 
 // Cada sección puede definir múltiples permisos alternativos (OR):
 // Ej: permisos: [["instrumentos","read"],["instrumentos","update"]]
@@ -22,6 +23,7 @@ const SECCIONES = [
   { key: "parentescos", label: "Parentescos", permisos: [["representantes","read"],["representantes","update"],["representantes","create"]] },
   { key: "cargos", label: "Cargos (personal)", permisos: [["personal","read"],["personal","update"],["personal","create"]] },
   { key: "personalizacion", label: "Personalización", permisos: [["personalizacion","read"]] },
+  { key: "identidad", label: "Identidad visual", permisos: [["identidad","read"]] },
   { key: "ayuda", label: "Ayuda / Documentación" },
 ];
 
@@ -60,6 +62,7 @@ export default function Administracion() {
   {/* {seccion === "instrumentos" && <InstrumentosAdmin />} */}
   {seccion === "estados" && <EstadosAdmin />}
   {seccion === "personalizacion" && <Personalizacion />}
+  {seccion === "identidad" && <IdentidadVisual />}
   {/* {seccion === "representantes" && <RepresentantesAdmin />} */}
   {/* {seccion === "eventos" && <EventosAdmin />} */}
   {seccion === "parentescos" && <ParentescosAdmin />}
