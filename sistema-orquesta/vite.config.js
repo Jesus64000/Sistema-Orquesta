@@ -97,6 +97,24 @@ export default defineConfig({
           }
         }
       },
+      '/personal': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+        bypass: function (req) {
+          if (req.headers && req.headers.accept && req.headers.accept.indexOf('text/html') !== -1) {
+            return '/index.html'
+          }
+        }
+      },
+      '/cargos': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+        bypass: function (req) {
+          if (req.headers && req.headers.accept && req.headers.accept.indexOf('text/html') !== -1) {
+            return '/index.html'
+          }
+        }
+      },
       '/administracion': {
         target: 'http://localhost:4000',
         changeOrigin: true,

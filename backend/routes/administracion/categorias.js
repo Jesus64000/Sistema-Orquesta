@@ -14,7 +14,7 @@ router.get('/', async (req, res) => {
 });
 
 // Crear categoría
-router.post('/', requirePermission('instrumentos:write'), async (req, res) => {
+router.post('/', requirePermission('instrumentos:create'), async (req, res) => {
   const { nombre, descripcion } = req.body;
   try {
   await db.query('INSERT INTO categoria (nombre, descripcion) VALUES (?, ?)', [nombre, descripcion]);
@@ -25,7 +25,7 @@ router.post('/', requirePermission('instrumentos:write'), async (req, res) => {
 });
 
 // Editar categoría
-router.put('/:id', requirePermission('instrumentos:write'), async (req, res) => {
+router.put('/:id', requirePermission('instrumentos:update'), async (req, res) => {
   const { nombre, descripcion } = req.body;
   try {
   await db.query('UPDATE categoria SET nombre=?, descripcion=? WHERE id_categoria=?', [nombre, descripcion, req.params.id]);
@@ -36,7 +36,7 @@ router.put('/:id', requirePermission('instrumentos:write'), async (req, res) => 
 });
 
 // Eliminar categoría
-router.delete('/:id', requirePermission('instrumentos:write'), async (req, res) => {
+router.delete('/:id', requirePermission('instrumentos:delete'), async (req, res) => {
   try {
   await db.query('DELETE FROM categoria WHERE id_categoria=?', [req.params.id]);
     res.json({ success: true });

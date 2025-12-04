@@ -21,7 +21,7 @@ router.get('/', async (req, res) => {
 });
 
 // Crear parentesco
-router.post('/', requirePermission('representantes:write'), async (req, res) => {
+router.post('/', requirePermission('representantes:create'), async (req, res) => {
   try {
     const { nombre, activo = 1 } = req.body;
     if (!nombre || !nombre.trim()) return res.status(400).json({ error: 'Nombre requerido' });
@@ -36,7 +36,7 @@ router.post('/', requirePermission('representantes:write'), async (req, res) => 
 });
 
 // Actualizar parentesco
-router.put('/:id', requirePermission('representantes:write'), async (req, res) => {
+router.put('/:id', requirePermission('representantes:update'), async (req, res) => {
   try {
     const { id } = req.params;
     const { nombre, activo } = req.body;
@@ -56,7 +56,7 @@ router.put('/:id', requirePermission('representantes:write'), async (req, res) =
 });
 
 // Eliminar parentesco (soft si tiene uso?) Por simplicidad: bloquear si está en uso.
-router.delete('/:id', requirePermission('representantes:write'), async (req, res) => {
+router.delete('/:id', requirePermission('representantes:delete'), async (req, res) => {
   try {
     const { id } = req.params;
   const [[row]] = await pool.query('SELECT * FROM parentesco WHERE id_parentesco = ?', [id]);

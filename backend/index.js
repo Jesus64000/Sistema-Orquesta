@@ -3,7 +3,6 @@
 
 import pool from './db.js';
 import app from './app.js';
-import { ensureMigrations } from './migrations/ensureMigrations.js';
 import { migrateLegacyPaths } from './boot/migrateLegacyPaths.js';
 
 const PORT = process.env.PORT || 4000;
@@ -16,11 +15,8 @@ async function start() {
     await pool.query('SELECT 1');
     console.log('Conexión a DB OK');
 
-    if (process.env.MIGRATIONS !== 'off') {
-      await ensureMigrations(pool);
-    } else {
-      console.log('Migraciones desactivadas por variable de entorno MIGRATIONS=off');
-    }
+    // Migraciones automáticas desactivadas para producción/entrega
+    // Se debe usar docs/Base_de_datos_estructura.sql y docs/datos_semilla.sql
 
     app.listen(PORT, () => console.log(`API escuchando en http://localhost:${PORT}`));
   } catch (err) {

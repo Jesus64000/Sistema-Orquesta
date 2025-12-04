@@ -373,7 +373,7 @@ router.post('/export-masivo', requirePermission('instrumentos:read'), async (req
           try { const d = new Date(s); if (isNaN(d)) return s; return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit' }); } catch { return s; }
         })()
       }));
-      streamTablePDF(res, { title: 'Instrumentos exportados', columns, rows: rowsPDF });
+      streamTablePDF(res, { title: 'Inventario', columns, rows: rowsPDF });
       return;
     }
 

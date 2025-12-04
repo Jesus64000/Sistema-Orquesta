@@ -537,7 +537,7 @@ router.post('/export', requirePermission('eventos:read'), async (req, res) => {
         { key: 'id_programa', header: 'Programa', width: 60 },
         { key: 'estado', header: 'Estado', width: 60 },
       ];
-      streamTablePDF(res, { title: 'Exportación de Eventos', columns, rows: data });
+      streamTablePDF(res, { title: 'Eventos', columns, rows: data });
       return; // stream
     }
 

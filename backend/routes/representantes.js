@@ -237,7 +237,7 @@ router.post('/export', requirePermission('representantes:read'), async (req, res
       ];
       // Mejor usar telefono_movil si está; proyectar rows en consecuencia
       const rows = data.map(r => ({ ...r, telefono_movil: r.telefono_movil || r.telefono }));
-      streamTablePDF(res, { title: 'Exportación de Representantes', columns, rows });
+      streamTablePDF(res, { title: 'Representantes', columns, rows });
       return;
     }
 

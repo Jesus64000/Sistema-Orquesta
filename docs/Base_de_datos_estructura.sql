@@ -1,0 +1,777 @@
+-- phpMyAdmin SQL Dump
+-- version 5.2.1
+-- https://www.phpmyadmin.net/
+--
+-- Servidor: 127.0.0.1
+-- Tiempo de generación: 04-12-2025 a las 14:15:38
+-- Versión del servidor: 10.4.32-MariaDB
+-- Versión de PHP: 8.0.30
+
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+START TRANSACTION;
+SET time_zone = "+00:00";
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
+
+--
+-- Base de datos: `prueba_db`
+--
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `alumno`
+--
+
+CREATE TABLE `alumno` (
+  `id_alumno` int(11) NOT NULL,
+  `nombre` varchar(100) NOT NULL,
+  `ci` varchar(20) DEFAULT NULL,
+  `fecha_nacimiento` date NOT NULL,
+  `genero` enum('Masculino','Femenino','Otro') NOT NULL,
+  `telefono_contacto` varchar(20) DEFAULT NULL,
+  `id_representante` int(11) DEFAULT NULL,
+  `estado` enum('Activo','Inactivo','Retirado') NOT NULL DEFAULT 'Activo',
+  `fecha_creacion` timestamp NOT NULL DEFAULT current_timestamp(),
+  `creado_en` timestamp NOT NULL DEFAULT current_timestamp(),
+  `nota` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `alumno_asistencia`
+--
+
+CREATE TABLE `alumno_asistencia` (
+  `id_asistencia` int(11) NOT NULL,
+  `id_alumno` int(11) NOT NULL,
+  `id_evento` int(11) NOT NULL,
+  `asistio` tinyint(1) NOT NULL,
+  `usuario` varchar(100) DEFAULT 'sistema',
+  `creado_en` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `alumno_documento`
+--
+
+CREATE TABLE `alumno_documento` (
+  `id_documento` int(11) NOT NULL,
+  `id_alumno` int(11) NOT NULL,
+  `tipo` varchar(50) DEFAULT 'otro',
+  `archivo_url` varchar(255) NOT NULL,
+  `creado_en` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `alumno_historial`
+--
+
+CREATE TABLE `alumno_historial` (
+  `id_historial` int(11) NOT NULL,
+  `id_alumno` int(11) NOT NULL,
+  `tipo` enum('CREACION','ACTUALIZACION','ESTADO','PROGRAMA','NOTA','ASIGNACION_INSTRUMENTO','OTRO') NOT NULL DEFAULT 'OTRO',
+  `descripcion` text DEFAULT NULL,
+  `usuario` varchar(150) DEFAULT NULL,
+  `creado_en` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `alumno_programa`
+--
+
+CREATE TABLE `alumno_programa` (
+  `id_alumno_programa` int(11) NOT NULL,
+  `id_alumno` int(11) NOT NULL,
+  `id_programa` int(11) NOT NULL,
+  `fecha_asignacion` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `alumno_representante`
+--
+
+CREATE TABLE `alumno_representante` (
+  `id` int(11) NOT NULL,
+  `id_alumno` int(11) NOT NULL,
+  `id_representante` int(11) NOT NULL,
+  `id_parentesco` int(11) DEFAULT NULL,
+  `principal` tinyint(1) NOT NULL DEFAULT 1,
+  `creado_en` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `asignacion_instrumento`
+--
+
+CREATE TABLE `asignacion_instrumento` (
+  `id_asignacion` int(11) NOT NULL,
+  `id_instrumento` int(11) NOT NULL,
+  `id_alumno` int(11) NOT NULL,
+  `fecha_asignacion` date NOT NULL,
+  `fecha_devolucion_prevista` date DEFAULT NULL,
+  `fecha_devolucion_real` date DEFAULT NULL,
+  `estado` enum('Activo','Finalizado','Vencida') NOT NULL DEFAULT 'Activo'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `cargo`
+--
+
+CREATE TABLE `cargo` (
+  `id_cargo` int(11) NOT NULL,
+  `nombre` varchar(100) NOT NULL,
+  `activo` tinyint(1) NOT NULL DEFAULT 1,
+  `creado_en` timestamp NULL DEFAULT current_timestamp(),
+  `actualizado_en` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `categoria`
+--
+
+CREATE TABLE `categoria` (
+  `id_categoria` int(11) NOT NULL,
+  `nombre` varchar(100) NOT NULL,
+  `descripcion` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `estados`
+--
+
+CREATE TABLE `estados` (
+  `id_estado` int(11) NOT NULL,
+  `nombre` varchar(100) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `evento`
+--
+
+CREATE TABLE `evento` (
+  `id_evento` int(11) NOT NULL,
+  `titulo` varchar(150) NOT NULL,
+  `descripcion` text DEFAULT NULL,
+  `fecha_evento` date NOT NULL,
+  `hora_evento` time NOT NULL,
+  `lugar` varchar(150) NOT NULL,
+  `creado_en` timestamp NOT NULL DEFAULT current_timestamp(),
+  `id_programa` int(11) DEFAULT NULL,
+  `estado` enum('PROGRAMADO','EN_CURSO','FINALIZADO','CANCELADO') NOT NULL DEFAULT 'PROGRAMADO'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `evento_historial`
+--
+
+CREATE TABLE `evento_historial` (
+  `id` int(11) NOT NULL,
+  `id_evento` int(11) NOT NULL,
+  `campo` varchar(50) NOT NULL,
+  `valor_anterior` text DEFAULT NULL,
+  `valor_nuevo` text DEFAULT NULL,
+  `usuario` varchar(100) DEFAULT NULL,
+  `creado_en` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `instrumento`
+--
+
+CREATE TABLE `instrumento` (
+  `id_instrumento` int(11) NOT NULL,
+  `nombre` varchar(100) NOT NULL,
+  `numero_serie` varchar(50) NOT NULL,
+  `fecha_adquisicion` date DEFAULT NULL,
+  `foto_url` varchar(255) DEFAULT NULL,
+  `ubicacion` varchar(100) DEFAULT NULL,
+  `id_categoria` int(11) DEFAULT NULL,
+  `id_estado` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `instrumento_historial`
+--
+
+CREATE TABLE `instrumento_historial` (
+  `id_historial` int(11) NOT NULL,
+  `id_instrumento` int(11) NOT NULL,
+  `tipo` varchar(50) NOT NULL,
+  `descripcion` text DEFAULT NULL,
+  `usuario` varchar(100) DEFAULT NULL,
+  `creado_en` timestamp NOT NULL DEFAULT current_timestamp(),
+  `id_alumno` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `movimiento_inventario`
+--
+
+CREATE TABLE `movimiento_inventario` (
+  `id_movimiento` int(11) NOT NULL,
+  `id_instrumento` int(11) NOT NULL,
+  `tipo_movimiento` enum('Entrada','Salida','Mantenimiento','Reingreso','Baja') NOT NULL,
+  `fecha_movimiento` timestamp NOT NULL DEFAULT current_timestamp(),
+  `descripcion` text DEFAULT NULL,
+  `responsable` varchar(100) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `parentesco`
+--
+
+CREATE TABLE `parentesco` (
+  `id_parentesco` int(11) NOT NULL,
+  `nombre` varchar(100) NOT NULL,
+  `activo` tinyint(1) NOT NULL DEFAULT 1,
+  `creado_en` timestamp NULL DEFAULT current_timestamp(),
+  `actualizado_en` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `personal`
+--
+
+CREATE TABLE `personal` (
+  `id_personal` int(11) NOT NULL,
+  `ci` varchar(20) NOT NULL,
+  `nombres` varchar(100) NOT NULL,
+  `apellidos` varchar(100) NOT NULL,
+  `email` varchar(120) NOT NULL,
+  `telefono` varchar(30) NOT NULL,
+  `direccion` varchar(255) DEFAULT NULL,
+  `fecha_nacimiento` date DEFAULT NULL,
+  `fecha_ingreso` date DEFAULT NULL,
+  `carga_horaria` int(11) NOT NULL DEFAULT 0,
+  `estado` enum('ACTIVO','INACTIVO','SUSPENDIDO','PERMISO') NOT NULL DEFAULT 'ACTIVO',
+  `id_cargo` int(11) DEFAULT NULL,
+  `id_programa` int(11) DEFAULT NULL,
+  `creado_en` timestamp NULL DEFAULT current_timestamp(),
+  `actualizado_en` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `deleted_at` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `personalizacion`
+--
+
+CREATE TABLE `personalizacion` (
+  `id` int(11) NOT NULL,
+  `nombre` varchar(100) NOT NULL,
+  `tema` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`tema`)),
+  `creado_en` timestamp NOT NULL DEFAULT current_timestamp(),
+  `actualizado_en` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `creado_por` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `programa`
+--
+
+CREATE TABLE `programa` (
+  `id_programa` int(11) NOT NULL,
+  `nombre` varchar(100) NOT NULL,
+  `descripcion` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `representante`
+--
+
+CREATE TABLE `representante` (
+  `id_representante` int(11) NOT NULL,
+  `nombre` varchar(100) NOT NULL,
+  `apellido` varchar(100) DEFAULT NULL,
+  `ci` varchar(20) DEFAULT NULL,
+  `telefono` varchar(20) DEFAULT NULL,
+  `telefono_movil` varchar(20) DEFAULT NULL,
+  `email` varchar(100) DEFAULT NULL,
+  `id_parentesco` int(11) DEFAULT NULL,
+  `activo` tinyint(1) NOT NULL DEFAULT 1,
+  `creado_en` timestamp NULL DEFAULT current_timestamp(),
+  `actualizado_en` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `creado_por` int(11) DEFAULT NULL,
+  `actualizado_por` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `rol`
+--
+
+CREATE TABLE `rol` (
+  `id_rol` int(11) NOT NULL,
+  `nombre` varchar(50) NOT NULL,
+  `permisos` text DEFAULT NULL,
+  `creado_en` timestamp NULL DEFAULT current_timestamp(),
+  `actualizado_en` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `usuario`
+--
+
+CREATE TABLE `usuario` (
+  `id_usuario` int(11) NOT NULL,
+  `nombre` varchar(100) NOT NULL,
+  `email` varchar(120) NOT NULL,
+  `password_hash` varchar(255) NOT NULL,
+  `id_rol` int(11) DEFAULT NULL,
+  `nivel_acceso` tinyint(4) DEFAULT NULL,
+  `activo` tinyint(1) NOT NULL DEFAULT 1,
+  `creado_en` timestamp NULL DEFAULT current_timestamp(),
+  `actualizado_en` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `must_change_password` tinyint(1) NOT NULL DEFAULT 0,
+  `last_login` timestamp NULL DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Índices para tablas volcadas
+--
+
+--
+-- Indices de la tabla `alumno`
+--
+ALTER TABLE `alumno`
+  ADD PRIMARY KEY (`id_alumno`),
+  ADD UNIQUE KEY `uq_alumno_ci` (`ci`),
+  ADD KEY `fk_alumno_representante` (`id_representante`);
+
+--
+-- Indices de la tabla `alumno_asistencia`
+--
+ALTER TABLE `alumno_asistencia`
+  ADD PRIMARY KEY (`id_asistencia`),
+  ADD KEY `id_alumno` (`id_alumno`),
+  ADD KEY `id_evento` (`id_evento`);
+
+--
+-- Indices de la tabla `alumno_documento`
+--
+ALTER TABLE `alumno_documento`
+  ADD PRIMARY KEY (`id_documento`),
+  ADD KEY `id_alumno` (`id_alumno`);
+
+--
+-- Indices de la tabla `alumno_historial`
+--
+ALTER TABLE `alumno_historial`
+  ADD PRIMARY KEY (`id_historial`),
+  ADD KEY `fk_hist_alumno` (`id_alumno`);
+
+--
+-- Indices de la tabla `alumno_programa`
+--
+ALTER TABLE `alumno_programa`
+  ADD PRIMARY KEY (`id_alumno_programa`),
+  ADD UNIQUE KEY `uq_alumno_programa` (`id_alumno`,`id_programa`),
+  ADD KEY `fk_ap_programa` (`id_programa`);
+
+--
+-- Indices de la tabla `alumno_representante`
+--
+ALTER TABLE `alumno_representante`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uniq_alumno_representante` (`id_alumno`,`id_representante`),
+  ADD KEY `id_parentesco` (`id_parentesco`),
+  ADD KEY `idx_alurep_alumno` (`id_alumno`),
+  ADD KEY `idx_alurep_representante` (`id_representante`);
+
+--
+-- Indices de la tabla `asignacion_instrumento`
+--
+ALTER TABLE `asignacion_instrumento`
+  ADD PRIMARY KEY (`id_asignacion`),
+  ADD KEY `id_instrumento` (`id_instrumento`),
+  ADD KEY `id_alumno` (`id_alumno`);
+
+--
+-- Indices de la tabla `cargo`
+--
+ALTER TABLE `cargo`
+  ADD PRIMARY KEY (`id_cargo`),
+  ADD UNIQUE KEY `uq_cargo_nombre` (`nombre`);
+
+--
+-- Indices de la tabla `categoria`
+--
+ALTER TABLE `categoria`
+  ADD PRIMARY KEY (`id_categoria`);
+
+--
+-- Indices de la tabla `estados`
+--
+ALTER TABLE `estados`
+  ADD PRIMARY KEY (`id_estado`);
+
+--
+-- Indices de la tabla `evento`
+--
+ALTER TABLE `evento`
+  ADD PRIMARY KEY (`id_evento`);
+
+--
+-- Indices de la tabla `evento_historial`
+--
+ALTER TABLE `evento_historial`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `id_evento` (`id_evento`);
+
+--
+-- Indices de la tabla `instrumento`
+--
+ALTER TABLE `instrumento`
+  ADD PRIMARY KEY (`id_instrumento`),
+  ADD UNIQUE KEY `numero_serie` (`numero_serie`),
+  ADD KEY `fk_instrumento_categoria` (`id_categoria`),
+  ADD KEY `fk_instrumento_estado` (`id_estado`);
+
+--
+-- Indices de la tabla `instrumento_historial`
+--
+ALTER TABLE `instrumento_historial`
+  ADD PRIMARY KEY (`id_historial`),
+  ADD KEY `id_instrumento` (`id_instrumento`),
+  ADD KEY `fk_instrumento_historial_alumno` (`id_alumno`);
+
+--
+-- Indices de la tabla `movimiento_inventario`
+--
+ALTER TABLE `movimiento_inventario`
+  ADD PRIMARY KEY (`id_movimiento`),
+  ADD KEY `id_instrumento` (`id_instrumento`);
+
+--
+-- Indices de la tabla `parentesco`
+--
+ALTER TABLE `parentesco`
+  ADD PRIMARY KEY (`id_parentesco`);
+
+--
+-- Indices de la tabla `personal`
+--
+ALTER TABLE `personal`
+  ADD PRIMARY KEY (`id_personal`),
+  ADD UNIQUE KEY `uq_personal_email` (`email`),
+  ADD UNIQUE KEY `uq_personal_ci` (`ci`),
+  ADD KEY `idx_personal_programa` (`id_programa`),
+  ADD KEY `idx_personal_cargo` (`id_cargo`),
+  ADD KEY `idx_personal_estado` (`estado`);
+
+--
+-- Indices de la tabla `personalizacion`
+--
+ALTER TABLE `personalizacion`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `ux_personalizacion_nombre` (`nombre`);
+
+--
+-- Indices de la tabla `programa`
+--
+ALTER TABLE `programa`
+  ADD PRIMARY KEY (`id_programa`);
+
+--
+-- Indices de la tabla `representante`
+--
+ALTER TABLE `representante`
+  ADD PRIMARY KEY (`id_representante`),
+  ADD UNIQUE KEY `uq_representante_ci` (`ci`),
+  ADD KEY `fk_representante_parentesco` (`id_parentesco`);
+
+--
+-- Indices de la tabla `rol`
+--
+ALTER TABLE `rol`
+  ADD PRIMARY KEY (`id_rol`),
+  ADD UNIQUE KEY `uq_rol_nombre` (`nombre`);
+
+--
+-- Indices de la tabla `usuario`
+--
+ALTER TABLE `usuario`
+  ADD PRIMARY KEY (`id_usuario`),
+  ADD UNIQUE KEY `uq_usuario_email` (`email`),
+  ADD KEY `fk_usuario_rol` (`id_rol`);
+
+--
+-- AUTO_INCREMENT de las tablas volcadas
+--
+
+--
+-- AUTO_INCREMENT de la tabla `alumno`
+--
+ALTER TABLE `alumno`
+  MODIFY `id_alumno` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `alumno_asistencia`
+--
+ALTER TABLE `alumno_asistencia`
+  MODIFY `id_asistencia` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `alumno_documento`
+--
+ALTER TABLE `alumno_documento`
+  MODIFY `id_documento` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `alumno_historial`
+--
+ALTER TABLE `alumno_historial`
+  MODIFY `id_historial` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `alumno_programa`
+--
+ALTER TABLE `alumno_programa`
+  MODIFY `id_alumno_programa` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `alumno_representante`
+--
+ALTER TABLE `alumno_representante`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `asignacion_instrumento`
+--
+ALTER TABLE `asignacion_instrumento`
+  MODIFY `id_asignacion` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `cargo`
+--
+ALTER TABLE `cargo`
+  MODIFY `id_cargo` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `categoria`
+--
+ALTER TABLE `categoria`
+  MODIFY `id_categoria` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `estados`
+--
+ALTER TABLE `estados`
+  MODIFY `id_estado` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `evento`
+--
+ALTER TABLE `evento`
+  MODIFY `id_evento` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `evento_historial`
+--
+ALTER TABLE `evento_historial`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `instrumento`
+--
+ALTER TABLE `instrumento`
+  MODIFY `id_instrumento` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `instrumento_historial`
+--
+ALTER TABLE `instrumento_historial`
+  MODIFY `id_historial` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `movimiento_inventario`
+--
+ALTER TABLE `movimiento_inventario`
+  MODIFY `id_movimiento` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `parentesco`
+--
+ALTER TABLE `parentesco`
+  MODIFY `id_parentesco` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `personal`
+--
+ALTER TABLE `personal`
+  MODIFY `id_personal` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `personalizacion`
+--
+ALTER TABLE `personalizacion`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `programa`
+--
+ALTER TABLE `programa`
+  MODIFY `id_programa` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `representante`
+--
+ALTER TABLE `representante`
+  MODIFY `id_representante` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `rol`
+--
+ALTER TABLE `rol`
+  MODIFY `id_rol` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `usuario`
+--
+ALTER TABLE `usuario`
+  MODIFY `id_usuario` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- Restricciones para tablas volcadas
+--
+
+--
+-- Filtros para la tabla `alumno`
+--
+ALTER TABLE `alumno`
+  ADD CONSTRAINT `fk_alumno_representante` FOREIGN KEY (`id_representante`) REFERENCES `representante` (`id_representante`) ON DELETE SET NULL;
+
+--
+-- Filtros para la tabla `alumno_asistencia`
+--
+ALTER TABLE `alumno_asistencia`
+  ADD CONSTRAINT `alumno_asistencia_ibfk_1` FOREIGN KEY (`id_alumno`) REFERENCES `alumno` (`id_alumno`) ON DELETE CASCADE,
+  ADD CONSTRAINT `alumno_asistencia_ibfk_2` FOREIGN KEY (`id_evento`) REFERENCES `evento` (`id_evento`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `alumno_documento`
+--
+ALTER TABLE `alumno_documento`
+  ADD CONSTRAINT `alumno_documento_ibfk_1` FOREIGN KEY (`id_alumno`) REFERENCES `alumno` (`id_alumno`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `alumno_historial`
+--
+ALTER TABLE `alumno_historial`
+  ADD CONSTRAINT `fk_hist_alumno` FOREIGN KEY (`id_alumno`) REFERENCES `alumno` (`id_alumno`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `alumno_programa`
+--
+ALTER TABLE `alumno_programa`
+  ADD CONSTRAINT `fk_ap_alumno` FOREIGN KEY (`id_alumno`) REFERENCES `alumno` (`id_alumno`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_ap_programa` FOREIGN KEY (`id_programa`) REFERENCES `programa` (`id_programa`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `alumno_representante`
+--
+ALTER TABLE `alumno_representante`
+  ADD CONSTRAINT `alumno_representante_ibfk_1` FOREIGN KEY (`id_alumno`) REFERENCES `alumno` (`id_alumno`) ON DELETE CASCADE,
+  ADD CONSTRAINT `alumno_representante_ibfk_2` FOREIGN KEY (`id_representante`) REFERENCES `representante` (`id_representante`) ON DELETE CASCADE,
+  ADD CONSTRAINT `alumno_representante_ibfk_3` FOREIGN KEY (`id_parentesco`) REFERENCES `parentesco` (`id_parentesco`) ON DELETE SET NULL;
+
+--
+-- Filtros para la tabla `asignacion_instrumento`
+--
+ALTER TABLE `asignacion_instrumento`
+  ADD CONSTRAINT `asignacion_instrumento_ibfk_1` FOREIGN KEY (`id_instrumento`) REFERENCES `instrumento` (`id_instrumento`),
+  ADD CONSTRAINT `asignacion_instrumento_ibfk_2` FOREIGN KEY (`id_alumno`) REFERENCES `alumno` (`id_alumno`);
+
+--
+-- Filtros para la tabla `evento_historial`
+--
+ALTER TABLE `evento_historial`
+  ADD CONSTRAINT `evento_historial_ibfk_1` FOREIGN KEY (`id_evento`) REFERENCES `evento` (`id_evento`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `instrumento`
+--
+ALTER TABLE `instrumento`
+  ADD CONSTRAINT `fk_instrumento_categoria` FOREIGN KEY (`id_categoria`) REFERENCES `categoria` (`id_categoria`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_instrumento_estado` FOREIGN KEY (`id_estado`) REFERENCES `estados` (`id_estado`) ON DELETE SET NULL;
+
+--
+-- Filtros para la tabla `instrumento_historial`
+--
+ALTER TABLE `instrumento_historial`
+  ADD CONSTRAINT `fk_instrumento_historial_alumno` FOREIGN KEY (`id_alumno`) REFERENCES `alumno` (`id_alumno`) ON DELETE SET NULL,
+  ADD CONSTRAINT `instrumento_historial_ibfk_1` FOREIGN KEY (`id_instrumento`) REFERENCES `instrumento` (`id_instrumento`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `movimiento_inventario`
+--
+ALTER TABLE `movimiento_inventario`
+  ADD CONSTRAINT `movimiento_inventario_ibfk_1` FOREIGN KEY (`id_instrumento`) REFERENCES `instrumento` (`id_instrumento`);
+
+--
+-- Filtros para la tabla `personal`
+--
+ALTER TABLE `personal`
+  ADD CONSTRAINT `fk_personal_cargo` FOREIGN KEY (`id_cargo`) REFERENCES `cargo` (`id_cargo`) ON DELETE SET NULL,
+  ADD CONSTRAINT `fk_personal_programa` FOREIGN KEY (`id_programa`) REFERENCES `programa` (`id_programa`) ON DELETE SET NULL;
+
+--
+-- Filtros para la tabla `representante`
+--
+ALTER TABLE `representante`
+  ADD CONSTRAINT `fk_representante_parentesco` FOREIGN KEY (`id_parentesco`) REFERENCES `parentesco` (`id_parentesco`) ON DELETE SET NULL;
+
+--
+-- Filtros para la tabla `usuario`
+--
+ALTER TABLE `usuario`
+  ADD CONSTRAINT `fk_usuario_rol` FOREIGN KEY (`id_rol`) REFERENCES `rol` (`id_rol`) ON DELETE SET NULL;
+COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;

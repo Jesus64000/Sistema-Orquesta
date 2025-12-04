@@ -503,41 +503,19 @@ router.post('/export-masivo', requirePermission('alumnos:export'), async (req, r
       if (format === 'pdf') {
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename="alumnos_export_masivo_${Date.now()}.pdf"`);
-        const doc = new PDFDocument({ margin: 30, size: 'A4' });
-        doc.pipe(res);
+        
+        const columns = [
+          { key: 'id_alumno', header: 'ID', width: 30 },
+          { key: 'nombre', header: 'Nombre', width: 140 },
+          { key: 'fecha_nacimiento', header: 'F. Nac.', width: 60 },
+          { key: 'genero', header: 'Género', width: 40 },
+          { key: 'telefono_contacto', header: 'Teléfono', width: 70 },
+          { key: 'estado', header: 'Estado', width: 50 },
+          { key: 'programas', header: 'Programas', width: 130 },
+        ];
 
-        doc.fontSize(14).text('Exportación de Alumnos', { align: 'center' });
-        doc.moveDown();
-
-        const colTitles = ['ID', 'Nombre', 'F. Nac.', 'Género', 'Teléfono', 'Estado', 'Programas'];
-        const colWidths = [40, 150, 70, 50, 90, 60, 180];
-
-        const drawRow = (vals, isHeader = false) => {
-          doc.font(isHeader ? 'Helvetica-Bold' : 'Helvetica');
-          for (let i = 0; i < vals.length; i++) {
-            const text = String(vals[i] ?? '');
-            doc.text(text, { continued: i < vals.length - 1, width: colWidths[i] });
-          }
-          doc.text('\n');
-        };
-
-        drawRow(colTitles, true);
-        doc.moveDown(0.2);
-
-        rows.forEach((r) => {
-          drawRow([
-            r.id_alumno,
-            r.nombre,
-            r.fecha_nacimiento,
-            r.genero,
-            r.telefono_contacto,
-            r.estado,
-            r.programas,
-          ]);
-        });
-
-        doc.end();
-        return; // stream finaliza la respuesta
+        streamTablePDF(res, { title: 'Matrícula', columns, rows });
+        return; 
       }
 
       res.status(400).json({ error: 'Formato no soportado. Usa csv | xlsx | pdf' });

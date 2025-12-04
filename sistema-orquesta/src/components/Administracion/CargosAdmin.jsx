@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import Button from '../ui/Button';
 import { http } from '../../api/http';
+import Modal from '../Modal';
+import ConfirmDialog from '../ConfirmDialog';
 
 export default function CargosAdmin() {
   const { tienePermiso } = useAuth();
@@ -9,8 +11,16 @@ export default function CargosAdmin() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [nombre, setNombre] = useState('');
   const [q, setQ] = useState('');
+
+  // Modal state
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [nombre, setNombre] = useState('');
+
+  // Confirm state
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
 
   const load = async () => {
     try {
@@ -25,11 +35,42 @@ export default function CargosAdmin() {
   useEffect(()=>{ load(); // eslint-disable-next-line react-hooks/exhaustive-deps
   },[q]);
 
-  const onCreate = async () => {
+  const openCreate = () => {
+    setEditingItem(null);
+    setNombre('');
+    setModalOpen(true);
+  };
+
+  const openEdit = (it) => {
+    setEditingItem(it);
+    setNombre(it.nombre);
+    setModalOpen(true);
+  };
+
+  const handleSave = async () => {
     if (!nombre.trim()) return;
     try {
-      await http.post('/administracion/cargos', { nombre: nombre.trim(), activo: 1 });
-      setNombre(''); load();
+      if (editingItem) {
+        await http.put(`/administracion/cargos/${editingItem.id_cargo}`, { nombre: nombre.trim() });
+      } else {
+        await http.post('/administracion/cargos', { nombre: nombre.trim(), activo: 1 });
+      }
+      setModalOpen(false);
+      load();
+    } catch (e) { alert(e.message); }
+  };
+
+  const openDelete = (it) => {
+    setItemToDelete(it);
+    setConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!itemToDelete) return;
+    try {
+      await http.delete(`/administracion/cargos/${itemToDelete.id_cargo}`);
+      setConfirmOpen(false);
+      load();
     } catch (e) { alert(e.message); }
   };
 
@@ -40,40 +81,24 @@ export default function CargosAdmin() {
     } catch (e) { alert(e.message); }
   };
 
-  const onRename = async (it) => {
-    const nuevo = prompt('Nuevo nombre para el cargo', it.nombre);
-    if (!nuevo || !nuevo.trim()) return;
-    try {
-      await http.put(`/administracion/cargos/${it.id_cargo}`, { nombre: nuevo.trim() });
-      load();
-    } catch (e) { alert(e.message); }
-  };
-
-  const onDelete = async (it) => {
-    if (!confirm(`Eliminar cargo "${it.nombre}"?`)) return;
-    try {
-      await http.delete(`/administracion/cargos/${it.id_cargo}`);
-      load();
-    } catch (e) { alert(e.message); }
-  };
-
   const filtered = useMemo(()=> items, [items]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Cargos</h2>
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold">Cargos</h2>
         <div className="flex gap-2">
-          <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Buscar..." className="h-10 px-3 rounded-full card border text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400" />
+          <input 
+            value={q} 
+            onChange={e=>setQ(e.target.value)} 
+            placeholder="Buscar..." 
+            className="h-9 px-3 rounded border text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400" 
+          />
+          {canWrite && (
+            <Button variant="primary" onClick={openCreate}>+ Nuevo Cargo</Button>
+          )}
         </div>
       </div>
-
-      {canWrite && (
-        <div className="flex items-center gap-2">
-          <input value={nombre} onChange={e=>setNombre(e.target.value)} placeholder="Nombre del cargo" className="h-10 px-3 rounded-full card border text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400" />
-          <Button onClick={onCreate} disabled={!nombre.trim()} >Agregar</Button>
-        </div>
-      )}
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm border-collapse">
@@ -99,10 +124,10 @@ export default function CargosAdmin() {
                 </td>
                 <td className="px-4 py-2 border-b">
                   {canWrite && (
-                    <>
-                      <button onClick={()=>onRename(it)} className="text-yellow-600 font-semibold hover:underline mr-2 text-xs">Renombrar</button>
-                      <button onClick={()=>onDelete(it)} className="text-red-600 font-semibold hover:underline text-xs">Eliminar</button>
-                    </>
+                    <div className="flex gap-2">
+                      <Button variant="secondary" size="sm" onClick={()=>openEdit(it)}>Editar</Button>
+                      <Button variant="danger" size="sm" onClick={()=>openDelete(it)}>Eliminar</Button>
+                    </div>
                   )}
                 </td>
               </tr>
@@ -110,6 +135,39 @@ export default function CargosAdmin() {
           </tbody>
         </table>
       </div>
+
+      <Modal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={editingItem ? "Editar Cargo" : "Nuevo Cargo"}
+        size="md"
+      >
+        <div className="space-y-4">
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                <input
+                    value={nombre}
+                    onChange={e => setNombre(e.target.value)}
+                    className="w-full p-2 border rounded focus:ring-2 focus:ring-yellow-400 outline-none"
+                    placeholder="Nombre del cargo"
+                />
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+                <Button variant="ghost" onClick={() => setModalOpen(false)}>Cancelar</Button>
+                <Button variant="primary" onClick={handleSave} disabled={!nombre.trim()}>Guardar</Button>
+            </div>
+        </div>
+      </Modal>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Eliminar Cargo"
+        message={`¿Estás seguro de que deseas eliminar el cargo "${itemToDelete?.nombre}"? Esta acción no se puede deshacer.`}
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={handleConfirmDelete}
+        confirmLabel="Eliminar"
+        confirmVariant="danger"
+      />
     </div>
   );
 }

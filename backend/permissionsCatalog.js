@@ -13,6 +13,7 @@ export const permissionsCatalog = {
   reportes: ["read"],
   personalizacion: ["read","update","delete"],
   identidad: ["read","update"],
+  personal: ["read","create","update","delete"],
 };
 
 function tokensArrayToObject(permsArr) {

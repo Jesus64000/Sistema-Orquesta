@@ -242,9 +242,16 @@ export function streamTablePDF(res, { title, columns, rows }) {
   const range = doc.bufferedPageRange();
   for (let i = range.start; i < range.start + range.count; i++) {
     doc.switchToPage(i);
+    
+    // Truco para escribir en el margen inferior sin disparar nueva página
+    const oldBottom = doc.page.margins.bottom;
+    doc.page.margins.bottom = 0;
+
     doc.fontSize(8).fillColor(styles.pdf.colors.meta)
-      .text(`Página ${i + 1} de ${range.count}` , margin, doc.page.height - margin, { align: 'center' })
+      .text(`Página ${i + 1} de ${range.count}` , margin, doc.page.height - margin + 10, { align: 'center', lineBreak: false })
       .fillColor(styles.pdf.colors.rowText);
+      
+    doc.page.margins.bottom = oldBottom;
   }
 
   doc.end();

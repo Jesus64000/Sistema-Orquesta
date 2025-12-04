@@ -31,6 +31,9 @@ function extractTokens(user) {
 
 export function hasPermission(user, required) {
   if (!user) return false;
+  // Admin (nivel 0) tiene acceso total siempre
+  if (user.nivel_acceso === 0) return true;
+
   const requiredNorm = normalizePerm(required);
   const perms = extractTokens(user);
   if (perms.includes('*')) return true; // comodín global
