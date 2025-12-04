@@ -514,7 +514,7 @@ router.post('/export-masivo', requirePermission('alumnos:export'), async (req, r
           { key: 'programas', header: 'Programas', width: 130 },
         ];
 
-        streamTablePDF(res, { title: 'Matrícula', columns, rows });
+        streamTablePDF(res, { title: 'Alumnos', columns, rows });
         return; 
       }
 
@@ -590,7 +590,7 @@ router.post('/export', requirePermission('alumnos:export'), async (req, res) => 
         { key: 'estado', header: 'Estado', width: 50 },
         { key: 'programas', header: 'Programas', width: 79 }
       ];
-      streamTablePDF(res, { title: 'Alumnos exportados', columns, rows: data });
+      streamTablePDF(res, { title: 'Alumnos', columns, rows: data });
       return;
     }
 

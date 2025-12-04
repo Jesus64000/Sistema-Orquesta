@@ -28,7 +28,7 @@ function Preview({ url, file, label }) {
 export default function IdentidadVisual() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [state, setState] = useState({ appLogo: null, sello: null, firma: null, includeSeal: true, includeSignature: true });
+  const [state, setState] = useState({ appLogo: '/logo.png', sello: null, firma: null, includeSeal: true, includeSignature: true });
   // No permitimos cambiar el logo de la app desde la UI: el logo del
   // sistema se mantiene fijo desde `public/logo.png`. Aquí solo se pueden
   // subir el `sello` y la `firma` que se usan en los PDFs.
@@ -40,7 +40,7 @@ export default function IdentidadVisual() {
       const { data } = await getIdentidad();
       if (data && data.ok) {
         setState({
-          appLogo: data.appLogo || null,
+          appLogo: '/logo.png', // Siempre mostrar el logo del sistema
           sello: data.sello || null,
           firma: data.firma || null,
           includeSeal: typeof data.includeSeal === 'boolean' ? data.includeSeal : true,
@@ -79,7 +79,7 @@ export default function IdentidadVisual() {
           ...s,
           // Aunque el servidor pueda devolver appLogo, no lo usamos como
           // logo de la app en la UI principal.
-          appLogo: d.appLogo || s.appLogo,
+          appLogo: '/logo.png',
           sello: d.sello || s.sello,
           firma: d.firma || s.firma,
           includeSeal: typeof d.includeSeal === 'boolean' ? d.includeSeal : s.includeSeal,

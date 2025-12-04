@@ -373,7 +373,7 @@ router.post('/export-masivo', requirePermission('instrumentos:read'), async (req
           try { const d = new Date(s); if (isNaN(d)) return s; return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit' }); } catch { return s; }
         })()
       }));
-      streamTablePDF(res, { title: 'Inventario', columns, rows: rowsPDF });
+      streamTablePDF(res, { title: 'Inventario de Instrumentos', columns, rows: rowsPDF });
       return;
     }
 
@@ -441,9 +441,9 @@ router.post('/export', requirePermission('instrumentos:read'), async (req, res) 
       res.setHeader('Content-Disposition', `attachment; filename="instrumentos_export_${Date.now()}.pdf"`);
       const columns = [
         { key: 'id_instrumento', header: 'ID', width: 40 },
-        { key: 'nombre', header: 'Nombre', width: 150 },
-        { key: 'numero_serie', header: 'Serie', width: 90 },
-        { key: 'categoria', header: 'Categoría', width: 90 },
+        { key: 'nombre', header: 'Nombre', width: 140 },
+        { key: 'numero_serie', header: 'Serie', width: 85 },
+        { key: 'categoria', header: 'Categoría', width: 85 },
         { key: 'estado', header: 'Estado', width: 65 },
         { key: 'fecha_adquisicion', header: 'F. Adq.', width: 50 },
         { key: 'ubicacion', header: 'Ubicación', width: 50 },
@@ -456,7 +456,7 @@ router.post('/export', requirePermission('instrumentos:read'), async (req, res) 
           try { const d = new Date(s); if (isNaN(d)) return s; return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit' }); } catch { return s; }
         })()
       }));
-      streamTablePDF(res, { title: 'Instrumentos exportados', columns, rows: rowsPDF });
+      streamTablePDF(res, { title: 'Inventario de Instrumentos', columns, rows: rowsPDF });
       return;
     }
 

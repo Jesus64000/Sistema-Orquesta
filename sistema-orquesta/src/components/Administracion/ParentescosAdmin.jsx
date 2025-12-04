@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { listarParentescos, crearParentesco, actualizarParentesco, eliminarParentesco } from '../../api/administracion/parentescos';
 import Modal from '../../components/Modal';
+import ConfirmDialog from '../../components/ConfirmDialog';
 
 export default function ParentescosAdmin() {
   const [items, setItems] = useState([]);
@@ -10,6 +11,10 @@ export default function ParentescosAdmin() {
   const [form, setForm] = useState({ nombre: '', activo: 1 });
   const [editId, setEditId] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
+  
+  // Confirmación para eliminar
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [toDeleteId, setToDeleteId] = useState(null);
 
   const cargar = useCallback(async () => {
     setLoading(true); setError(null);
@@ -40,12 +45,20 @@ export default function ParentescosAdmin() {
   function onEdit(item) {
     setEditId(item.id_parentesco);
     setForm({ nombre: item.nombre, activo: item.activo });
+    setModalOpen(true);
   }
 
-  async function onDelete(id) {
-    if (!window.confirm('¿Eliminar parentesco?')) return;
+  function onDelete(id) {
+    setToDeleteId(id);
+    setConfirmOpen(true);
+  }
+
+  async function confirmDelete() {
+    if (!toDeleteId) return;
     try {
-      await eliminarParentesco(id);
+      await eliminarParentesco(toDeleteId);
+      setToDeleteId(null);
+      setConfirmOpen(false);
       cargar();
     } catch (e) { setError(e.message || 'No se pudo eliminar'); }
   }
@@ -94,6 +107,16 @@ export default function ParentescosAdmin() {
       )}
 
       {error && <div className="text-red-600 text-sm">{error}</div>}
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Eliminar parentesco"
+        message="¿Estás seguro de que deseas eliminar este parentesco? Esta acción no se puede deshacer."
+        onCancel={() => { setConfirmOpen(false); setToDeleteId(null); }}
+        onConfirm={confirmDelete}
+        confirmLabel="Eliminar"
+        confirmColor="bg-red-600 hover:bg-red-700"
+      />
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm border-collapse">

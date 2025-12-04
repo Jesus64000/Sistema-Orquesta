@@ -228,16 +228,16 @@ router.post('/export', requirePermission('representantes:read'), async (req, res
       res.setHeader('Content-Disposition', `attachment; filename="representantes_export_${Date.now()}.pdf"`);
       const columns = [
         { key: 'id_representante', header: 'ID', width: 30 },
-        { key: 'nombre_completo', header: 'Nombre', width: 140 },
+        { key: 'nombre_completo', header: 'Nombre', width: 130 },
         { key: 'ci', header: 'CI', width: 60 },
         { key: 'telefono_movil', header: 'Tel.Móvil', width: 70 },
-        { key: 'email', header: 'Email', width: 130 },
-        { key: 'parentesco', header: 'Parentesco', width: 70 },
+        { key: 'email', header: 'Email', width: 110 },
+        { key: 'parentesco', header: 'Parentesco', width: 60 },
         { key: 'alumnos_count', header: 'Alumnos', width: 50 }
       ];
       // Mejor usar telefono_movil si está; proyectar rows en consecuencia
       const rows = data.map(r => ({ ...r, telefono_movil: r.telefono_movil || r.telefono }));
-      streamTablePDF(res, { title: 'Representantes', columns, rows });
+      streamTablePDF(res, { title: 'Listado de Representantes', columns, rows });
       return;
     }
 

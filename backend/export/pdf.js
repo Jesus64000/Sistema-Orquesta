@@ -118,8 +118,9 @@ export function streamTablePDF(res, { title, columns, rows }) {
   const logos = { right: chosenLogo || assetPath('logo-sin-fondo.png') };
   const headerH = styles.pdf.headerHeight || 60;
   const headerReserve = Math.max(headerH, styles.pdf.headerReserve || 80);
-  const logoW = Math.max(80, styles.pdf.logoWidth || 150);
-  const imgY = Math.max(6, margin + (styles.pdf.logoOffsetY ?? -8));
+  // Reducir tamaño logo un 25% (aprox 112px si base es 150) y subirlo un poco más
+  const logoW = Math.max(60, (styles.pdf.logoWidth || 150) * 0.75);
+  const imgY = Math.max(6, margin + (styles.pdf.logoOffsetY ?? -15));
 
   const now = new Date();
   const hh = now.getHours() % 12 || 12;
@@ -130,16 +131,23 @@ export function streamTablePDF(res, { title, columns, rows }) {
 
   function renderPageChrome() {
     drawHeaderDecor(doc, styles);
-    // Logo derecho
+    
+    // Logo Izquierdo
     if (fs.existsSync(logos.right)) {
-      const x = doc.page.width - margin - logoW;
-      doc.image(logos.right, x, imgY, { width: logoW });
+      doc.image(logos.right, margin, imgY, { width: logoW });
     }
-    // Título centrado y "Generado" a la izquierda (donde estaba el logo izquierdo)
-    doc.font(fontRegular).fontSize(styles.pdf.titleFontSize).fillColor(styles.pdf.colors.title).text(title || 'Reporte', { align: 'center' });
-  const genY = Math.max(6, margin - 6);
-  doc.fontSize(8).fillColor(styles.pdf.colors.meta).text(`Generado: ${ts}`, margin, genY, { align: 'left' });
+
+    // Fecha Generado (Derecha Superior)
+    const genY = Math.max(10, margin - 10);
+    doc.fontSize(8).fillColor(styles.pdf.colors.meta).text(`Generado: ${ts}`, margin, genY, { align: 'right', width: doc.page.width - (margin * 2) });
+
+    // Título Centrado (ajustado verticalmente para alinearse mejor con el logo)
+    const titleY = imgY + 35;
+    doc.font(fontRegular).fontSize(styles.pdf.titleFontSize + 2).fillColor(styles.pdf.colors.title);
+    doc.text(title || 'Reporte', margin, titleY, { align: 'center', width: doc.page.width - (margin * 2) });
+
     doc.fillColor(styles.pdf.colors.rowText);
+    
     // Garantizar que el contenido de tabla empiece por debajo del encabezado y del logo
     doc.y = Math.max(doc.y, margin + headerReserve);
     drawFooterSignSeal();

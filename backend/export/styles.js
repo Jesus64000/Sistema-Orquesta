@@ -18,7 +18,7 @@ const DEFAULT_STYLES = {
     titleFontSize: 14,
     headerFontSize: 10,
     rowFontSize: 9,
-    margin: 30,
+    margin: 36,
   headerHeight: 60,
   headerReserve: 80,
   logoWidth: 150,
@@ -27,12 +27,12 @@ const DEFAULT_STYLES = {
     includeSignatureSeal: true,
     colors: {
       title: '#111827',
-      headerBg: '#f3f4f6',
+      headerBg: '#e2e8f0',
       headerText: '#111827',
       rowText: '#111827',
-      zebraBg: '#fafafa',
-      grid: '#e5e7eb',
-      meta: '#666666',
+      zebraBg: '#f8fafc',
+      grid: '#cbd5e1',
+      meta: '#64748b',
       gradientStart: '#5eead4', // turquesa
       gradientEnd: '#a78bfa'    // lila
     }
